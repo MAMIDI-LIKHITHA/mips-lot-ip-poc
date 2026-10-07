@@ -13,6 +13,7 @@ module mips_mmio_adapter_candidate #(
     parameter logic [ADDR_W-1:0] DEST3_BASE = 32'h0003_0000,
     parameter logic [ADDR_W-1:0] DEST_MASK  = 32'hFFFF_0000
 ) (
+    input  logic rst_n,
     input  logic req_valid,
     output logic req_ready,
     input  logic req_write,
@@ -33,6 +34,7 @@ module mips_mmio_adapter_candidate #(
     logic busy;
     logic [DATA_W/2-1:0] response_data;
     logic response_error;
+    logic addr_valid;
 
     function automatic logic [DST_W-1:0] decode_dst(input logic [ADDR_W-1:0] addr);
         begin
@@ -45,11 +47,19 @@ module mips_mmio_adapter_candidate #(
             else if ((addr & DEST_MASK) == (DEST3_BASE & DEST_MASK))
                 decode_dst = 'd3;
             else
-                decode_dst = 'd3;
+                decode_dst = '0;
         end
     endfunction
 
-    assign req_ready = !busy && lot_ready;
+    always_comb begin
+        addr_valid =
+            ((req_addr & DEST_MASK) == (DEST0_BASE & DEST_MASK)) ||
+            ((req_addr & DEST_MASK) == (DEST1_BASE & DEST_MASK)) ||
+            ((req_addr & DEST_MASK) == (DEST2_BASE & DEST_MASK)) ||
+            ((req_addr & DEST_MASK) == (DEST3_BASE & DEST_MASK));
+    end
+
+    assign req_ready = !busy && lot_ready && addr_valid && rst_n;
     assign lot_valid = req_valid && req_ready;
     assign lot_dst = decode_dst(req_addr);
 
