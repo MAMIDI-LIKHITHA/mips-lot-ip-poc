@@ -3,10 +3,11 @@
 ## Implemented in repository
 
 - Generic transaction-level 4×4 crossbar.
+- Protocol-neutral internal LOT transaction router boundary.
 - Round-robin output arbitration.
 - Input exclusivity in the scheduler.
 - Output backpressure awareness.
-- Standalone self-checking testbench.
+- Standalone self-checking testbench with contention, backpressure and round-robin fairness checks.
 - Icarus and ModelSim command scripts.
 
 ## Not yet implemented
