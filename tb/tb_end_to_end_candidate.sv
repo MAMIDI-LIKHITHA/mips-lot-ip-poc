@@ -226,6 +226,7 @@ module tb_end_to_end_candidate;
 
         cpu_rsp_ready = 1'b1;
         @(posedge clk);
+        #1;
         cpu_rsp_ready = 1'b0;
 
         if (cpu_rsp_valid !== 1'b0) begin
