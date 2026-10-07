@@ -86,7 +86,6 @@ module tb_end_to_end_candidate;
     assign lot_rsp_valid = rsp_dst_valid[0];
     assign lot_rsp_rdata = rsp_dst_data[0];
     assign lot_rsp_error = rsp_dst_error[0];
-    assign rsp_src_ready[0] = rsp_src_ready[0];
 
     mips_mmio_adapter_candidate #(
         .ADDR_W(ADDR_W),
@@ -214,8 +213,8 @@ module tb_end_to_end_candidate;
         // The endpoint response must return through the response XBAR.
         wait (cpu_rsp_valid);
 
-        if (cpu_rsp_rdata !== 32'h0040_1234) begin
-            $error("End-to-end response mismatch: got %h expected 00401234",
+        if (cpu_rsp_rdata !== 32'h0040_ABCD) begin
+            $error("End-to-end response mismatch: got %h expected 0040ABCD",
                    cpu_rsp_rdata);
             $fatal;
         end
