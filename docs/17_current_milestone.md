@@ -9,9 +9,11 @@
 - Output backpressure awareness.
 - Protocol-neutral 4×4 response router.
 - Candidate single-outstanding MIPS MMIO adapter with request and response handshakes.
+- Behavioral endpoint harness for an end-to-end candidate transaction.
 - Self-checking request testbench with connectivity, contention, backpressure and round-robin fairness checks.
 - Self-checking response testbench with routing, error propagation, contention and backpressure checks.
-- Icarus and ModelSim command scripts covering the request and response testbenches.
+- End-to-end testbench covering candidate CPU request -> request XBAR -> endpoint -> response XBAR -> candidate CPU response.
+- Icarus and ModelSim command scripts covering all three testbenches.
 
 ## Not yet implemented
 
@@ -20,7 +22,7 @@
 - Register block.
 - Thread/Wi-Fi/BLE/Ethernet endpoint adapters.
 - Protocol-specific packet handling.
-- End-to-end MIPS-to-endpoint system integration.
+- Final system-level MIPS integration.
 - McKeown/iSLIP scheduler.
 - Synthesis/performance measurements.
 
@@ -30,9 +32,9 @@ The testbenches have been written but their PASS results must only be reported
 after they are actually executed in a compatible simulator. This repository
 does not treat source-code inspection as simulation evidence.
 
-## Next engineering step
+## Current milestone
 
-Connect the candidate MIPS request path and response path through a small
-behavioral endpoint test harness. That will provide an end-to-end protocol-
-neutral transaction demonstration before committing to the final MIPS bus or
-network endpoint protocols.
+The protocol-neutral candidate path is now represented end to end in simulation
+structure. The next engineering work should focus on replacing assumptions one
+at a time: first confirm the actual MIPS bus, then define the real transaction
+and response mapping, then connect the endpoint/protocol boundary.
