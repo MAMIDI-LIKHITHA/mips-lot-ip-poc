@@ -125,6 +125,13 @@ module tb_xbar_4x4;
         end
         out_ready[1] = 1'b1;
 
+        // Reset before the fairness measurement so the expected starting
+        // pointer is deterministic and independent of previous tests.
+        clear_inputs();
+        rst_n = 1'b0;
+        repeat (2) @(posedge clk);
+        rst_n = 1'b1;
+
         // Test 5: round-robin fairness under persistent contention.
         clear_inputs();
         for (i = 0; i < N; i = i + 1) begin
