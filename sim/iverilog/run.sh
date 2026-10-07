@@ -12,3 +12,6 @@ vvp sim_xbar.out
 
 iverilog -g2012 -s tb_lot_rsp_router -o sim_rsp.out $COMMON tb/tb_lot_rsp_router.sv
 vvp sim_rsp.out
+
+iverilog -g2012 -s tb_end_to_end_candidate -o sim_e2e.out $COMMON tb/tb_end_to_end_candidate.sv
+vvp sim_e2e.out
