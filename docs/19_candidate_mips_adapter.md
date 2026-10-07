@@ -33,13 +33,31 @@ Default candidate regions:
 
 These addresses are placeholders, not the project's final address map.
 
+## Candidate response interface
+
+The adapter now accepts:
+
+- lot_rsp_valid / lot_rsp_ready
+- lot_rsp_rdata
+- lot_rsp_error
+
+It holds the CPU response until rsp_ready and allows only one outstanding
+request.
+
+## Payload sizing
+
+The candidate payload is explicitly sized as:
+
+{write, address, write_data}
+
+The LOT payload width is parameterized as ADDR_W + DATA_W/2 + 1 so the write
+bit does not overlap the address field.
+
 ## Important limitation
 
-The existing XBAR is request-only. It has no reverse response network.
-Therefore this adapter does not claim complete CPU read/write transaction
-completion. A proper implementation still needs the confirmed MIPS protocol,
-final address map, request format, endpoint response semantics, reverse response
-routing, error/timeout behavior, and ordering/outstanding-transaction rules.
+This remains a candidate interface. A proper final implementation still needs
+the confirmed MIPS protocol, final address map, endpoint response semantics,
+transaction ID requirements, timeout behavior, and ordering/outstanding rules.
 
-The next integration decision is whether the LOT fabric should use a separate
-response XBAR or another response-routing mechanism.
+The reverse response path is now represented by a separate protocol-neutral
+response router in docs/20_response_path.md and rtl/interconnect/lot_rsp_router.sv.
