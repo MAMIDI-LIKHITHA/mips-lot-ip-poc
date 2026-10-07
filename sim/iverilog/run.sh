@@ -1,9 +1,14 @@
 #!/bin/sh
 set -eu
 
-iverilog -g2012 -s tb_xbar_4x4 -o sim.out \
-  rtl/crossbar/xbar_scheduler.sv \
-  rtl/crossbar/xbar_4x4.sv \
-  tb/tb_xbar_4x4.sv
+COMMON="rtl/crossbar/xbar_scheduler.sv \
+rtl/crossbar/xbar_4x4.sv \
+rtl/interconnect/lot_txn_router.sv \
+rtl/interconnect/lot_rsp_router.sv \
+rtl/mips_if/mips_mmio_adapter_candidate.sv"
 
-vvp sim.out
+iverilog -g2012 -s tb_xbar_4x4 -o sim_xbar.out $COMMON tb/tb_xbar_4x4.sv
+vvp sim_xbar.out
+
+iverilog -g2012 -s tb_lot_rsp_router -o sim_rsp.out $COMMON tb/tb_lot_rsp_router.sv
+vvp sim_rsp.out
