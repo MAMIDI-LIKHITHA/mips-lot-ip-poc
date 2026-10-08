@@ -252,7 +252,7 @@ module tb_xbar_stress_latency;
             $display("TB RESULT: PASS - stress traffic, transfer accounting, contention, backpressure, four-output simultaneous traffic and zero-cycle crossbar latency verified.");
         end
 
-        $finish;
+        $stop;
     end
 
 endmodule
