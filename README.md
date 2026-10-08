@@ -19,11 +19,13 @@ The repository deliberately separates confirmed requirements from assumptions an
 | MIPS bus/interface | Candidate adapter implemented; final interface To Verify |
 | 4×4 crossbar | **Implemented and Verified** |
 | Arbitration/scheduler | **Implemented and Verified** |
+| LOT transaction router | **Implemented and Verified** |
+| LOT response router | **Implemented and Verified** |
 | Matter/networking study | Research/planning |
 | Silicon Labs DVKs | Evaluation pending |
 | Endpoint adapters | Behavioral endpoint model only |
 | Full system integration | **Candidate path verified** |
-| Verification | **Crossbar + end-to-end candidate verification passed** |
+| Verification | **Crossbar + transaction router + response router + end-to-end candidate verification passed** |
 | Performance targets | To verify |
 | IP/license/toolchain review | To verify |
 
@@ -50,6 +52,54 @@ Observed ModelSim result:
 - Simulation completion: **85 ps**
 
 Detailed evidence is recorded in `results/xbar_4x4_verification.md`.
+
+### Verified LOT transaction-router result
+
+The standalone LOT transaction-router testbench `tb/tb_lot_txn_router.sv` was compiled and simulated with ModelSim Intel FPGA Edition.
+
+**Result: PASS**
+
+Verified behaviors:
+
+- Source-to-destination routing
+- Payload/data integrity
+- Destination backpressure
+- Multiple-source contention
+- Input exclusivity under contention
+- Round-robin arbitration progression
+- Ready/valid transfer behavior
+
+Observed ModelSim result:
+
+- Compilation: **0 errors**
+- Simulation: **0 errors**
+- Testbench result: **PASS**
+- Simulation completion: **76 ps**
+
+Detailed evidence is recorded in `results/lot_txn_router_verification.md`.
+
+### Verified LOT response-router result
+
+The standalone LOT response-router testbench `tb/tb_lot_rsp_router.sv` was simulated with ModelSim Intel FPGA Edition.
+
+**Result: PASS**
+
+Verified behaviors:
+
+- Response routing
+- Response payload transfer
+- Error propagation
+- Multiple-source contention
+- Backpressure behavior
+- Ready/valid response transfer
+
+Observed ModelSim result:
+
+- Simulation: **0 errors, 0 warnings**
+- Testbench result: **PASS**
+- Simulation completion: **19 ps**
+
+Detailed evidence is recorded in `results/lot_rsp_router_verification.md`.
 
 ### Verified end-to-end candidate result
 
@@ -80,6 +130,15 @@ Observed ModelSim result:
 - No simulation errors reported
 
 Detailed evidence is recorded in `results/end_to_end_candidate_verification.md`.
+
+### Verification matrix
+
+| Verification target | Result | Evidence |
+|---|---|---|
+| 4×4 request crossbar | **PASS** | `results/xbar_4x4_verification.md` |
+| LOT transaction router | **PASS** | `results/lot_txn_router_verification.md` |
+| LOT response router | **PASS** | `results/lot_rsp_router_verification.md` |
+| End-to-end candidate path | **PASS** | `results/end_to_end_candidate_verification.md` |
 
 ### Status labels
 
@@ -118,13 +177,14 @@ Their exact role and mapping to the four crossbar ports are **not yet final**.
 
 ## Next milestone
 
-With the standalone crossbar now verified, the next milestone is to verify the transaction/interconnect path:
+The core candidate interconnect path is now verified. The next milestone is robustness and corner-case verification:
 
-1. Verify the LOT transaction router.
-2. Verify the LOT response router.
-3. Run the existing end-to-end candidate testbench.
-4. Check reset, response routing, backpressure, and error behavior.
-5. Only then connect additional MIPS and endpoint functionality once their interfaces are confirmed.
+1. Reset behavior and clean recovery.
+2. Error propagation and invalid/corner-case transactions.
+3. Sustained backpressure and ready/valid stability.
+4. Simultaneous multi-output traffic and additional contention cases.
+5. Assertions/coverage and, where appropriate, timing/synthesis checks.
+6. Only then connect additional MIPS and endpoint functionality once their interfaces are confirmed.
 
 ## Source basis
 
