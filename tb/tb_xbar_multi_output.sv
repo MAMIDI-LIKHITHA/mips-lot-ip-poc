@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 module tb_xbar_multi_output;
 
     localparam int N = 4;
