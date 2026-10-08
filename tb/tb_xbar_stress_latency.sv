@@ -46,10 +46,6 @@ module tb_xbar_stress_latency;
     integer latency_sum;
     integer errors;
 
-    integer seed;
-    integer rand_v;
-    integer rand_d;
-    integer rand_r;
     integer inject_cycle [N];
     logic   pending_valid [N];
 
@@ -82,7 +78,6 @@ module tb_xbar_stress_latency;
         latency_max = 0;
         latency_sum = 0;
         errors = 0;
-        seed = 32'h5A17_C0DE;
 
         for (i = 0; i < N; i = i + 1) begin
             pending_valid[i] = 1'b0;
@@ -98,27 +93,20 @@ module tb_xbar_stress_latency;
             // combinational ready/valid signals settle before the handshake.
             @(negedge clk);
 
-            // Keep traffic dense enough to exercise contention, while
-            // leaving idle cycles possible.
+            // Deterministic stress pattern. This avoids simulator-specific
+            // random-seed behavior while still varying validity, destinations
+            // and backpressure over the full 500-cycle run.
             for (i = 0; i < N; i = i + 1) begin
-                rand_v = $urandom(seed) % 100;
-                rand_d = $urandom(seed) % N;
-                in_valid[i] = (rand_v < 75);
-                in_dst[i] = rand_d[DST_W-1:0];
+                in_valid[i] = (((cycle + 3*i) % 7) != 0);
+                in_dst[i] = (cycle + 2*i + (cycle/11)) % N;
                 in_data[i] = 32'hA500_0000 | (cycle << 8) | i;
 
-                if (in_valid[i]) begin
-                    pending_valid[i] = 1'b1;
-                    inject_cycle[i] = cycle;
-                end else begin
-                    pending_valid[i] = 1'b0;
-                end
+                pending_valid[i] = in_valid[i];
+                inject_cycle[i] = cycle;
             end
 
-            for (j = 0; j < N; j = j + 1) begin
-                rand_r = $urandom(seed) % 100;
-                out_ready[j] = (rand_r < 70);
-            end
+            for (j = 0; j < N; j = j + 1)
+                out_ready[j] = (((cycle + 2*j) % 9) != 0);
 
             #1;
 
