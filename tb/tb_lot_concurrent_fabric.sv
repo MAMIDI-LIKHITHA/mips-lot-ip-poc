@@ -33,7 +33,8 @@ module tb_lot_concurrent_fabric;
     logic [N-1:0] rsp_src_error;
 
     logic [N-1:0] dst_valid, dst_ready;
-    logic [N-1:0][DATA_W-1:0] dst_data, dst_error;
+    logic [N-1:0][DATA_W-1:0] dst_data;
+    logic [N-1:0] dst_error;
     logic [N-1:0][N-1:0] req_grant, rsp_grant;
 
     logic [N-1:0] response_seen;
@@ -86,9 +87,10 @@ module tb_lot_concurrent_fabric;
     generate
         for (g = 0; g < N; g = g + 1) begin : g_rsp_id
             assign rsp_src_id[g] = g[DST_W-1:0];
-            assign rsp_src_ready[g] = 1'b1;
         end
     endgenerate
+
+    assign ep_rsp_ready = rsp_src_ready;
 
     lot_rsp_router #(
         .N(N), .DATA_W(DATA_W), .SRC_W(DST_W)
