@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 module tb_lot_rsp_router;
 
     localparam int N = 4;
