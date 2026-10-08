@@ -1,5 +1,5 @@
-// Lightweight functional coverage for the ready-aware crossbar.
-// Intended for simulation-side coverage collection in the verification environment.
+// Portable functional coverage tracker for ModelSim Intel FPGA Edition.
+// Uses ordinary simulation constructs instead of covergroups/Questa-only features.
 
 module xbar_coverage #(
     parameter int N = 4,
@@ -16,85 +16,76 @@ module xbar_coverage #(
     input logic [N-1:0][N-1:0] grant
 );
 
-    // Every legal source -> destination pair.
-    covergroup cg_routes @(posedge clk);
-        cp_src0_dst: coverpoint in_dst[0] iff (rst_n && in_valid[0] && in_ready[0]) {
-            bins dst0 = {0};
-            bins dst1 = {1};
-            bins dst2 = {2};
-            bins dst3 = {3};
-        }
-        cp_src1_dst: coverpoint in_dst[1] iff (rst_n && in_valid[1] && in_ready[1]) {
-            bins dst0 = {0};
-            bins dst1 = {1};
-            bins dst2 = {2};
-            bins dst3 = {3};
-        }
-        cp_src2_dst: coverpoint in_dst[2] iff (rst_n && in_valid[2] && in_ready[2]) {
-            bins dst0 = {0};
-            bins dst1 = {1};
-            bins dst2 = {2};
-            bins dst3 = {3};
-        }
-        cp_src3_dst: coverpoint in_dst[3] iff (rst_n && in_valid[3] && in_ready[3]) {
-            bins dst0 = {0};
-            bins dst1 = {1};
-            bins dst2 = {2};
-            bins dst3 = {3};
-        }
-    endgroup
+    localparam int ROUTE_COUNT = N * N;
 
-    // Backpressure: traffic exists while at least one output is stalled.
-    covergroup cg_backpressure @(posedge clk);
-        cp_stall: coverpoint (|in_valid && (out_ready != {N{1'b1}})) {
-            bins no_stall = {1'b0};
-            bins stalled  = {1'b1};
-        }
-    endgroup
+    logic [ROUTE_COUNT-1:0] route_seen;
+    logic contention_seen;
+    logic multi_output_seen;
+    logic backpressure_seen;
+    logic reset_seen;
+    integer route_hits;
+    integer cycle_count;
 
-    // Number of active outputs.
-    covergroup cg_multi_output @(posedge clk);
-        cp_active_outputs: coverpoint $countones(out_valid) {
-            bins none  = {0};
-            bins one   = {1};
-            bins two   = {2};
-            bins three = {3};
-            bins four  = {4};
-        }
-    endgroup
+    function automatic integer route_index(input integer src, input integer dst);
+        route_index = (src * N) + dst;
+    endfunction
 
-    // Number of simultaneously active inputs, including contention scenarios.
-    covergroup cg_contention @(posedge clk);
-        cp_active_inputs: coverpoint $countones(in_valid) {
-            bins none  = {0};
-            bins one   = {1};
-            bins two   = {2};
-            bins three = {3};
-            bins four  = {4};
-        }
-    endgroup
+    always @(posedge clk) begin
+        integer s;
+        integer d;
 
-    // Reset asserted/released.
-    covergroup cg_reset @(posedge clk);
-        cp_reset: coverpoint rst_n {
-            bins reset_asserted = {1'b0};
-            bins reset_released = {1'b1};
-        }
-    endgroup
+        cycle_count = cycle_count + 1;
 
-    cg_routes       routes_cov = new();
-    cg_backpressure bp_cov     = new();
-    cg_multi_output multi_cov  = new();
-    cg_contention   cont_cov   = new();
-    cg_reset        reset_cov  = new();
+        if (!rst_n) begin
+            reset_seen = 1'b1;
+        end
+        else begin
+            // Record every accepted legal source -> destination transfer.
+            for (s = 0; s < N; s = s + 1) begin
+                if (in_valid[s] && in_ready[s] && (in_dst[s] < N)) begin
+                    d = in_dst[s];
+                    if (!route_seen[route_index(s, d)]) begin
+                        route_seen[route_index(s, d)] <= 1'b1;
+                        route_hits = route_hits + 1;
+                    end
+                end
+            end
+
+            // Multiple active inputs indicate a contention/multi-request scenario.
+            if ($countones(in_valid) >= 2)
+                contention_seen <= 1'b1;
+
+            // More than one active output indicates simultaneous multi-output traffic.
+            if ($countones(out_valid) >= 2)
+                multi_output_seen <= 1'b1;
+
+            // Valid traffic while at least one output is not ready.
+            if ((|in_valid) && (out_ready != {N{1'b1}}))
+                backpressure_seen <= 1'b1;
+        end
+    end
+
+    initial begin
+        route_seen = '0;
+        contention_seen = 1'b0;
+        multi_output_seen = 1'b0;
+        backpressure_seen = 1'b0;
+        reset_seen = 1'b0;
+        route_hits = 0;
+        cycle_count = 0;
+    end
 
     final begin
-        $display("XBAR COVERAGE: routes=%0.2f%% backpressure=%0.2f%% multi_output=%0.2f%% contention=%0.2f%% reset=%0.2f%%",
-                 routes_cov.get_inst_coverage(),
-                 bp_cov.get_inst_coverage(),
-                 multi_cov.get_inst_coverage(),
-                 cont_cov.get_inst_coverage(),
-                 reset_cov.get_inst_coverage());
+        $display("==============================================");
+        $display("XBAR FUNCTIONAL COVERAGE");
+        $display("Route coverage       : %0d/%0d = %0.2f%%",
+                 route_hits, ROUTE_COUNT,
+                 (100.0 * route_hits) / ROUTE_COUNT);
+        $display("Contention           : %s", contention_seen ? "PASS" : "MISS");
+        $display("Multi-output         : %s", multi_output_seen ? "PASS" : "MISS");
+        $display("Backpressure         : %s", backpressure_seen ? "PASS" : "MISS");
+        $display("Reset                : %s", reset_seen ? "PASS" : "MISS");
+        $display("==============================================");
     end
 
 endmodule
