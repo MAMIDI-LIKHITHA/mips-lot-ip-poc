@@ -55,3 +55,5 @@ Errors: 0, Warnings: 0
 The standalone 4×4 crossbar and its round-robin scheduler have passed the current directed verification suite. This establishes the crossbar as a verified building block for the next LOT interconnect integration stage.
 
 This result does **not** imply full LOT IP or system-level verification. Reset/error corner cases, transaction/response routers, MIPS integration, endpoint adapters, and end-to-end behavior remain to be verified.
+
+---
