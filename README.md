@@ -174,6 +174,30 @@ Observed ModelSim result:
 
 Detailed evidence is recorded in `results/xbar_reset_verification.md`.
 
+### Verified MIPS MMIO candidate adapter
+
+The standalone candidate-adapter testbench tb/tb_mips_mmio_adapter_candidate.sv was compiled and simulated with ModelSim Intel FPGA Edition 2021.1.
+
+**Result: PASS**
+
+Verified behaviors:
+
+- Four destination decodes and LOT payload encoding
+- LOT-side request backpressure and held-request stability
+- Single-outstanding-request enforcement
+- CPU-side response backpressure and response/error stability
+- Invalid-address suppression
+- Reset quiescence and post-reset recovery
+
+Observed ModelSim result:
+
+- Compilation: **0 errors, 0 warnings**
+- Simulation: **PASS**
+- Testbench result: **PASS**
+- Simulation completion: **346 ps**
+- Final $stop is expected testbench termination after all checks pass
+
+Detailed evidence is recorded in results/mips_mmio_adapter_candidate_verification.md.
 ### Verification matrix
 
 | Verification target | Result | Evidence |
@@ -190,6 +214,7 @@ Detailed evidence is recorded in `results/xbar_reset_verification.md`.
 | Functional coverage | **PASS — 16/16 routes, contention, multi-output, backpressure, reset** | `results/xbar_functional_coverage.md` |
 | Concurrent multi-source LOT fabric | **PASS — four simultaneous sources, independent endpoints, response source-ID mapping** | `results/lot_concurrent_fabric_verification.md` |
 | Mixed concurrent LOT traffic | **PASS — 16 transactions, contention, writes, reads, error responses, backpressure and source mapping** | `results/lot_mixed_traffic_verification.md` |
+| MIPS MMIO candidate adapter | **PASS — destination decode, payload encoding, backpressure, single-outstanding behavior, error handling and reset recovery** | `results/mips_mmio_adapter_candidate_verification.md` |
 
 ### Status labels
 
@@ -237,8 +262,9 @@ The core candidate interconnect path, crossbar reset behavior, functional covera
 5. Stress and latency verification. **500-cycle stress test passed with 1002/1002 transfer accounting, contention, backpressure, four-output traffic and 0-cycle combinational latency.**
 6. Concurrent multi-source fabric traffic. **Four simultaneous sources reached independent endpoints and returned correctly mapped responses through the shared request/response fabrics.**
 7. Mixed concurrent LOT traffic. **16/16 transactions returned correctly with destination contention, write/read/error traffic, response backpressure and source-ID mapping verified.**
-8. Timing/synthesis checks and implementation-oriented measurements when a suitable implementation toolchain is available.
-9. Then connect additional MIPS and endpoint functionality once their interfaces are confirmed.
+8. MIPS MMIO candidate adapter verification. **Destination decode, payload encoding, backpressure, single-outstanding behavior, error handling, invalid-address suppression and reset recovery verified.**
+9. Timing/synthesis checks and implementation-oriented measurements when a suitable implementation toolchain is available.
+10. Then connect additional MIPS and endpoint functionality once their interfaces are confirmed.
 
 ## Source basis
 
