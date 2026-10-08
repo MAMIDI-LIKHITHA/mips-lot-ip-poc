@@ -24,7 +24,7 @@ module tb_lot_concurrent_fabric;
     logic [N-1:0] req_valid, req_ready;
     logic [N-1:0][LOT_W-1:0] req_data;
 
-    logic [N-1:0] ep_rsp_valid, ep_rsp_ready, ep_rsp_error;
+    logic [N-1:0] ep_rsp_valid, ep_rsp_ready, ep_rsp_error, ep_req_ready;
     logic [N-1:0][DATA_W-1:0] ep_rsp_data;
 
     logic [N-1:0] rsp_src_valid, rsp_src_ready;
@@ -65,12 +65,12 @@ module tb_lot_concurrent_fabric;
     // Each endpoint accepts exactly one request and returns the written value.
     generate
         for (g = 0; g < N; g = g + 1) begin : g_ep
-            assign req_ready[g] = ep_rsp_ready[g];
+            assign req_ready[g] = ep_req_ready[g];
             lot_endpoint_adapter #(
                 .ADDR_W(ADDR_W), .DATA_W(DATA_W), .LOT_W(LOT_W)
             ) u_endpoint (
                 .clk(clk), .rst_n(rst_n),
-                .req_valid(req_valid[g]), .req_ready(ep_rsp_ready[g]),
+                .req_valid(req_valid[g]), .req_ready(ep_req_ready[g]),
                 .req_payload(req_data[g]),
                 .rsp_valid(ep_rsp_valid[g]), .rsp_ready(ep_rsp_ready[g]),
                 .rsp_rdata(ep_rsp_data[g]), .rsp_error(ep_rsp_error[g])
@@ -142,7 +142,7 @@ module tb_lot_concurrent_fabric;
             $display("  src_valid=%b src_ready=%b", src_valid, src_ready);
             $display("  req_valid=%b req_ready=%b", req_valid, req_ready);
             $display("  req_grant=%b", req_grant);
-            $display("  ep_rsp_valid=%b ep_rsp_ready=%b", ep_rsp_valid, ep_rsp_ready);
+            $display("  ep_rsp_valid=%b ep_rsp_ready=%b ep_req_ready=%b", ep_rsp_valid, ep_rsp_ready, ep_req_ready);
             $display("  rsp_src_valid=%b rsp_src_ready=%b", rsp_src_valid, rsp_src_ready);
             $display("  dst_valid=%b dst_ready=%b", dst_valid, dst_ready);
             $display("  rsp_grant=%b", rsp_grant);
