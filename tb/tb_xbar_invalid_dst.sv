@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 module tb_xbar_invalid_dst;
 
     localparam int N = 3;
