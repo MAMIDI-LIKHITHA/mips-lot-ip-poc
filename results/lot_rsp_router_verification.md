@@ -21,8 +21,8 @@ Observed result:
 
 ```text
 TB RESULT: PASS - response routing, error propagation, contention and backpressure checks passed.
-** Note: $finish : tb/tb_lot_rsp_router.sv(90)
-Time: 19 ps
+** Note: $finish : tb/tb_lot_rsp_router.sv(91)
+Time: 19 ns
 Errors: 0, Warnings: 0
 ```
 
@@ -37,7 +37,7 @@ The required RTL/testbench modules loaded successfully and the simulation comple
 - Backpressure behavior
 - Ready/valid response transfer
 
-The `$finish` / ModelSim break at line 90 is expected because the testbench terminates with `$finish`; it is not a simulation failure.
+The `$finish` / ModelSim break at line 91 is expected because the testbench terminates with `$finish`; it is not a simulation failure.
 
 ## Conclusion
 
