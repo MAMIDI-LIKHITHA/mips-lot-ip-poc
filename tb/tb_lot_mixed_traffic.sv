@@ -1,19 +1,20 @@
 // Mixed concurrent LOT fabric verification.
 //
-// Four independent sources each execute a mixed write/read/error sequence.
-// The first phase deliberately creates destination contention, while later
-// phases use independent destinations. Response readiness is varied to exercise
-// response backpressure and stability. Endpoint ownership is tracked at the
-// request handshake so response source IDs remain associated with the actual
-// winning source under contention.
+// Four independent sources execute a mixed write/read/error sequence.
+// The first transaction creates destination contention, then each source
+// writes and reads its own endpoint before issuing an invalid-register write.
+// Response readiness is varied to exercise response backpressure and stability.
+// Endpoint ownership is tracked at the request handshake so response source IDs
+// remain associated with the actual winning source under contention.
 //
 // Verified intent:
 // - concurrent source traffic
 // - request-destination contention and arbitration
-// - read/write/error transactions
+// - write/read/error transactions
 // - response backpressure
 // - response source-ID mapping under contention
 // - data/error integrity
+// - transfer accounting
 
 module tb_lot_mixed_traffic;
 
@@ -22,7 +23,7 @@ module tb_lot_mixed_traffic;
     localparam int DATA_W = 32;
     localparam int DST_W = 2;
     localparam int LOT_W = ADDR_W + DATA_W + 1;
-    localparam int TXNS_PER_SRC = 3;
+    localparam int TXNS_PER_SRC = 4;
 
     logic clk, rst_n;
 
@@ -64,11 +65,9 @@ module tb_lot_mixed_traffic;
     function automatic [DST_W-1:0] calc_target(input integer s, input integer t);
         begin
             if (t == 0)
-                calc_target = 2;          // all sources contend for endpoint 2
-            else if (t == 1)
-                calc_target = s;          // independent destinations
+                calc_target = 2;              // all sources contend for endpoint 2
             else
-                calc_target = (s + 1) % N; // second contention pattern
+                calc_target = s[DST_W-1:0];  // later traffic uses own endpoint
         end
     endfunction
 
@@ -80,8 +79,8 @@ module tb_lot_mixed_traffic;
         expected_data = calc_data(s);
     endfunction
 
-    function automatic expected_error(input integer t);
-        expected_error = (t == 2);
+    function automatic logic expected_error(input integer t);
+        expected_error = (t == 3);
     endfunction
 
     assign dst_ready[0] = ((cycle % 4) != 1);
@@ -98,13 +97,16 @@ module tb_lot_mixed_traffic;
             always_comb begin
                 src_data[g] = '0;
                 if (txn_idx[g] == 0) begin
-                    // WRITE CONTROL
+                    // WRITE CONTROL to endpoint 2 (contention phase).
                     src_data[g] = {1'b1, (target[g] << 16), calc_data(g)};
                 end else if (txn_idx[g] == 1) begin
-                    // READ CONTROL
+                    // WRITE CONTROL to the source's own endpoint.
+                    src_data[g] = {1'b1, (target[g] << 16), calc_data(g)};
+                end else if (txn_idx[g] == 2) begin
+                    // READ CONTROL from the source's own endpoint.
                     src_data[g] = {1'b0, (target[g] << 16), 32'h0};
                 end else begin
-                    // INVALID WRITE: local register offset 0x0010
+                    // INVALID WRITE: local register offset 0x0010.
                     src_data[g] = {1'b1, (target[g] << 16) | 32'h0000_0010, calc_data(g)};
                 end
             end
@@ -165,7 +167,7 @@ module tb_lot_mixed_traffic;
     always @(posedge clk) begin
         if (rst_n) begin
             for (i = 0; i < N; i = i + 1) begin
-                // Record actual request winner for each endpoint.
+                // Record the actual request winner for each endpoint.
                 if (req_valid[i] && req_ready[i]) begin
                     for (integer s = 0; s < N; s = s + 1) begin
                         if (src_valid[s] && src_ready[s] &&
@@ -173,13 +175,16 @@ module tb_lot_mixed_traffic;
                             endpoint_owner[i] <= s[DST_W-1:0];
                             owner_valid[i] <= 1'b1;
                             waiting[s] <= 1'b1;
-                            accepted_count <= accepted_count + 1;
+                            // Blocking increment avoids losing simultaneous
+                            // accepted transfers in a single clock cycle.
+                            accepted_count = accepted_count + 1;
                         end
                     end
                 end
 
                 if (dst_valid[i] && dst_ready[i]) begin
-                    response_count <= response_count + 1;
+                    // Blocking increment avoids losing simultaneous responses.
+                    response_count = response_count + 1;
                     for (integer s2 = 0; s2 < N; s2 = s2 + 1) begin
                         if (rsp_src_id[i] == s2[DST_W-1:0] && waiting[s2]) begin
                             if (dst_data[i] !== expected_data(s2, txn_idx[s2]))
@@ -210,10 +215,10 @@ module tb_lot_mixed_traffic;
                 (src_valid[1] && src_valid[2] && src_dst[1] == src_dst[2]) ||
                 (src_valid[1] && src_valid[3] && src_dst[1] == src_dst[3]) ||
                 (src_valid[2] && src_valid[3] && src_dst[2] == src_dst[3]))
-                contention_cycles <= contention_cycles + 1;
+                contention_cycles = contention_cycles + 1;
 
             if (dst_valid != 0 && dst_ready != {N{1'b1}})
-                backpressure_cycles <= backpressure_cycles + 1;
+                backpressure_cycles = backpressure_cycles + 1;
         end
     end
 
@@ -238,11 +243,11 @@ module tb_lot_mixed_traffic;
         rst_n = 1'b1;
 
         $display("=== MIXED CONCURRENT LOT FABRIC VERIFICATION ===");
-        $display("[1] Concurrent mixed write/read/error traffic begins");
-        $display("[2] Initial phase creates four-way contention for endpoint 2");
+        $display("[1] Four sources begin with a contended write to endpoint 2");
+        $display("[2] Each source then performs an independent write/read/error sequence");
 
         cycle = 0;
-        while (response_count < (N * TXNS_PER_SRC) && cycle < 100) begin
+        while (response_count < (N * TXNS_PER_SRC) && cycle < 150) begin
             @(posedge clk);
             cycle = cycle + 1;
         end
@@ -273,14 +278,14 @@ module tb_lot_mixed_traffic;
             $fatal(1, "Accepted transfer count mismatch: got %0d expected %0d",
                    accepted_count, N*TXNS_PER_SRC);
 
-        $display("[3] Mixed read/write/error responses verified");
+        $display("[3] Mixed write/read/error responses verified");
         $display("[4] Response backpressure and stability exercised");
         $display("[5] Source mapping preserved under contention");
         $display("Accepted transactions      : %0d", accepted_count);
         $display("Returned responses         : %0d", response_count);
         $display("Contention cycles          : %0d", contention_cycles);
         $display("Backpressure cycles        : %0d", backpressure_cycles);
-        $display("TB RESULT: PASS - mixed concurrent LOT traffic, contention, reads, writes, error responses, backpressure and source mapping verified.");
+        $display("TB RESULT: PASS - mixed concurrent LOT traffic, contention, writes, reads, error responses, backpressure and source mapping verified.");
         $display("Simulation cycles          : %0d", cycle);
         $stop;
     end
