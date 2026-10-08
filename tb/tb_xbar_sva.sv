@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 module tb_xbar_sva;
 
     localparam int N = 4;
@@ -57,14 +58,12 @@ module tb_xbar_sva;
         in_data = '0;
         out_ready = '0;
 
-        // Reset must suppress all visible transfers.
         #2;
         if (in_ready !== '0 || out_valid !== '0 || out_data !== '0) begin
             $error("TB: reset did not quiesce crossbar");
             $finish;
         end
 
-        // Normal single transfer.
         #8;
         rst_n = 1'b1;
         out_ready[2] = 1'b1;
@@ -80,7 +79,6 @@ module tb_xbar_sva;
             $finish;
         end
 
-        // Contention: two inputs request the same output.
         in_valid = '0;
         in_dst[0] = 2'd3;
         in_dst[1] = 2'd3;
@@ -98,7 +96,6 @@ module tb_xbar_sva;
             $finish;
         end
 
-        // Backpressure: output 1 stalled while a request is held.
         in_valid = '0;
         out_ready = '0;
         in_valid[2] = 1'b1;
@@ -111,7 +108,6 @@ module tb_xbar_sva;
             $finish;
         end
 
-        // Release the stalled output.
         out_ready[1] = 1'b1;
         #10;
         if (out_valid[1] !== 1'b1 ||
@@ -121,7 +117,6 @@ module tb_xbar_sva;
             $finish;
         end
 
-        // Reset while traffic is present.
         rst_n = 1'b0;
         #2;
         if (in_ready !== '0 || out_valid !== '0 || out_data !== '0) begin
