@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 module tb_mips_mmio_adapter_candidate;
 
     localparam int ADDR_W = 32;
