@@ -16,16 +16,35 @@ module xbar_coverage #(
     input logic [N-1:0][N-1:0] grant
 );
 
-    // Route coverage: every legal source -> destination pair.
+    // Every legal source -> destination pair.
     covergroup cg_routes @(posedge clk);
-        cp_route: coverpoint {
-            in_valid[0] && in_ready[0] && (in_dst[0] < N)
-        } {
-            bins active = {1'b1};
+        cp_src0_dst: coverpoint in_dst[0] iff (rst_n && in_valid[0] && in_ready[0]) {
+            bins dst0 = {0};
+            bins dst1 = {1};
+            bins dst2 = {2};
+            bins dst3 = {3};
+        }
+        cp_src1_dst: coverpoint in_dst[1] iff (rst_n && in_valid[1] && in_ready[1]) {
+            bins dst0 = {0};
+            bins dst1 = {1};
+            bins dst2 = {2};
+            bins dst3 = {3};
+        }
+        cp_src2_dst: coverpoint in_dst[2] iff (rst_n && in_valid[2] && in_ready[2]) {
+            bins dst0 = {0};
+            bins dst1 = {1};
+            bins dst2 = {2};
+            bins dst3 = {3};
+        }
+        cp_src3_dst: coverpoint in_dst[3] iff (rst_n && in_valid[3] && in_ready[3]) {
+            bins dst0 = {0};
+            bins dst1 = {1};
+            bins dst2 = {2};
+            bins dst3 = {3};
         }
     endgroup
 
-    // Backpressure coverage: at least one output is stalled while valid traffic exists.
+    // Backpressure: traffic exists while at least one output is stalled.
     covergroup cg_backpressure @(posedge clk);
         cp_stall: coverpoint (|in_valid && (out_ready != {N{1'b1}})) {
             bins no_stall = {1'b0};
@@ -33,28 +52,29 @@ module xbar_coverage #(
         }
     endgroup
 
-    // Multi-output coverage: number of active outputs.
+    // Number of active outputs.
     covergroup cg_multi_output @(posedge clk);
         cp_active_outputs: coverpoint $countones(out_valid) {
-            bins none = {0};
-            bins one  = {1};
-            bins two  = {2};
+            bins none  = {0};
+            bins one   = {1};
+            bins two   = {2};
             bins three = {3};
-            bins four = {4};
+            bins four  = {4};
         }
     endgroup
 
-    // Contention coverage: multiple inputs request traffic simultaneously.
+    // Number of simultaneously active inputs, including contention scenarios.
     covergroup cg_contention @(posedge clk);
         cp_active_inputs: coverpoint $countones(in_valid) {
-            bins one = {1};
-            bins two = {2};
+            bins none  = {0};
+            bins one   = {1};
+            bins two   = {2};
             bins three = {3};
-            bins four = {4};
+            bins four  = {4};
         }
     endgroup
 
-    // Reset coverage.
+    // Reset asserted/released.
     covergroup cg_reset @(posedge clk);
         cp_reset: coverpoint rst_n {
             bins reset_asserted = {1'b0};
