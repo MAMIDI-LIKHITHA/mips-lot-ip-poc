@@ -203,14 +203,15 @@ Their exact role and mapping to the four crossbar ports are **not yet final**.
 
 ## Next milestone
 
-The core candidate interconnect path, crossbar reset behavior, and functional coverage are now verified. The next milestone is robustness and implementation-oriented verification:
+The core candidate interconnect path, crossbar reset behavior, functional coverage, and deterministic stress/latency verification are now verified. The next milestone is robustness and implementation-oriented verification:
 
 1. Error propagation and invalid/corner-case transactions. **Invalid destination suppression verified.**
 2. Sustained backpressure and ready/valid stability. **Verified.**
 3. Simultaneous multi-output traffic and additional contention cases. **Multi-output traffic verified.**
 4. Functional coverage. **16/16 routes plus contention, multi-output, backpressure and reset verified.**
-5. Timing/synthesis checks and implementation-oriented measurements.
-6. Only then connect additional MIPS and endpoint functionality once their interfaces are confirmed.
+5. Stress and latency verification. **500-cycle stress test passed with 1002/1002 transfer accounting, contention, backpressure, four-output traffic and 0-cycle combinational latency.**
+6. Timing/synthesis checks and implementation-oriented measurements when a suitable implementation toolchain is available.
+7. Then connect additional MIPS and endpoint functionality once their interfaces are confirmed.
 
 ## Source basis
 
