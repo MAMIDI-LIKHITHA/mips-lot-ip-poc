@@ -87,6 +87,83 @@ module tb_lot_mixed_traffic;
         expected_error = (t == 3);
     endfunction
 
+    genvar g;
+    generate
+        for (g = 0; g < N; g = g + 1) begin : g_src
+            assign src_valid[g] = !done[g] && !waiting[g];
+            assign src_dst[g] = target[g][DST_W-1:0];
+
+            always_comb begin
+                src_data[g] = '0;
+                if (txn_idx[g] == 0) begin
+                    // WRITE CONTROL to endpoint 2 (contention phase).
+                    src_data[g] = {1'b1, (target[g] << 16), calc_data(g)};
+                end else if (txn_idx[g] == 1) begin
+                    // WRITE CONTROL to the source's own endpoint.
+                    src_data[g] = {1'b1, (target[g] << 16), calc_data(g)};
+                end else if (txn_idx[g] == 2) begin
+                    // READ CONTROL from the source's own endpoint.
+                    src_data[g] = {1'b0, (target[g] << 16), 32'h0};
+                end else begin
+                    // INVALID WRITE: local register offset 0x0010.
+                    src_data[g] = {1'b1, (target[g] << 16) | 32'h0000_0010, calc_data(g)};
+                end
+            end
+        end
+    endgenerate
+
+    lot_txn_router #(
+        .N(N), .DATA_W(LOT_W), .DST_W(DST_W)
+    ) u_req_router (
+        .clk(clk), .rst_n(rst_n),
+        .src_valid(src_valid), .src_ready(src_ready),
+        .src_dst(src_dst), .src_data(src_data),
+        .dst_valid(req_valid), .dst_ready(req_ready),
+        .dst_data(req_data), .grant(req_grant)
+    );
+
+    generate
+        for (g = 0; g < N; g = g + 1) begin : g_ep
+            assign req_ready[g] = ep_req_ready[g];
+            lot_endpoint_adapter #(
+                .ADDR_W(ADDR_W), .DATA_W(DATA_W), .LOT_W(LOT_W)
+            ) u_endpoint (
+                .clk(clk), .rst_n(rst_n),
+                .req_valid(req_valid[g]), .req_ready(ep_req_ready[g]),
+                .req_payload(req_data[g]),
+                .rsp_valid(ep_rsp_valid[g]), .rsp_ready(ep_rsp_ready[g]),
+                .rsp_rdata(ep_rsp_data[g]), .rsp_error(ep_rsp_error[g])
+            );
+        end
+    endgenerate
+
+    assign rsp_src_valid = ep_rsp_valid;
+    assign rsp_src_data = ep_rsp_data;
+    assign rsp_src_error = ep_rsp_error;
+
+    generate
+        for (g = 0; g < N; g = g + 1) begin : g_rsp_id
+            assign rsp_src_id[g] = endpoint_owner[g];
+        end
+    endgenerate
+
+    assign ep_rsp_ready = rsp_src_ready;
+
+    lot_rsp_router #(
+        .N(N), .DATA_W(DATA_W), .SRC_W(DST_W)
+    ) u_rsp_router (
+        .clk(clk), .rst_n(rst_n),
+        .src_valid(rsp_src_valid), .src_ready(rsp_src_ready),
+        .src_id(rsp_src_id), .src_data(rsp_src_data),
+        .src_error(rsp_src_error),
+        .dst_valid(dst_valid), .dst_ready(dst_ready),
+        .dst_data(dst_data), .dst_error(dst_error),
+        .grant(rsp_grant)
+    );
+
+    always #5 clk = ~clk;
+
+
     assign dst_ready[0] = ((cycle % 4) != 1);
     assign dst_ready[1] = ((cycle % 4) != 2);
     assign dst_ready[2] = ((cycle % 4) != 3);
