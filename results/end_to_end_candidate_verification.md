@@ -48,11 +48,12 @@ Observed ModelSim result:
 
 ```text
 TB RESULT: PASS - CPU request reached endpoint 2 and response returned through response XBAR.
-** Note: $finish : tb/tb_end_to_end_candidate.sv(239)
-Time: 46 ps
+** Note: $stop    : tb/tb_end_to_end_candidate.sv(351)
+Time: 296 ns
+Errors: 0, Warnings: 0
 ```
 
-The `$finish` note and resulting break message are expected because the testbench intentionally terminates the simulation after the checks pass.
+The `$stop` note and resulting break message are expected because the testbench intentionally stops the simulation after the checks pass.
 
 ## Verified behaviors
 
