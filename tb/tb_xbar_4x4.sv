@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 module tb_xbar_4x4;
 
     localparam int N = 4;
