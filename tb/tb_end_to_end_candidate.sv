@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 // End-to-end protocol-neutral candidate transaction harness.
 //
 // Flow under test:
