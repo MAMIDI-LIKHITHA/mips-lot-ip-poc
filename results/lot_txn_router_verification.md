@@ -27,8 +27,8 @@ Observed result:
 
 ```text
 TB RESULT: PASS - LOT transaction routing, payload integrity, backpressure, contention and round-robin progression checks passed.
-** Note: $finish : tb/tb_lot_txn_router.sv(180)
-Time: 76 ps
+** Note: $finish : tb/tb_lot_txn_router.sv(181)
+Time: 76 ns
 Errors: 0, Warnings: 0
 ```
 
@@ -42,7 +42,7 @@ Errors: 0, Warnings: 0
 - Round-robin arbitration progression
 - Ready/valid transfer behavior
 
-The `$finish` / ModelSim break at line 180 is expected because the testbench terminates with `$finish`; it is not a simulation failure.
+The `$finish` / ModelSim break at line 181 is expected because the testbench terminates with `$finish`; it is not a simulation failure.
 
 ## Conclusion
 
