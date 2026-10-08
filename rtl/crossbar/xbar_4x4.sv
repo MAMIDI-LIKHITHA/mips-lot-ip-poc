@@ -21,10 +21,9 @@ module xbar_4x4 #(
     logic [N-1:0][N-1:0] req;
     logic [N-1:0]        valid_dst;
 
-    integer i;
-    integer j;
+    always_comb begin : build_requests
+        integer i;
 
-    always_comb begin
         valid_dst = '0;
         req       = '0;
 
@@ -42,7 +41,10 @@ module xbar_4x4 #(
         .grant (grant)
     );
 
-    always_comb begin
+    always_comb begin : route_outputs
+        integer i;
+        integer j;
+
         in_ready  = '0;
         out_valid = '0;
         out_data  = '0;
