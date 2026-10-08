@@ -24,7 +24,7 @@ The repository deliberately separates confirmed requirements from assumptions an
 | Matter/networking study | Research/planning |
 | Silicon Labs DVKs | Evaluation pending |
 | Endpoint adapters | **Behavioral endpoint adapter implemented and verified** |
-| Full system integration | **Candidate path + Endpoint 2 register integration verified** |
+| Full system integration | **Candidate path + four independent endpoint register integration verified** |
 | Verification | **Crossbar + transaction router + response router + endpoint-integrated end-to-end path + reset + invalid-destination + sustained backpressure + multi-output + functional coverage + stress/latency verification passed** |
 | Performance targets | To verify |
 | IP/license/toolchain review | To verify |
