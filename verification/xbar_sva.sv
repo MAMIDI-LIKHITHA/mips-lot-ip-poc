@@ -43,6 +43,7 @@ module xbar_sva #(
     endgenerate
 
     // A visible transfer requires both VALID and READY.
+    genvar j;
     generate
         for (j = 0; j < N; j = j + 1) begin : g_transfer_handshake
             assert_valid_ready: assert property (
