@@ -23,9 +23,9 @@ The repository deliberately separates confirmed requirements from assumptions an
 | LOT response router | **Implemented and Verified** |
 | Matter/networking study | Research/planning |
 | Silicon Labs DVKs | Evaluation pending |
-| Endpoint adapters | Behavioral endpoint model only |
-| Full system integration | **Candidate path verified** |
-| Verification | **Crossbar + transaction router + response router + end-to-end candidate + reset + invalid-destination + sustained backpressure + multi-output + functional coverage verification passed** |
+| Endpoint adapters | **Behavioral endpoint adapter implemented and verified** |
+| Full system integration | **Candidate path + Endpoint 2 register integration verified** |
+| Verification | **Crossbar + transaction router + response router + endpoint-integrated end-to-end path + reset + invalid-destination + sustained backpressure + multi-output + functional coverage + stress/latency verification passed** |
 | Performance targets | To verify |
 | IP/license/toolchain review | To verify |
 
@@ -109,7 +109,7 @@ The candidate system path in `tb/tb_end_to_end_candidate.sv` was compiled and si
 
 Verified path:
 
-**Candidate CPU request → MIPS MMIO adapter → LOT transaction router → 4×4 request XBAR → behavioral endpoint 2 → response XBAR → LOT response router → MIPS MMIO adapter → CPU response**
+**Candidate CPU request → MIPS MMIO adapter → LOT transaction router → 4×4 request XBAR → LOT endpoint register adapter → response XBAR → LOT response router → MIPS MMIO adapter → CPU response**
 
 Verified behaviors:
 
@@ -122,6 +122,10 @@ Verified behaviors:
 - CPU received expected response `32'h0040_ABCD`
 - No endpoint error
 - End-to-end test completed successfully
+- Endpoint 2 CONTROL/DATA writes and readbacks verified
+- STATUS and ID register reads verified
+- Invalid local-register error propagated back to the CPU response
+- CPU response backpressure and response-data stability verified
 
 Observed ModelSim result:
 
@@ -130,6 +134,23 @@ Observed ModelSim result:
 - No simulation errors reported
 
 Detailed evidence is recorded in `results/end_to_end_candidate_verification.md`.
+
+### Verified end-to-end LOT endpoint integration
+
+The endpoint-integrated `tb/tb_end_to_end_candidate.sv` was compiled and simulated with ModelSim Intel FPGA Edition 2021.1.
+
+**Result: PASS**
+
+Verified the complete protocol-neutral path through the real `lot_endpoint_adapter`, including CONTROL/DATA register writes and readbacks, STATUS/ID reads, invalid-register error propagation, and CPU response backpressure stability.
+
+Observed ModelSim result:
+
+- Compilation: **0 errors**
+- Simulation: **0 errors, 0 warnings**
+- Testbench result: **PASS**
+- Simulation completion: **296 ps**
+
+Detailed evidence is recorded in `results/end_to_end_lot_endpoint_integration_verification.md`.
 
 ### Verified reset behavior
 
@@ -161,6 +182,7 @@ Detailed evidence is recorded in `results/xbar_reset_verification.md`.
 | LOT transaction router | **PASS** | `results/lot_txn_router_verification.md` |
 | LOT response router | **PASS** | `results/lot_rsp_router_verification.md` |
 | End-to-end candidate path | **PASS** | `results/end_to_end_candidate_verification.md` |
+| End-to-end LOT endpoint integration | **PASS — register access, error propagation, response backpressure** | `results/end_to_end_lot_endpoint_integration_verification.md` |
 | Crossbar reset behavior | **PASS** | `results/xbar_reset_verification.md` |
 | Invalid destination handling | **PASS** | `tb/tb_xbar_invalid_dst.sv` |
 | Sustained backpressure / ready-valid stability | **PASS** | `results/xbar_backpressure_verification.md` |\n| Simultaneous multi-output traffic | **PASS** | `results/xbar_multi_output_verification.md` |
