@@ -92,75 +92,7 @@ module tb_lot_mixed_traffic;
     assign dst_ready[2] = ((cycle % 4) != 3);
     assign dst_ready[3] = 1'b1;
 
-    initial begin
-        clk = 1'b0;
-        rst_n = 1'b0;
-        accepted_count = 0;
-        response_count = 0;
-        contention_cycles = 0;
-        backpressure_cycles = 0;
-
-        for (i = 0; i < N; i = i + 1) begin
-            txn_idx[i] = 0;
-            target[i] = calc_target(i, 0);
-            waiting[i] = 1'b0;
-            done[i] = 1'b0;
-            endpoint_owner[i] = '0;
-            owner_valid[i] = 1'b0;
-        end
-
-        repeat (2) @(posedge clk);
-        rst_n = 1'b1;
-
-        $display("=== MIXED CONCURRENT LOT FABRIC VERIFICATION ===");
-        $display("[1] Four sources begin with a contended write to endpoint 2");
-        $display("[2] Each source then performs an independent write/read/error sequence");
-
-        cycle = 0;
-        while (response_count < (N * TXNS_PER_SRC) && cycle < 150) begin
-            @(posedge clk);
-            cycle = cycle + 1;
-        end
-
-        if (response_count != (N * TXNS_PER_SRC)) begin
-            $display("TIMEOUT: responses=%0d expected=%0d", response_count, N*TXNS_PER_SRC);
-            $display("  src_valid=%b src_ready=%b", src_valid, src_ready);
-            $display("  src_dst=%p", src_dst);
-            $display("  req_valid=%b req_ready=%b", req_valid, req_ready);
-            $display("  req_grant=%p", req_grant);
-            $display("  ep_rsp_valid=%b ep_rsp_ready=%b", ep_rsp_valid, ep_rsp_ready);
-            $display("  dst_valid=%b dst_ready=%b", dst_valid, dst_ready);
-            $display("  waiting=%p done=%p", waiting, done);
-            $fatal;
-        end
-
-        for (i = 0; i < N; i = i + 1)
-            if (!done[i] || waiting[i])
-                $fatal(1, "Source %0d did not complete cleanly", i);
-
-        if (contention_cycles == 0)
-            $fatal(1, "Expected destination contention was not observed");
-
-        if (backpressure_cycles == 0)
-            $fatal(1, "Expected response backpressure was not observed");
-
-        if (accepted_count != (N * TXNS_PER_SRC))
-            $fatal(1, "Accepted transfer count mismatch: got %0d expected %0d",
-                   accepted_count, N*TXNS_PER_SRC);
-
-        $display("[3] Mixed write/read/error responses verified");
-        $display("[4] Response backpressure and stability exercised");
-        $display("[5] Source mapping preserved under contention");
-        $display("Accepted transactions      : %0d", accepted_count);
-        $display("Returned responses         : %0d", response_count);
-        $display("Contention cycles          : %0d", contention_cycles);
-        $display("Backpressure cycles        : %0d", backpressure_cycles);
-        $display("TB RESULT: PASS - mixed concurrent LOT traffic, contention, writes, reads, error responses, backpressure and source mapping verified.");
-        $display("Simulation cycles          : %0d", cycle);
-        $stop;
-    end
-
-endmodule    always @(posedge clk) begin
+    always @(posedge clk) begin
         if (rst_n) begin
             // Capture the source and expected response associated with the
             // transaction actually granted to each endpoint.
@@ -242,7 +174,9 @@ endmodule    always @(posedge clk) begin
             waiting[i] = 1'b0;
             done[i] = 1'b0;
             endpoint_owner[i] = '0;
-            owner_valid[i] = 1'b0;
+            endpoint_expected_data[i] = '0;
+            endpoint_expected_error[i] = 1'b0;
+            endpoint_pending[i] = 1'b0;
         end
 
         repeat (2) @(posedge clk);
