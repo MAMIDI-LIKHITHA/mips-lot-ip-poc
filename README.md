@@ -17,15 +17,39 @@ The repository deliberately separates confirmed requirements from assumptions an
 | Project scope | Defined from available POC documents |
 | System architecture | Conceptual |
 | MIPS bus/interface | To verify |
-| 4×4 crossbar | Initial implementation planned |
-| Arbitration/scheduler | Initial implementation planned |
+| 4×4 crossbar | **Implemented and Verified** |
+| Arbitration/scheduler | **Implemented and Verified** |
 | Matter/networking study | Research/planning |
 | Silicon Labs DVKs | Evaluation pending |
 | Endpoint adapters | Not finalised |
 | Full system integration | Not started |
-| Verification | Plan defined; implementation in progress |
+| Verification | **Crossbar directed verification passed** |
 | Performance targets | To verify |
 | IP/license/toolchain review | To verify |
+
+### Verified 4×4 crossbar result
+
+The standalone 4×4 crossbar testbench `tb/tb_xbar_4x4.sv` was compiled and simulated with ModelSim Intel FPGA Edition.
+
+**Result: PASS**
+
+Verified behaviors:
+
+- 4×4 connectivity/routing
+- Multiple inputs contending for the same output
+- Input exclusivity
+- Output backpressure / ready-valid behavior
+- Round-robin arbitration fairness
+- No simulation errors
+
+Observed ModelSim result:
+
+- Compilation: **0 errors**
+- Simulation: **0 errors**
+- Testbench result: **PASS**
+- Simulation completion: **85 ps**
+
+Detailed evidence is recorded in `results/xbar_4x4_verification.md`.
 
 ### Status labels
 
@@ -37,7 +61,7 @@ The repository deliberately separates confirmed requirements from assumptions an
 
 ## Repository structure
 
-```
+```text
 rtl/           RTL implementation
 tb/            Testbenches and directed tests
 verification/  Assertions, scoreboards and coverage
@@ -64,13 +88,13 @@ Their exact role and mapping to the four crossbar ports are **not yet final**.
 
 ## Next milestone
 
-Build and verify the standalone transaction/interconnect foundation first:
+With the standalone crossbar now verified, the next milestone is to verify the transaction/interconnect path:
 
-1. Define a generic internal transaction interface.
-2. Implement a 4×4 crossbar.
-3. Implement arbitration that prevents an input from being granted to multiple outputs in one cycle.
-4. Add directed connectivity and contention tests.
-5. Only then connect the MIPS adapter and endpoint adapters once their interfaces are confirmed.
+1. Verify the LOT transaction router.
+2. Verify the LOT response router.
+3. Run the existing end-to-end candidate testbench.
+4. Check reset, response routing, backpressure, and error behavior.
+5. Only then connect additional MIPS and endpoint functionality once their interfaces are confirmed.
 
 ## Source basis
 
