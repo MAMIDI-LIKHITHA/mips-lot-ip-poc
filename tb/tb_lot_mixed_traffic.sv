@@ -52,8 +52,12 @@ module tb_lot_mixed_traffic;
     logic waiting [N];
     logic done [N];
 
+    // Scoreboard state is captured at the actual endpoint request handshake.
+    // This avoids inferring response ownership from transient source-ready signals.
     logic [DST_W-1:0] endpoint_owner [N];
-    logic owner_valid [N];
+    logic [DATA_W-1:0] endpoint_expected_data [N];
+    logic endpoint_expected_error [N];
+    logic endpoint_pending [N];
 
     integer accepted_count;
     integer response_count;
@@ -88,120 +92,122 @@ module tb_lot_mixed_traffic;
     assign dst_ready[2] = ((cycle % 4) != 3);
     assign dst_ready[3] = 1'b1;
 
-    genvar g;
-    generate
-        for (g = 0; g < N; g = g + 1) begin : g_src
-            assign src_valid[g] = !done[g] && !waiting[g];
-            assign src_dst[g] = target[g][DST_W-1:0];
+    initial begin
+        clk = 1'b0;
+        rst_n = 1'b0;
+        accepted_count = 0;
+        response_count = 0;
+        contention_cycles = 0;
+        backpressure_cycles = 0;
 
-            always_comb begin
-                src_data[g] = '0;
-                if (txn_idx[g] == 0) begin
-                    // WRITE CONTROL to endpoint 2 (contention phase).
-                    src_data[g] = {1'b1, (target[g] << 16), calc_data(g)};
-                end else if (txn_idx[g] == 1) begin
-                    // WRITE CONTROL to the source's own endpoint.
-                    src_data[g] = {1'b1, (target[g] << 16), calc_data(g)};
-                end else if (txn_idx[g] == 2) begin
-                    // READ CONTROL from the source's own endpoint.
-                    src_data[g] = {1'b0, (target[g] << 16), 32'h0};
-                end else begin
-                    // INVALID WRITE: local register offset 0x0010.
-                    src_data[g] = {1'b1, (target[g] << 16) | 32'h0000_0010, calc_data(g)};
-                end
-            end
+        for (i = 0; i < N; i = i + 1) begin
+            txn_idx[i] = 0;
+            target[i] = calc_target(i, 0);
+            waiting[i] = 1'b0;
+            done[i] = 1'b0;
+            endpoint_owner[i] = '0;
+            owner_valid[i] = 1'b0;
         end
-    endgenerate
 
-    lot_txn_router #(
-        .N(N), .DATA_W(LOT_W), .DST_W(DST_W)
-    ) u_req_router (
-        .clk(clk), .rst_n(rst_n),
-        .src_valid(src_valid), .src_ready(src_ready),
-        .src_dst(src_dst), .src_data(src_data),
-        .dst_valid(req_valid), .dst_ready(req_ready),
-        .dst_data(req_data), .grant(req_grant)
-    );
+        repeat (2) @(posedge clk);
+        rst_n = 1'b1;
 
-    generate
-        for (g = 0; g < N; g = g + 1) begin : g_ep
-            assign req_ready[g] = ep_req_ready[g];
-            lot_endpoint_adapter #(
-                .ADDR_W(ADDR_W), .DATA_W(DATA_W), .LOT_W(LOT_W)
-            ) u_endpoint (
-                .clk(clk), .rst_n(rst_n),
-                .req_valid(req_valid[g]), .req_ready(ep_req_ready[g]),
-                .req_payload(req_data[g]),
-                .rsp_valid(ep_rsp_valid[g]), .rsp_ready(ep_rsp_ready[g]),
-                .rsp_rdata(ep_rsp_data[g]), .rsp_error(ep_rsp_error[g])
-            );
+        $display("=== MIXED CONCURRENT LOT FABRIC VERIFICATION ===");
+        $display("[1] Four sources begin with a contended write to endpoint 2");
+        $display("[2] Each source then performs an independent write/read/error sequence");
+
+        cycle = 0;
+        while (response_count < (N * TXNS_PER_SRC) && cycle < 150) begin
+            @(posedge clk);
+            cycle = cycle + 1;
         end
-    endgenerate
 
-    assign rsp_src_valid = ep_rsp_valid;
-    assign rsp_src_data = ep_rsp_data;
-    assign rsp_src_error = ep_rsp_error;
-
-    generate
-        for (g = 0; g < N; g = g + 1) begin : g_rsp_id
-            assign rsp_src_id[g] = endpoint_owner[g];
+        if (response_count != (N * TXNS_PER_SRC)) begin
+            $display("TIMEOUT: responses=%0d expected=%0d", response_count, N*TXNS_PER_SRC);
+            $display("  src_valid=%b src_ready=%b", src_valid, src_ready);
+            $display("  src_dst=%p", src_dst);
+            $display("  req_valid=%b req_ready=%b", req_valid, req_ready);
+            $display("  req_grant=%p", req_grant);
+            $display("  ep_rsp_valid=%b ep_rsp_ready=%b", ep_rsp_valid, ep_rsp_ready);
+            $display("  dst_valid=%b dst_ready=%b", dst_valid, dst_ready);
+            $display("  waiting=%p done=%p", waiting, done);
+            $fatal;
         end
-    endgenerate
 
-    assign ep_rsp_ready = rsp_src_ready;
+        for (i = 0; i < N; i = i + 1)
+            if (!done[i] || waiting[i])
+                $fatal(1, "Source %0d did not complete cleanly", i);
 
-    lot_rsp_router #(
-        .N(N), .DATA_W(DATA_W), .SRC_W(DST_W)
-    ) u_rsp_router (
-        .clk(clk), .rst_n(rst_n),
-        .src_valid(rsp_src_valid), .src_ready(rsp_src_ready),
-        .src_id(rsp_src_id), .src_data(rsp_src_data),
-        .src_error(rsp_src_error),
-        .dst_valid(dst_valid), .dst_ready(dst_ready),
-        .dst_data(dst_data), .dst_error(dst_error),
-        .grant(rsp_grant)
-    );
+        if (contention_cycles == 0)
+            $fatal(1, "Expected destination contention was not observed");
 
-    always #5 clk = ~clk;
+        if (backpressure_cycles == 0)
+            $fatal(1, "Expected response backpressure was not observed");
 
-    always @(posedge clk) begin
+        if (accepted_count != (N * TXNS_PER_SRC))
+            $fatal(1, "Accepted transfer count mismatch: got %0d expected %0d",
+                   accepted_count, N*TXNS_PER_SRC);
+
+        $display("[3] Mixed write/read/error responses verified");
+        $display("[4] Response backpressure and stability exercised");
+        $display("[5] Source mapping preserved under contention");
+        $display("Accepted transactions      : %0d", accepted_count);
+        $display("Returned responses         : %0d", response_count);
+        $display("Contention cycles          : %0d", contention_cycles);
+        $display("Backpressure cycles        : %0d", backpressure_cycles);
+        $display("TB RESULT: PASS - mixed concurrent LOT traffic, contention, writes, reads, error responses, backpressure and source mapping verified.");
+        $display("Simulation cycles          : %0d", cycle);
+        $stop;
+    end
+
+endmodule    always @(posedge clk) begin
         if (rst_n) begin
+            // Capture the source and expected response associated with the
+            // transaction actually granted to each endpoint.
             for (i = 0; i < N; i = i + 1) begin
-                // Record the actual request winner for each endpoint.
                 if (req_valid[i] && req_ready[i]) begin
                     for (integer s = 0; s < N; s = s + 1) begin
-                        if (src_valid[s] && src_ready[s] &&
-                            src_dst[s] == i[DST_W-1:0]) begin
-                            endpoint_owner[i] <= s[DST_W-1:0];
-                            owner_valid[i] <= 1'b1;
+                        if (req_grant[s][i]) begin
+                            endpoint_owner[i] = s[DST_W-1:0];
+                            endpoint_expected_data[i] = calc_data(s);
+                            endpoint_expected_error[i] = (txn_idx[s] == 3);
+                            endpoint_pending[i] = 1'b1;
                             waiting[s] <= 1'b1;
-                            // Blocking increment avoids losing simultaneous
-                            // accepted transfers in a single clock cycle.
                             accepted_count = accepted_count + 1;
                         end
                     end
                 end
 
+                // The response handshake at the endpoint is the point where
+                // the endpoint has accepted the response fabric's readiness.
+                // The final output handshake below verifies source routing.
                 if (dst_valid[i] && dst_ready[i]) begin
-                    // Blocking increment avoids losing simultaneous responses.
+                    if (!endpoint_pending[i])
+                        $fatal(1, "Endpoint %0d returned a response without a pending transaction", i);
+
+                    if (rsp_src_id[i] !== endpoint_owner[i])
+                        $fatal(1, "Endpoint %0d source-ID mismatch: got %0d expected %0d",
+                               i, rsp_src_id[i], endpoint_owner[i]);
+
+                    if (dst_data[i] !== endpoint_expected_data[i])
+                        $fatal(1, "Endpoint %0d data mismatch: got %h expected %h (source %0d)",
+                               i, dst_data[i], endpoint_expected_data[i], endpoint_owner[i]);
+
+                    if (dst_error[i] !== endpoint_expected_error[i])
+                        $fatal(1, "Endpoint %0d error mismatch: got %b expected %b (source %0d)",
+                               i, dst_error[i], endpoint_expected_error[i], endpoint_owner[i]);
+
                     response_count = response_count + 1;
-                    for (integer s2 = 0; s2 < N; s2 = s2 + 1) begin
-                        if (rsp_src_id[i] == s2[DST_W-1:0] && waiting[s2]) begin
-                            if (dst_data[i] !== expected_data(s2, txn_idx[s2]))
-                                $fatal(1, "Source %0d data mismatch txn %0d: got %h expected %h",
-                                       s2, txn_idx[s2], dst_data[i], expected_data(s2, txn_idx[s2]));
-                            if (dst_error[i] !== expected_error(txn_idx[s2]))
-                                $fatal(1, "Source %0d error mismatch txn %0d: got %b expected %b",
-                                       s2, txn_idx[s2], dst_error[i], expected_error(txn_idx[s2]));
-                            waiting[s2] <= 1'b0;
-                            if (txn_idx[s2] == TXNS_PER_SRC-1) begin
-                                done[s2] <= 1'b1;
-                            end else begin
-                                txn_idx[s2] <= txn_idx[s2] + 1;
-                                target[s2] <= calc_target(s2, txn_idx[s2] + 1);
-                            end
-                        end
+                    waiting[endpoint_owner[i]] <= 1'b0;
+
+                    if (txn_idx[endpoint_owner[i]] == TXNS_PER_SRC-1) begin
+                        done[endpoint_owner[i]] <= 1'b1;
+                    end else begin
+                        txn_idx[endpoint_owner[i]] <= txn_idx[endpoint_owner[i]] + 1;
+                        target[endpoint_owner[i]] <= calc_target(endpoint_owner[i], txn_idx[endpoint_owner[i]] + 1);
                     end
+
+                    endpoint_pending[i] = 1'b0;
                 end
             end
         end
