@@ -26,13 +26,19 @@ module xbar_sva #(
     endgenerate
 
     // An output can have at most one granted input.
-    genvar j;
+    genvar o;
+    genvar a;
+    genvar b;
     generate
-        for (j = 0; j < N; j = j + 1) begin : g_output_onehot
-            assert_output_onehot: assert property (
-                @(posedge clk) disable iff (!rst_n)
-                $onehot0(grant[:,j])
-            ) else $error("XBAR SVA: output %0d has multiple grants", j);
+        for (o = 0; o < N; o = o + 1) begin : g_output_unique
+            for (a = 0; a < N; a = a + 1) begin : g_output_pair_a
+                for (b = a + 1; b < N; b = b + 1) begin : g_output_pair_b
+                    assert_output_unique: assert property (
+                        @(posedge clk) disable iff (!rst_n)
+                        !(grant[a][o] && grant[b][o])
+                    ) else $error("XBAR SVA: output %0d has multiple grants", o);
+                end
+            end
         end
     endgenerate
 
