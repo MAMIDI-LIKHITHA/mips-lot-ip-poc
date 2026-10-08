@@ -16,14 +16,14 @@ The repository deliberately separates confirmed requirements from assumptions an
 |---|---|
 | Project scope | Defined from available POC documents |
 | System architecture | Conceptual |
-| MIPS bus/interface | To verify |
+| MIPS bus/interface | Candidate adapter implemented; final interface To Verify |
 | 4×4 crossbar | **Implemented and Verified** |
 | Arbitration/scheduler | **Implemented and Verified** |
 | Matter/networking study | Research/planning |
 | Silicon Labs DVKs | Evaluation pending |
-| Endpoint adapters | Not finalised |
-| Full system integration | Not started |
-| Verification | **Crossbar directed verification passed** |
+| Endpoint adapters | Behavioral endpoint model only |
+| Full system integration | **Candidate path verified** |
+| Verification | **Crossbar + end-to-end candidate verification passed** |
 | Performance targets | To verify |
 | IP/license/toolchain review | To verify |
 
@@ -50,6 +50,36 @@ Observed ModelSim result:
 - Simulation completion: **85 ps**
 
 Detailed evidence is recorded in `results/xbar_4x4_verification.md`.
+
+### Verified end-to-end candidate result
+
+The candidate system path in `tb/tb_end_to_end_candidate.sv` was compiled and simulated with ModelSim Intel FPGA Edition.
+
+**Result: PASS**
+
+Verified path:
+
+**Candidate CPU request → MIPS MMIO adapter → LOT transaction router → 4×4 request XBAR → behavioral endpoint 2 → response XBAR → LOT response router → MIPS MMIO adapter → CPU response**
+
+Verified behaviors:
+
+- Candidate CPU request accepted
+- Address `32'h0002_0040` decoded to endpoint/destination 2
+- Request traversed the request XBAR
+- Endpoint 2 accepted the transaction
+- Deterministic endpoint response generated
+- Response returned through the response XBAR
+- CPU received expected response `32'h0040_ABCD`
+- No endpoint error
+- End-to-end test completed successfully
+
+Observed ModelSim result:
+
+- Testbench result: **PASS**
+- Simulation completion: **46 ps**
+- No simulation errors reported
+
+Detailed evidence is recorded in `results/end_to_end_candidate_verification.md`.
 
 ### Status labels
 
