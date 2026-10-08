@@ -169,54 +169,64 @@ module tb_lot_mixed_traffic;
     assign dst_ready[2] = ((cycle % 4) != 3);
     assign dst_ready[3] = 1'b1;
 
+    logic source_response_inflight [N];
+    logic [DATA_W-1:0] source_expected_data [N];
+    logic source_expected_error [N];
+
     always @(posedge clk) begin
         if (rst_n) begin
-            // Capture the source and expected response associated with the
-            // transaction actually granted to each endpoint.
+            // Request-side scoreboard: endpoint ownership is captured at the
+            // actual XBAR grant, not inferred from source-ready timing.
             for (i = 0; i < N; i = i + 1) begin
                 if (req_valid[i] && req_ready[i]) begin
                     for (integer s = 0; s < N; s = s + 1) begin
                         if (req_grant[s][i]) begin
                             endpoint_owner[i] = s[DST_W-1:0];
-                            endpoint_expected_data[i] = calc_data(s);
-                            endpoint_expected_error[i] = (txn_idx[s] == 3);
                             endpoint_pending[i] = 1'b1;
+                            source_expected_data[s] = calc_data(s);
+                            source_expected_error[s] = (txn_idx[s] == 3);
                             waiting[s] <= 1'b1;
                             accepted_count = accepted_count + 1;
                         end
                     end
                 end
 
-                // The response handshake at the endpoint is the point where
-                // the endpoint has accepted the response fabric's readiness.
-                // The final output handshake below verifies source routing.
-                if (dst_valid[i] && dst_ready[i]) begin
+                // Response-fabric input handshake: verify that the endpoint
+                // response carries the source ID recorded at request time.
+                if (rsp_src_valid[i] && rsp_src_ready[i]) begin
                     if (!endpoint_pending[i])
-                        $fatal(1, "Endpoint %0d returned a response without a pending transaction", i);
-
+                        $fatal(1, "Endpoint %0d response without pending request", i);
                     if (rsp_src_id[i] !== endpoint_owner[i])
                         $fatal(1, "Endpoint %0d source-ID mismatch: got %0d expected %0d",
                                i, rsp_src_id[i], endpoint_owner[i]);
-
-                    if (dst_data[i] !== endpoint_expected_data[i])
-                        $fatal(1, "Endpoint %0d data mismatch: got %h expected %h (source %0d)",
-                               i, dst_data[i], endpoint_expected_data[i], endpoint_owner[i]);
-
-                    if (dst_error[i] !== endpoint_expected_error[i])
-                        $fatal(1, "Endpoint %0d error mismatch: got %b expected %b (source %0d)",
-                               i, dst_error[i], endpoint_expected_error[i], endpoint_owner[i]);
-
-                    response_count = response_count + 1;
-                    waiting[endpoint_owner[i]] <= 1'b0;
-
-                    if (txn_idx[endpoint_owner[i]] == TXNS_PER_SRC-1) begin
-                        done[endpoint_owner[i]] <= 1'b1;
-                    end else begin
-                        txn_idx[endpoint_owner[i]] <= txn_idx[endpoint_owner[i]] + 1;
-                        target[endpoint_owner[i]] <= calc_target(endpoint_owner[i], txn_idx[endpoint_owner[i]] + 1);
-                    end
-
+                    source_response_inflight[endpoint_owner[i]] = 1'b1;
                     endpoint_pending[i] = 1'b0;
+                end
+            end
+
+            // Response-fabric output handshake: output index is the source ID.
+            // This is intentionally indexed by source, not endpoint.
+            for (integer s2 = 0; s2 < N; s2 = s2 + 1) begin
+                if (dst_valid[s2] && dst_ready[s2]) begin
+                    if (!source_response_inflight[s2])
+                        $fatal(1, "Source %0d received response without matching routed response", s2);
+                    if (dst_data[s2] !== source_expected_data[s2])
+                        $fatal(1, "Source %0d data mismatch txn %0d: got %h expected %h",
+                               s2, txn_idx[s2], dst_data[s2], source_expected_data[s2]);
+                    if (dst_error[s2] !== source_expected_error[s2])
+                        $fatal(1, "Source %0d error mismatch txn %0d: got %b expected %b",
+                               s2, txn_idx[s2], dst_error[s2], source_expected_error[s2]);
+
+                    source_response_inflight[s2] = 1'b0;
+                    response_count = response_count + 1;
+                    waiting[s2] <= 1'b0;
+
+                    if (txn_idx[s2] == TXNS_PER_SRC-1)
+                        done[s2] <= 1'b1;
+                    else begin
+                        txn_idx[s2] <= txn_idx[s2] + 1;
+                        target[s2] <= calc_target(s2, txn_idx[s2] + 1);
+                    end
                 end
             end
         end
@@ -254,6 +264,9 @@ module tb_lot_mixed_traffic;
             endpoint_expected_data[i] = '0;
             endpoint_expected_error[i] = 1'b0;
             endpoint_pending[i] = 1'b0;
+            source_response_inflight[i] = 1'b0;
+            source_expected_data[i] = '0;
+            source_expected_error[i] = 1'b0;
         end
 
         repeat (2) @(posedge clk);
