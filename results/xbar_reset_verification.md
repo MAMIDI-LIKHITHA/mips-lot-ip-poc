@@ -36,6 +36,7 @@ Result:
 TB RESULT: PASS - reset quiescence, reset-time traffic suppression, post-reset recovery and repeated reset behavior checks passed.
 ** Note: $finish    : tb/tb_xbar_reset.sv(114)
 Time: 26 ns
+Errors: 0, Warnings: 0
 ```
 
 The `$finish` / `Break in Module` message is the expected simulator stop at the testbench's `$finish` statement.
