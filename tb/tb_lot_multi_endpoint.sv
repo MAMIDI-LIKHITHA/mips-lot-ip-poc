@@ -156,7 +156,7 @@ module tb_lot_multi_endpoint;
     );
         logic [ADDR_W-1:0] addr;
         begin
-            addr = {dst, 14'b0, 16'h000C};
+            addr = {14'b0, dst, 16'h000C};
             cpu_req_write = 1'b0;
             cpu_req_addr = addr;
             cpu_req_wdata = '0;
