@@ -34,20 +34,16 @@ module tb_xbar_stress_latency;
     integer cycle;
     integer i;
     integer j;
-    integer grants_this_cycle;
     integer accepted_count;
     integer delivered_count;
     integer contention_cycles;
-    integer backpressure_cycles;
+    integer backpressure_output_stalls;
     integer multi_output_cycles;
     integer latency_zero_count;
     integer latency_min;
     integer latency_max;
     integer latency_sum;
     integer errors;
-
-    integer inject_cycle [N];
-    logic   pending_valid [N];
 
     task automatic clear_inputs;
         integer t;
@@ -71,7 +67,7 @@ module tb_xbar_stress_latency;
         accepted_count = 0;
         delivered_count = 0;
         contention_cycles = 0;
-        backpressure_cycles = 0;
+        backpressure_output_stalls = 0;
         multi_output_cycles = 0;
         latency_zero_count = 0;
         latency_min = 999999;
@@ -79,46 +75,43 @@ module tb_xbar_stress_latency;
         latency_sum = 0;
         errors = 0;
 
-        for (i = 0; i < N; i = i + 1) begin
-            pending_valid[i] = 1'b0;
-            inject_cycle[i] = 0;
-        end
-
         // Hold reset across a rising edge.
         repeat (2) @(posedge clk);
         rst_n = 1'b1;
 
         for (cycle = 0; cycle < NUM_CYCLES; cycle = cycle + 1) begin
-            // Drive a new traffic pattern during the low phase so all
-            // combinational ready/valid signals settle before the handshake.
+            // Drive traffic during the low phase so combinational
+            // ready/valid signals settle before the checks.
             @(negedge clk);
 
-            // Deterministic stress pattern. This avoids simulator-specific
-            // random-seed behavior while still varying validity, destinations
-            // and backpressure over the full 500-cycle run.
-            for (i = 0; i < N; i = i + 1) begin
-                in_valid[i] = (((cycle + 3*i) % 7) != 0);
-                in_dst[i] = (cycle + 2*i + (cycle/11)) % N;
-                in_data[i] = 32'hA500_0000 | (cycle << 8) | i;
+            // Every 10th cycle is a guaranteed four-way transfer:
+            // all four inputs are valid, each targets a different output,
+            // and all outputs are ready.
+            if ((cycle % 10) == 0) begin
+                for (i = 0; i < N; i = i + 1) begin
+                    in_valid[i] = 1'b1;
+                    in_dst[i] = ((cycle / 10) + i) % N;
+                    in_data[i] = 32'hF400_0000 | (cycle << 8) | i;
+                end
+                out_ready = '1;
+            end else begin
+                // Deterministic mixed traffic pattern. It varies validity,
+                // destinations and output backpressure while guaranteeing
+                // recurring contention.
+                for (i = 0; i < N; i = i + 1) begin
+                    in_valid[i] = (((cycle + 3*i) % 7) != 0);
+                    in_dst[i] = (cycle + 2*i + (cycle/11)) % N;
+                    in_data[i] = 32'hA500_0000 | (cycle << 8) | i;
+                end
 
-                pending_valid[i] = in_valid[i];
-                inject_cycle[i] = cycle;
+                for (j = 0; j < N; j = j + 1)
+                    out_ready[j] = (((cycle + 2*j) % 9) != 0);
             end
-
-            for (j = 0; j < N; j = j + 1)
-                out_ready[j] = (((cycle + 2*j) % 9) != 0);
 
             #1;
 
             // Verify scheduler invariants every stress cycle.
-            grants_this_cycle = 0;
-
             for (i = 0; i < N; i = i + 1) begin
-                grants_this_cycle = grants_this_cycle + grant[i][0]
-                                   + grant[i][1]
-                                   + grant[i][2]
-                                   + grant[i][3];
-
                 if (grant[i][0] || grant[i][1] || grant[i][2] || grant[i][3]) begin
                     if (!in_valid[i]) begin
                         $error("Cycle %0d: grant issued to invalid input %0d", cycle, i);
@@ -169,29 +162,23 @@ module tb_xbar_stress_latency;
                 if (in_valid[i] && in_ready[i]) begin
                     accepted_count = accepted_count + 1;
 
-                    // The crossbar is combinational, so a stable request
-                    // can transfer in the same cycle it is presented.
+                    // This XBAR is combinational, so an accepted transfer
+                    // is delivered in the same cycle (zero-cycle latency).
                     latency_zero_count = latency_zero_count + 1;
-                    latency_sum = latency_sum + 0;
-                    if (0 < latency_min)
+                    if (latency_min > 0)
                         latency_min = 0;
-                    if (0 > latency_max)
-                        latency_max = 0;
+                    latency_max = 0;
                 end
             end
 
             for (j = 0; j < N; j = j + 1) begin
-                if (out_valid[j] && out_ready[j]) begin
+                if (out_valid[j] && out_ready[j])
                     delivered_count = delivered_count + 1;
-                end
-            end
-
-            // Scenario counters.
-            for (j = 0; j < N; j = j + 1) begin
                 if (!out_ready[j])
-                    backpressure_cycles = backpressure_cycles + 1;
+                    backpressure_output_stalls = backpressure_output_stalls + 1;
             end
 
+            // Detect whether any output has multiple active contenders.
             for (j = 0; j < N; j = j + 1) begin
                 integer contenders;
                 contenders = 0;
@@ -204,6 +191,7 @@ module tb_xbar_stress_latency;
                 end
             end
 
+            // Count cycles where all four outputs are simultaneously valid.
             if ((out_valid[0] + out_valid[1] + out_valid[2] + out_valid[3]) == N)
                 multi_output_cycles = multi_output_cycles + 1;
         end
@@ -216,19 +204,19 @@ module tb_xbar_stress_latency;
         $display("================================================");
         $display("XBAR STRESS + LATENCY VERIFICATION");
         $display("================================================");
-        $display("Stress cycles             : %0d", NUM_CYCLES);
-        $display("Accepted transfers        : %0d", accepted_count);
-        $display("Delivered transfers       : %0d", delivered_count);
-        $display("Contention cycles         : %0d", contention_cycles);
-        $display("Backpressure observations : %0d", backpressure_cycles);
-        $display("Four-output cycles        : %0d", multi_output_cycles);
-        $display("Latency min (cycles)      : %0d", latency_min);
-        $display("Latency max (cycles)      : %0d", latency_max);
+        $display("Stress cycles               : %0d", NUM_CYCLES);
+        $display("Accepted transfers          : %0d", accepted_count);
+        $display("Delivered transfers         : %0d", delivered_count);
+        $display("Contention cycles           : %0d", contention_cycles);
+        $display("Backpressure output stalls  : %0d", backpressure_output_stalls);
+        $display("Four-output cycles          : %0d", multi_output_cycles);
+        $display("Latency min (cycles)        : %0d", latency_min);
+        $display("Latency max (cycles)        : %0d", latency_max);
         if (accepted_count > 0)
-            $display("Latency average (cycles)  : %0.2f", latency_sum * 1.0 / accepted_count);
+            $display("Latency average (cycles)    : %0.2f", latency_sum * 1.0 / accepted_count);
         else
-            $display("Latency average (cycles)  : N/A");
-        $display("Zero-cycle transfers      : %0d", latency_zero_count);
+            $display("Latency average (cycles)    : N/A");
+        $display("Zero-cycle transfers        : %0d", latency_zero_count);
         $display("================================================");
 
         if (accepted_count != delivered_count) begin
@@ -247,8 +235,13 @@ module tb_xbar_stress_latency;
             errors = errors + 1;
         end
 
-        if (backpressure_cycles == 0) begin
+        if (backpressure_output_stalls == 0) begin
             $error("Stress test did not exercise backpressure");
+            errors = errors + 1;
+        end
+
+        if (multi_output_cycles == 0) begin
+            $error("Stress test did not exercise four-output simultaneous traffic");
             errors = errors + 1;
         end
 
@@ -256,7 +249,7 @@ module tb_xbar_stress_latency;
             $display("TB RESULT: FAIL - %0d verification errors detected.", errors);
             $fatal;
         end else begin
-            $display("TB RESULT: PASS - stress traffic, transfer accounting, contention, backpressure, multi-output behavior and zero-cycle crossbar latency verified.");
+            $display("TB RESULT: PASS - stress traffic, transfer accounting, contention, backpressure, four-output simultaneous traffic and zero-cycle crossbar latency verified.");
         end
 
         $finish;
