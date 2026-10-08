@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 module tb_lot_endpoint_adapter;
     localparam int ADDR_W=32, DATA_W=32, LOT_W=65;
     logic clk,rst_n,req_valid,req_ready,rsp_valid,rsp_ready,rsp_error;
