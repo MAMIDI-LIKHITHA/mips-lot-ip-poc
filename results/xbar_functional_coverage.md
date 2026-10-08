@@ -40,7 +40,7 @@ TB RESULT: PASS - functional coverage scenarios exercised all 16 routes, content
 
 - Compilation: **0 errors, 5 warnings**
 - Simulation: **0 errors, 0 warnings**
-- Simulation completion: **204 ps**
+- Simulation completion: **204 ns**
 - Testbench terminated normally with `$finish`
 
 ## Coverage interpretation
