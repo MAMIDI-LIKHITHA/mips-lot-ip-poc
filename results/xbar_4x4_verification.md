@@ -34,8 +34,8 @@ Result:
 
 ```text
 TB RESULT: PASS — connectivity, contention, input exclusivity, backpressure and round-robin fairness checks passed.
-** Note: $finish : tb/tb_xbar_4x4.sv(162)
-Time: 85 ps
+** Note: $finish : tb/tb_xbar_4x4.sv(163)
+Time: 85 ns
 Errors: 0, Warnings: 0
 ```
 
