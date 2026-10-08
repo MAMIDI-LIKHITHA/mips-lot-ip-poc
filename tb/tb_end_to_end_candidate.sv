@@ -1,9 +1,9 @@
 // End-to-end protocol-neutral candidate transaction harness.
-//
+// 
 // Flow under test:
 // candidate CPU request -> request XBAR -> behavioral endpoint -> response XBAR
 // -> candidate CPU response.
-//
+// 
 // This does not represent the final MIPS bus or any final network protocol.
 
 module tb_end_to_end_candidate;
@@ -155,6 +155,7 @@ module tb_end_to_end_candidate;
     // Simple endpoint model:
     // endpoint 2 accepts the request, waits one cycle, then returns
     // {address[15:0], write_data[15:0]} as a deterministic response.
+    // The LOT payload layout is {write, address[31:0], write_data[31:0]}.
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             endpoint_rsp_pending <= 1'b0;
@@ -167,7 +168,7 @@ module tb_end_to_end_candidate;
             if (req_dst_valid[2] && req_dst_ready[2]) begin
                 endpoint_rsp_pending <= 1'b1;
                 endpoint_rsp_data <= {
-                    req_dst_data[2][31:16],
+                    req_dst_data[2][47:32],
                     req_dst_data[2][15:0]
                 };
                 endpoint_rsp_error <= 1'b0;
