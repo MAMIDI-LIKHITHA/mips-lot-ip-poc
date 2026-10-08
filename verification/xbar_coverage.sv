@@ -75,17 +75,20 @@ module xbar_coverage #(
         cycle_count = 0;
     end
 
-    final begin
-        $display("==============================================");
-        $display("XBAR FUNCTIONAL COVERAGE");
-        $display("Route coverage       : %0d/%0d = %0.2f%%",
-                 route_hits, ROUTE_COUNT,
-                 (100.0 * route_hits) / ROUTE_COUNT);
-        $display("Contention           : %s", contention_seen ? "PASS" : "MISS");
-        $display("Multi-output         : %s", multi_output_seen ? "PASS" : "MISS");
-        $display("Backpressure         : %s", backpressure_seen ? "PASS" : "MISS");
-        $display("Reset                : %s", reset_seen ? "PASS" : "MISS");
-        $display("==============================================");
+    task report;
+        real route_pct;
+        begin
+            route_pct = (100.0 * route_hits) / ROUTE_COUNT;
+            $display("==============================================");
+            $display("XBAR FUNCTIONAL COVERAGE");
+            $display("Route coverage       : %0d/%0d = %0.2f%%",
+                     route_hits, ROUTE_COUNT, route_pct);
+            $display("Contention           : %s", contention_seen ? "PASS" : "MISS");
+            $display("Multi-output         : %s", multi_output_seen ? "PASS" : "MISS");
+            $display("Backpressure         : %s", backpressure_seen ? "PASS" : "MISS");
+            $display("Reset                : %s", reset_seen ? "PASS" : "MISS");
+            $display("==============================================");
+        end
     end
 
 endmodule
