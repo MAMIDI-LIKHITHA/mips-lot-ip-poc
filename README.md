@@ -25,7 +25,7 @@ The repository deliberately separates confirmed requirements from assumptions an
 | Silicon Labs DVKs | Evaluation pending |
 | Endpoint adapters | Behavioral endpoint model only |
 | Full system integration | **Candidate path verified** |
-| Verification | **Crossbar + transaction router + response router + end-to-end candidate + reset + invalid-destination + sustained backpressure + multi-output verification passed** |
+| Verification | **Crossbar + transaction router + response router + end-to-end candidate + reset + invalid-destination + sustained backpressure + multi-output + functional coverage verification passed** |
 | Performance targets | To verify |
 | IP/license/toolchain review | To verify |
 
@@ -164,6 +164,7 @@ Detailed evidence is recorded in `results/xbar_reset_verification.md`.
 | Crossbar reset behavior | **PASS** | `results/xbar_reset_verification.md` |
 | Invalid destination handling | **PASS** | `tb/tb_xbar_invalid_dst.sv` |
 | Sustained backpressure / ready-valid stability | **PASS** | `results/xbar_backpressure_verification.md` |\n| Simultaneous multi-output traffic | **PASS** | `results/xbar_multi_output_verification.md` |
+| Functional coverage | **PASS — 16/16 routes, contention, multi-output, backpressure, reset** | `results/xbar_functional_coverage.md` |
 
 ### Status labels
 
@@ -202,13 +203,14 @@ Their exact role and mapping to the four crossbar ports are **not yet final**.
 
 ## Next milestone
 
-The core candidate interconnect path and crossbar reset behavior are now verified. The next milestone is robustness and corner-case verification:
+The core candidate interconnect path, crossbar reset behavior, and functional coverage are now verified. The next milestone is robustness and implementation-oriented verification:
 
 1. Error propagation and invalid/corner-case transactions. **Invalid destination suppression verified.**
 2. Sustained backpressure and ready/valid stability. **Verified.**
 3. Simultaneous multi-output traffic and additional contention cases. **Multi-output traffic verified.**
-4. Assertions/coverage and, where appropriate, timing/synthesis checks.
-5. Only then connect additional MIPS and endpoint functionality once their interfaces are confirmed.
+4. Functional coverage. **16/16 routes plus contention, multi-output, backpressure and reset verified.**
+5. Timing/synthesis checks and implementation-oriented measurements.
+6. Only then connect additional MIPS and endpoint functionality once their interfaces are confirmed.
 
 ## Source basis
 
