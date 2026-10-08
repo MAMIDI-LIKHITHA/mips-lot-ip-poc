@@ -25,7 +25,7 @@ The repository deliberately separates confirmed requirements from assumptions an
 | Silicon Labs DVKs | Evaluation pending |
 | Endpoint adapters | Behavioral endpoint model only |
 | Full system integration | **Candidate path verified** |
-| Verification | **Crossbar + transaction router + response router + end-to-end candidate verification passed** |
+| Verification | **Crossbar + transaction router + response router + end-to-end candidate + reset verification passed** |
 | Performance targets | To verify |
 | IP/license/toolchain review | To verify |
 
@@ -131,6 +131,28 @@ Observed ModelSim result:
 
 Detailed evidence is recorded in `results/end_to_end_candidate_verification.md`.
 
+### Verified reset behavior
+
+The crossbar reset testbench `tb/tb_xbar_reset.sv` was compiled and simulated with ModelSim Intel FPGA Edition.
+
+**Result: PASS**
+
+Verified behaviors:
+
+- Reset quiescence
+- Traffic suppression while reset is asserted
+- Post-reset traffic recovery
+- Repeated reset behavior
+
+Observed ModelSim result:
+
+- Compilation: **0 errors**
+- Simulation: **0 errors**
+- Testbench result: **PASS**
+- Simulation completion: **26 ps**
+
+Detailed evidence is recorded in `results/xbar_reset_verification.md`.
+
 ### Verification matrix
 
 | Verification target | Result | Evidence |
@@ -139,6 +161,7 @@ Detailed evidence is recorded in `results/end_to_end_candidate_verification.md`.
 | LOT transaction router | **PASS** | `results/lot_txn_router_verification.md` |
 | LOT response router | **PASS** | `results/lot_rsp_router_verification.md` |
 | End-to-end candidate path | **PASS** | `results/end_to_end_candidate_verification.md` |
+| Crossbar reset behavior | **PASS** | `results/xbar_reset_verification.md` |
 
 ### Status labels
 
@@ -177,14 +200,13 @@ Their exact role and mapping to the four crossbar ports are **not yet final**.
 
 ## Next milestone
 
-The core candidate interconnect path is now verified. The next milestone is robustness and corner-case verification:
+The core candidate interconnect path and crossbar reset behavior are now verified. The next milestone is robustness and corner-case verification:
 
-1. Reset behavior and clean recovery.
-2. Error propagation and invalid/corner-case transactions.
-3. Sustained backpressure and ready/valid stability.
-4. Simultaneous multi-output traffic and additional contention cases.
-5. Assertions/coverage and, where appropriate, timing/synthesis checks.
-6. Only then connect additional MIPS and endpoint functionality once their interfaces are confirmed.
+1. Error propagation and invalid/corner-case transactions.
+2. Sustained backpressure and ready/valid stability.
+3. Simultaneous multi-output traffic and additional contention cases.
+4. Assertions/coverage and, where appropriate, timing/synthesis checks.
+5. Only then connect additional MIPS and endpoint functionality once their interfaces are confirmed.
 
 ## Source basis
 
