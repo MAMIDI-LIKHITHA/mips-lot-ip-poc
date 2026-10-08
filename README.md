@@ -186,7 +186,7 @@ Detailed evidence is recorded in `results/xbar_reset_verification.md`.
 | Crossbar reset behavior | **PASS** | `results/xbar_reset_verification.md` |
 | Invalid destination handling | **PASS** | `tb/tb_xbar_invalid_dst.sv` |
 | Sustained backpressure / ready-valid stability | **PASS** | `results/xbar_backpressure_verification.md` |\n| Simultaneous multi-output traffic | **PASS** | `results/xbar_multi_output_verification.md` |
-| Functional coverage | **PASS — 16/16 routes, contention, multi-output, backpressure, reset** | `results/xbar_functional_coverage.md` |
+| Functional coverage | **PASS — 16/16 routes, contention, multi-output, backpressure, reset** | `results/xbar_functional_coverage.md` |\n| Concurrent multi-source LOT fabric | **PASS — four simultaneous sources, independent endpoints, response source-ID mapping** | `results/lot_concurrent_fabric_verification.md` |
 
 ### Status labels
 
@@ -231,9 +231,9 @@ The core candidate interconnect path, crossbar reset behavior, functional covera
 2. Sustained backpressure and ready/valid stability. **Verified.**
 3. Simultaneous multi-output traffic and additional contention cases. **Multi-output traffic verified.**
 4. Functional coverage. **16/16 routes plus contention, multi-output, backpressure and reset verified.**
-5. Stress and latency verification. **500-cycle stress test passed with 1002/1002 transfer accounting, contention, backpressure, four-output traffic and 0-cycle combinational latency.**
-6. Timing/synthesis checks and implementation-oriented measurements when a suitable implementation toolchain is available.
-7. Then connect additional MIPS and endpoint functionality once their interfaces are confirmed.
+5. Stress and latency verification. **500-cycle stress test passed with 1002/1002 transfer accounting, contention, backpressure, four-output traffic and 0-cycle combinational latency.**\n6. Concurrent multi-source fabric traffic. **Four simultaneous sources reached independent endpoints and returned correctly mapped responses through the shared request/response fabrics.**
+7. Timing/synthesis checks and implementation-oriented measurements when a suitable implementation toolchain is available.
+8. Then connect additional MIPS and endpoint functionality once their interfaces are confirmed.
 
 ## Source basis
 
