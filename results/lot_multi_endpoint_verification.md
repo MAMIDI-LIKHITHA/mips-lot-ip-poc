@@ -41,3 +41,5 @@ Warnings: 0
 PASS. All four XBAR destinations were exercised with independent endpoint instances, correct ID responses were observed, the shared response path returned each transaction to the candidate CPU-side adapter, and no endpoint response remained asserted after the completed sequence.
 
 This is a functional simulation result only; no FPGA Fmax, area, or resource-utilization claim is made.
+
+---
