@@ -40,28 +40,26 @@ module xbar_coverage #(
             reset_seen = 1'b1;
         end
         else begin
-            // Record every accepted legal source -> destination transfer.
             for (s = 0; s < N; s = s + 1) begin
                 if (in_valid[s] && in_ready[s] && (in_dst[s] < N)) begin
                     d = in_dst[s];
                     if (!route_seen[route_index(s, d)]) begin
-                        route_seen[route_index(s, d)] <= 1'b1;
+                        // Blocking update is intentional: coverage state is a
+                        // simulation-side scoreboard sampled on clock edges.
+                        route_seen[route_index(s, d)] = 1'b1;
                         route_hits = route_hits + 1;
                     end
                 end
             end
 
-            // Multiple active inputs indicate a contention/multi-request scenario.
             if ($countones(in_valid) >= 2)
-                contention_seen <= 1'b1;
+                contention_seen = 1'b1;
 
-            // More than one active output indicates simultaneous multi-output traffic.
             if ($countones(out_valid) >= 2)
-                multi_output_seen <= 1'b1;
+                multi_output_seen = 1'b1;
 
-            // Valid traffic while at least one output is not ready.
             if ((|in_valid) && (out_ready != {N{1'b1}}))
-                backpressure_seen <= 1'b1;
+                backpressure_seen = 1'b1;
         end
     end
 
@@ -89,6 +87,6 @@ module xbar_coverage #(
             $display("Reset                : %s", reset_seen ? "PASS" : "MISS");
             $display("==============================================");
         end
-    end
+    endtask
 
 endmodule
