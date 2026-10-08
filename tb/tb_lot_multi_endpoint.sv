@@ -181,6 +181,10 @@ module tb_lot_multi_endpoint;
             @(posedge clk);
             cpu_req_valid = 1'b0;
 
+            // Assert response-ready before the sampling edge.  This avoids
+            // a testbench race where cpu_rsp_ready is driven after @(posedge clk)
+            // and therefore misses the response handshake.
+            cpu_rsp_ready = 1'b1;
             wait_for_response(dst);
             if (cpu_rsp_error !== 1'b0 || cpu_rsp_rdata !== expected) begin
                 $error("Endpoint %0d response mismatch: got data=%h error=%b expected=%h",
@@ -188,7 +192,6 @@ module tb_lot_multi_endpoint;
                 $fatal;
             end
 
-            cpu_rsp_ready = 1'b1;
             @(posedge clk);
             #1 cpu_rsp_ready = 1'b0;
         end
