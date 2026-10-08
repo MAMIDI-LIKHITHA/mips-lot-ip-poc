@@ -157,6 +157,7 @@ module tb_xbar_coverage;
             $finish;
         end
 
+        cov.report();
         $display("TB RESULT: PASS - functional coverage scenarios exercised all 16 routes, contention, four-way multi-output traffic, partial backpressure and reset.");
         $finish;
     end
