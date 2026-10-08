@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 // Mixed concurrent LOT fabric verification.
 //
 // Four independent sources execute a mixed write/read/error sequence.
