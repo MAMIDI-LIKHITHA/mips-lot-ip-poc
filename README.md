@@ -55,8 +55,7 @@ The current crossbar is combinational from request/grant to output transfer, so 
 rtl/           RTL implementation
 tb/            Testbenches
 verification/  Assertions and coverage
-docs/          Architecture / requirements
-research/      Crossbar, scheduler and networking notes
+docs/          Architecture / requirements / research notes
 sim/           Simulator scripts/configuration
 results/       Verification evidence
 ```
