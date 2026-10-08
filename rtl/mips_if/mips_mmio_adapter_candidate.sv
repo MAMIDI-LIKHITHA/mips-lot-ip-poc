@@ -69,8 +69,10 @@ module mips_mmio_adapter_candidate #(
     end
 
     // One outstanding request at a time.
+    // Keep VALID independent of READY to avoid a combinational handshake loop
+    // through the request crossbar: VALID -> XBAR request -> grant -> READY.
     assign req_ready = !busy && lot_ready && addr_valid && rst_n;
-    assign lot_valid = req_valid && req_ready;
+    assign lot_valid = req_valid && !busy && addr_valid && rst_n;
     assign lot_dst = decode_dst(req_addr);
 
     // Payload = {write, address, write_data}.
