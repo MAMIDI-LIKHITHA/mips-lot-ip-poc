@@ -32,6 +32,7 @@ module tb_lot_multi_endpoint;
     logic [N-1:0][DST_W-1:0] req_src_dst;
     logic [N-1:0][LOT_W-1:0] req_src_data;
     logic [N-1:0] req_dst_valid, req_dst_ready;
+    logic [N-1:0] ep_req_ready;
     logic [N-1:0][LOT_W-1:0] req_dst_data;
     logic [N-1:0][N-1:0] req_grant;
 
@@ -51,7 +52,7 @@ module tb_lot_multi_endpoint;
     assign req_src_dst[0] = lot_req_dst;
     assign req_src_data[0] = lot_req_payload;
     assign lot_req_ready = req_src_ready[0];
-    assign req_dst_ready = '1;
+    assign req_dst_ready = ep_req_ready;
 
     assign rsp_src_valid = ep_rsp_valid;
     assign rsp_src_id[0] = 2'd0;
@@ -106,25 +107,25 @@ module tb_lot_multi_endpoint;
 
     lot_endpoint_adapter #(.ADDR_W(ADDR_W), .DATA_W(DATA_W), .LOT_W(LOT_W))
         u_endpoint0 (.clk(clk), .rst_n(rst_n), .req_valid(req_dst_valid[0]),
-        .req_ready(req_dst_ready[0]), .req_payload(req_dst_data[0]),
+        .req_ready(ep_req_ready[0]), .req_payload(req_dst_data[0]),
         .rsp_valid(ep_rsp_valid[0]), .rsp_ready(ep_rsp_ready[0]),
         .rsp_rdata(ep_rsp_data[0]), .rsp_error(ep_rsp_error[0]));
 
     lot_endpoint_adapter #(.ADDR_W(ADDR_W), .DATA_W(DATA_W), .LOT_W(LOT_W))
         u_endpoint1 (.clk(clk), .rst_n(rst_n), .req_valid(req_dst_valid[1]),
-        .req_ready(req_dst_ready[1]), .req_payload(req_dst_data[1]),
+        .req_ready(ep_req_ready[1]), .req_payload(req_dst_data[1]),
         .rsp_valid(ep_rsp_valid[1]), .rsp_ready(ep_rsp_ready[1]),
         .rsp_rdata(ep_rsp_data[1]), .rsp_error(ep_rsp_error[1]));
 
     lot_endpoint_adapter #(.ADDR_W(ADDR_W), .DATA_W(DATA_W), .LOT_W(LOT_W))
         u_endpoint2 (.clk(clk), .rst_n(rst_n), .req_valid(req_dst_valid[2]),
-        .req_ready(req_dst_ready[2]), .req_payload(req_dst_data[2]),
+        .req_ready(ep_req_ready[2]), .req_payload(req_dst_data[2]),
         .rsp_valid(ep_rsp_valid[2]), .rsp_ready(ep_rsp_ready[2]),
         .rsp_rdata(ep_rsp_data[2]), .rsp_error(ep_rsp_error[2]));
 
     lot_endpoint_adapter #(.ADDR_W(ADDR_W), .DATA_W(DATA_W), .LOT_W(LOT_W))
         u_endpoint3 (.clk(clk), .rst_n(rst_n), .req_valid(req_dst_valid[3]),
-        .req_ready(req_dst_ready[3]), .req_payload(req_dst_data[3]),
+        .req_ready(ep_req_ready[3]), .req_payload(req_dst_data[3]),
         .rsp_valid(ep_rsp_valid[3]), .rsp_ready(ep_rsp_ready[3]),
         .rsp_rdata(ep_rsp_data[3]), .rsp_error(ep_rsp_error[3]));
 
@@ -194,6 +195,24 @@ module tb_lot_multi_endpoint;
 
             @(posedge clk);
             #1 cpu_rsp_ready = 1'b0;
+
+            // Allow the candidate adapter's registered busy/response state to
+            // settle before starting the next independent transaction.
+            begin : idle_wait
+                integer idle_cycles;
+                idle_cycles = 0;
+                while (u_mips_candidate.busy && idle_cycles < 5) begin
+                    @(posedge clk);
+                    idle_cycles = idle_cycles + 1;
+                end
+                if (u_mips_candidate.busy) begin
+                    $display("BUSY CLEAR TIMEOUT endpoint %0d", dst);
+                    $display("  busy=%b response_valid=%b rsp_valid=%b rsp_ready=%b",
+                             u_mips_candidate.busy, u_mips_candidate.response_valid,
+                             cpu_rsp_valid, cpu_rsp_ready);
+                    $fatal;
+                end
+            end
         end
     endtask
 
