@@ -160,7 +160,24 @@ module tb_lot_multi_endpoint;
             cpu_req_addr = addr;
             cpu_req_wdata = '0;
             cpu_req_valid = 1'b1;
-            wait (cpu_req_ready);
+            begin : request_wait
+                integer req_cycles;
+                req_cycles = 0;
+                while (!cpu_req_ready && req_cycles < 20) begin
+                    @(posedge clk);
+                    req_cycles = req_cycles + 1;
+                end
+                if (!cpu_req_ready) begin
+                    $display("REQUEST TIMEOUT endpoint %0d", dst);
+                    $display("  cpu_req_valid=%b cpu_req_ready=%b", cpu_req_valid, cpu_req_ready);
+                    $display("  lot_req_valid=%b lot_req_ready=%b lot_req_dst=%0d", lot_req_valid, lot_req_ready, lot_req_dst);
+                    $display("  req_src_valid=%b req_src_ready=%b req_dst_valid=%b req_dst_ready=%b", req_src_valid, req_src_ready, req_dst_valid, req_dst_ready);
+                    $display("  req_grant=%b", req_grant);
+                    $display("  rsp_src_valid=%b rsp_src_ready=%b rsp_dst_valid=%b rsp_dst_ready=%b", rsp_src_valid, rsp_src_ready, rsp_dst_valid, rsp_dst_ready);
+                    $display("  ep_rsp_valid=%b ep_rsp_ready=%b", ep_rsp_valid, ep_rsp_ready);
+                    $fatal;
+                end
+            end
             @(posedge clk);
             cpu_req_valid = 1'b0;
 
