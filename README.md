@@ -25,7 +25,7 @@ The repository deliberately separates confirmed requirements from assumptions an
 | Silicon Labs DVKs | Evaluation pending |
 | Endpoint adapters | **Behavioral endpoint adapter implemented and verified** |
 | Full system integration | **Candidate path + four independent endpoint register integration verified** |
-| Verification | **Crossbar + transaction router + response router + endpoint-integrated end-to-end path + reset + invalid-destination + sustained backpressure + multi-output + functional coverage + stress/latency verification passed** |
+| Verification | **Crossbar + transaction router + response router + endpoint-integrated end-to-end path + reset + invalid-destination + sustained backpressure + multi-output + functional coverage + stress/latency + mixed concurrent traffic verification passed** |
 | Performance targets | To verify |
 | IP/license/toolchain review | To verify |
 
@@ -185,8 +185,11 @@ Detailed evidence is recorded in `results/xbar_reset_verification.md`.
 | End-to-end LOT endpoint integration | **PASS — register access, error propagation, response backpressure** | `results/end_to_end_lot_endpoint_integration_verification.md` |
 | Crossbar reset behavior | **PASS** | `results/xbar_reset_verification.md` |
 | Invalid destination handling | **PASS** | `tb/tb_xbar_invalid_dst.sv` |
-| Sustained backpressure / ready-valid stability | **PASS** | `results/xbar_backpressure_verification.md` |\n| Simultaneous multi-output traffic | **PASS** | `results/xbar_multi_output_verification.md` |
-| Functional coverage | **PASS — 16/16 routes, contention, multi-output, backpressure, reset** | `results/xbar_functional_coverage.md` |\n| Concurrent multi-source LOT fabric | **PASS — four simultaneous sources, independent endpoints, response source-ID mapping** | `results/lot_concurrent_fabric_verification.md` |
+| Sustained backpressure / ready-valid stability | **PASS** | `results/xbar_backpressure_verification.md` |
+| Simultaneous multi-output traffic | **PASS** | `results/xbar_multi_output_verification.md` |
+| Functional coverage | **PASS — 16/16 routes, contention, multi-output, backpressure, reset** | `results/xbar_functional_coverage.md` |
+| Concurrent multi-source LOT fabric | **PASS — four simultaneous sources, independent endpoints, response source-ID mapping** | `results/lot_concurrent_fabric_verification.md` |
+| Mixed concurrent LOT traffic | **PASS — 16 transactions, contention, writes, reads, error responses, backpressure and source mapping** | `results/lot_mixed_traffic_verification.md` |
 
 ### Status labels
 
@@ -225,15 +228,17 @@ Their exact role and mapping to the four crossbar ports are **not yet final**.
 
 ## Next milestone
 
-The core candidate interconnect path, crossbar reset behavior, functional coverage, and deterministic stress/latency verification are now verified. The next milestone is robustness and implementation-oriented verification:
+The core candidate interconnect path, crossbar reset behavior, functional coverage, deterministic stress/latency verification, concurrent multi-source traffic, and mixed concurrent traffic are now verified. The next milestone is robustness and implementation-oriented verification:
 
-1. Error propagation and invalid/corner-case transactions. **Invalid destination suppression verified.**
+1. Error propagation and invalid/corner-case transactions. **Invalid destination suppression and endpoint invalid-register error propagation verified.**
 2. Sustained backpressure and ready/valid stability. **Verified.**
 3. Simultaneous multi-output traffic and additional contention cases. **Multi-output traffic verified.**
 4. Functional coverage. **16/16 routes plus contention, multi-output, backpressure and reset verified.**
-5. Stress and latency verification. **500-cycle stress test passed with 1002/1002 transfer accounting, contention, backpressure, four-output traffic and 0-cycle combinational latency.**\n6. Concurrent multi-source fabric traffic. **Four simultaneous sources reached independent endpoints and returned correctly mapped responses through the shared request/response fabrics.**
-7. Timing/synthesis checks and implementation-oriented measurements when a suitable implementation toolchain is available.
-8. Then connect additional MIPS and endpoint functionality once their interfaces are confirmed.
+5. Stress and latency verification. **500-cycle stress test passed with 1002/1002 transfer accounting, contention, backpressure, four-output traffic and 0-cycle combinational latency.**
+6. Concurrent multi-source fabric traffic. **Four simultaneous sources reached independent endpoints and returned correctly mapped responses through the shared request/response fabrics.**
+7. Mixed concurrent LOT traffic. **16/16 transactions returned correctly with destination contention, write/read/error traffic, response backpressure and source-ID mapping verified.**
+8. Timing/synthesis checks and implementation-oriented measurements when a suitable implementation toolchain is available.
+9. Then connect additional MIPS and endpoint functionality once their interfaces are confirmed.
 
 ## Source basis
 
