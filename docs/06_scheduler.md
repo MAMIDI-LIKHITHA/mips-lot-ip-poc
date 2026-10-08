@@ -14,7 +14,11 @@ Round-robin arbitration is the first POC policy because it is easy to reason abo
 
 ## Backpressure and head-of-line behavior
 
-The baseline crossbar uses ready/valid handshaking. An output transfer occurs only when both `out_valid` and `out_ready` are asserted. Therefore, downstream backpressure can prevent a selected transfer from completing.
+The baseline crossbar uses ready/valid handshaking. An output transfer occurs only when both `out_valid` and `out_ready` are asserted.
+
+In the current implementation, the selected grant drives `out_valid`, while downstream `out_ready` also participates in the combinational transfer path. This means the current crossbar can complete a transfer in the same simulation cycle when the selected request is valid and the destination is ready. It also creates a combinational ready/valid dependency that should be considered during synthesis and timing analysis.
+
+This is intentional for the current functional POC, but it is not a claim about final implementation timing. If timing closure or interface integration requires it, the path can later be broken with registered/elastic buffering.
 
 The current design is a simple single-request-per-source model rather than a buffered virtual-channel architecture. Because of that, a source that cannot make progress can limit the traffic behind it; this is a head-of-line blocking limitation to keep in mind when evaluating scalability. The POC does not claim to eliminate head-of-line blocking.
 
