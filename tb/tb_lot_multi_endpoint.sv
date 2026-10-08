@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 // Multi-endpoint protocol-neutral verification harness.
 //
 // Verifies that all four 4x4 request-XBAR destinations can reach an
