@@ -79,7 +79,9 @@ module tb_xbar_coverage;
         in_data = '0;
         out_ready = '0;
 
-        #2;
+        // Hold reset through at least one rising clock edge so the
+        // coverage tracker can record the reset-asserted bin.
+        #7;
         if (in_ready !== '0 || out_valid !== '0 || out_data !== '0) begin
             $error("TB: reset did not quiesce crossbar");
             $finish;
@@ -151,7 +153,7 @@ module tb_xbar_coverage;
         in_valid = '0;
         out_ready = '0;
         rst_n = 1'b0;
-        #2;
+        #7;
         if (in_ready !== '0 || out_valid !== '0 || out_data !== '0) begin
             $error("TB: reset recovery check failed");
             $finish;
