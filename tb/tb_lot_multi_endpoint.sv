@@ -130,6 +130,25 @@ module tb_lot_multi_endpoint;
 
     always #5 clk = ~clk;
 
+    task automatic wait_for_response(input logic [DST_W-1:0] dst);
+        integer cycles;
+        begin
+            cycles = 0;
+            while (!cpu_rsp_valid && cycles < 20) begin
+                @(posedge clk);
+                cycles = cycles + 1;
+            end
+            if (!cpu_rsp_valid) begin
+                $display("TIMEOUT endpoint %0d", dst);
+                $display("  cpu_req_valid=%b cpu_req_ready=%b busy_path_rsp_valid=%b", cpu_req_valid, cpu_req_ready, cpu_rsp_valid);
+                $display("  req_valid=%b req_ready=%b req_dst_valid=%b req_dst_ready=%b", lot_req_valid, lot_req_ready, req_dst_valid, req_dst_ready);
+                $display("  rsp_src_valid=%b rsp_src_ready=%b rsp_dst_valid=%b rsp_dst_ready=%b", rsp_src_valid, rsp_src_ready, rsp_dst_valid, rsp_dst_ready);
+                $display("  ep_rsp_valid=%b ep_rsp_ready=%b", ep_rsp_valid, ep_rsp_ready);
+                $fatal;
+            end
+        end
+    endtask
+
     task automatic cpu_read(
         input logic [DST_W-1:0] dst,
         input logic [DATA_W-1:0] expected
@@ -145,7 +164,7 @@ module tb_lot_multi_endpoint;
             @(posedge clk);
             cpu_req_valid = 1'b0;
 
-            wait (cpu_rsp_valid);
+            wait_for_response(dst);
             if (cpu_rsp_error !== 1'b0 || cpu_rsp_rdata !== expected) begin
                 $error("Endpoint %0d response mismatch: got data=%h error=%b expected=%h",
                        dst, cpu_rsp_rdata, cpu_rsp_error, expected);
