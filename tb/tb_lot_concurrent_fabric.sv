@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 // Concurrent multi-source LOT fabric verification.
 //
 // Four independent request sources issue simultaneous writes to four endpoint
