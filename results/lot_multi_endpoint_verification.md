@@ -31,7 +31,7 @@ The endpoint ID register is `0x000C` and returns `32'h4C4F_5430` (`LOT0`).
 [4] Endpoint 3 ID read
 [5] Endpoint isolation check
 TB RESULT: PASS - all four XBAR destinations reached independent LOT endpoint adapters and returned correct register responses through the shared response fabric.
-Time: 186 ps
+Time: 186 ns
 Errors: 0
 Warnings: 0
 ```
