@@ -55,8 +55,6 @@ module tb_lot_mixed_traffic;
     // Scoreboard state is captured at the actual endpoint request handshake.
     // This avoids inferring response ownership from transient source-ready signals.
     logic [DST_W-1:0] endpoint_owner [N];
-    logic [DATA_W-1:0] endpoint_expected_data [N];
-    logic endpoint_expected_error [N];
     logic endpoint_pending [N];
 
     integer accepted_count;
@@ -79,17 +77,8 @@ module tb_lot_mixed_traffic;
         calc_data = 32'hB100_0000 + s;
     endfunction
 
-    function automatic [31:0] expected_data(input integer s, input integer t);
-        expected_data = calc_data(s);
-    endfunction
-
-    function automatic logic expected_error(input integer t);
-        expected_error = (t == 3);
-    endfunction
-
-    genvar g;
     generate
-        for (g = 0; g < N; g = g + 1) begin : g_src
+        for (genvar g = 0; g < N; g = g + 1) begin : g_src
             assign src_valid[g] = !done[g] && !waiting[g];
             assign src_dst[g] = target[g][DST_W-1:0];
 
@@ -123,7 +112,7 @@ module tb_lot_mixed_traffic;
     );
 
     generate
-        for (g = 0; g < N; g = g + 1) begin : g_ep
+        for (genvar g = 0; g < N; g = g + 1) begin : g_ep
             assign req_ready[g] = ep_req_ready[g];
             lot_endpoint_adapter #(
                 .ADDR_W(ADDR_W), .DATA_W(DATA_W), .LOT_W(LOT_W)
@@ -142,7 +131,7 @@ module tb_lot_mixed_traffic;
     assign rsp_src_error = ep_rsp_error;
 
     generate
-        for (g = 0; g < N; g = g + 1) begin : g_rsp_id
+        for (genvar g = 0; g < N; g = g + 1) begin : g_rsp_id
             assign rsp_src_id[g] = endpoint_owner[g];
         end
     endgenerate
@@ -162,7 +151,6 @@ module tb_lot_mixed_traffic;
     );
 
     always #5 clk = ~clk;
-
 
     assign dst_ready[0] = ((cycle % 4) != 1);
     assign dst_ready[1] = ((cycle % 4) != 2);
@@ -205,7 +193,6 @@ module tb_lot_mixed_traffic;
             end
 
             // Response-fabric output handshake: output index is the source ID.
-            // This is intentionally indexed by source, not endpoint.
             for (integer s2 = 0; s2 < N; s2 = s2 + 1) begin
                 if (dst_valid[s2] && dst_ready[s2]) begin
                     if (!source_response_inflight[s2])
@@ -254,6 +241,7 @@ module tb_lot_mixed_traffic;
         response_count = 0;
         contention_cycles = 0;
         backpressure_cycles = 0;
+        cycle = 0;
 
         for (i = 0; i < N; i = i + 1) begin
             txn_idx[i] = 0;
@@ -261,8 +249,6 @@ module tb_lot_mixed_traffic;
             waiting[i] = 1'b0;
             done[i] = 1'b0;
             endpoint_owner[i] = '0;
-            endpoint_expected_data[i] = '0;
-            endpoint_expected_error[i] = 1'b0;
             endpoint_pending[i] = 1'b0;
             source_response_inflight[i] = 1'b0;
             source_expected_data[i] = '0;
@@ -281,6 +267,12 @@ module tb_lot_mixed_traffic;
             @(posedge clk);
             cycle = cycle + 1;
         end
+
+        // The scoreboard uses nonblocking assignments for source state so that
+        // source valid/ready behavior updates after the clocking event. Wait one
+        // additional edge before checking completion to avoid a testbench race
+        // with the final response's done[] update.
+        @(posedge clk);
 
         if (response_count != (N * TXNS_PER_SRC)) begin
             $display("TIMEOUT: responses=%0d expected=%0d", response_count, N*TXNS_PER_SRC);
