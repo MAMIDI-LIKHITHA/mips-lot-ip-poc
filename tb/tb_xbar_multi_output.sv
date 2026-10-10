@@ -98,11 +98,12 @@ module tb_xbar_multi_output;
         out_ready[2] = 1'b0;
         #1;
 
-        if (out_valid[0] !== 1'b1 ||
-            out_valid[1] !== 1'b1 ||
-            out_valid[2] !== 1'b0 ||
-            out_valid[3] !== 1'b1)
-            $fatal(1, "FAIL: VALID/data was not preserved under partial backpressure");
+        // VALID and payload must remain asserted/stable while output 2 is stalled.
+        if (out_valid !== 4'b1111)
+            $fatal(1, "FAIL: VALID was not preserved under partial backpressure");
+
+        if (out_data[2] !== 32'hA222_2222)
+            $fatal(1, "FAIL: stalled output 2 payload changed under backpressure");
 
         if (in_ready[0] !== 1'b1 ||
             in_ready[1] !== 1'b1 ||
