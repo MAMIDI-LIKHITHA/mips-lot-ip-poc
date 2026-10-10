@@ -45,6 +45,22 @@ module tb_xbar_stress_latency;
     integer latency_max;
     integer latency_sum;
     integer errors;
+    logic [N-1:0] source_pending;
+
+    // A source holds VALID, destination, and payload until its handshake.
+    always @(posedge clk or negedge rst_n) begin
+        integer s;
+        if (!rst_n) begin
+            source_pending <= '0;
+        end else begin
+            for (s = 0; s < N; s = s + 1) begin
+                if (in_valid[s] && in_ready[s])
+                    source_pending[s] <= 1'b0;
+                else if (in_valid[s])
+                    source_pending[s] <= 1'b1;
+            end
+        end
+    end
 
     task automatic clear_inputs;
         integer t;
@@ -75,6 +91,7 @@ module tb_xbar_stress_latency;
         latency_max = 0;
         latency_sum = 0;
         errors = 0;
+        source_pending = '0;
 
         // Hold reset across a rising edge.
         repeat (2) @(posedge clk);
@@ -85,28 +102,28 @@ module tb_xbar_stress_latency;
             // ready/valid signals settle before the checks.
             @(negedge clk);
 
-            // Every 10th cycle is a guaranteed four-way transfer:
-            // all four inputs are valid, each targets a different output,
-            // and all outputs are ready.
-            if ((cycle % 10) == 0) begin
-                for (i = 0; i < N; i = i + 1) begin
-                    in_valid[i] = 1'b1;
-                    in_dst[i] = ((cycle / 10) + i) % N;
-                    in_data[i] = 32'hF400_0000 | (cycle << 8) | i;
-                end
+            // Every 10th cycle opens a four-output opportunity; otherwise
+            // use deterministic output stalls to exercise backpressure.
+            if ((cycle % 10) == 0)
                 out_ready = '1;
-            end else begin
-                // Deterministic mixed traffic pattern. It varies validity,
-                // destinations and output backpressure while guaranteeing
-                // recurring contention.
-                for (i = 0; i < N; i = i + 1) begin
-                    in_valid[i] = (((cycle + 3*i) % 7) != 0);
-                    in_dst[i] = (cycle + 2*i + (cycle/11)) % N;
-                    in_data[i] = 32'hA500_0000 | (cycle << 8) | i;
-                end
-
+            else
                 for (j = 0; j < N; j = j + 1)
                     out_ready[j] = (((cycle + 2*j) % 9) != 0);
+
+            // Only launch a new transaction after the previous one completed.
+            // A stalled source keeps VALID, destination, and data unchanged.
+            for (i = 0; i < N; i = i + 1) begin
+                if (!source_pending[i]) begin
+                    if ((cycle % 10) == 0) begin
+                        in_valid[i] = 1'b1;
+                        in_dst[i] = ((cycle / 10) + i) % N;
+                        in_data[i] = 32'hF400_0000 | (cycle << 8) | i;
+                    end else begin
+                        in_valid[i] = (((cycle + 3*i) % 7) != 0);
+                        in_dst[i] = (cycle + 2*i + (cycle/11)) % N;
+                        in_data[i] = 32'hA500_0000 | (cycle << 8) | i;
+                    end
+                end
             end
 
             #1;
