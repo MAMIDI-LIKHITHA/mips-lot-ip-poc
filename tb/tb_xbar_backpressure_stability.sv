@@ -60,8 +60,10 @@ module tb_xbar_backpressure_stability;
         out_ready[2] = 1'b0;
 
         #1;
-        if (out_valid[2] !== 1'b0)
-            $fatal(1, "FAIL: stalled destination asserted out_valid");
+        if (out_valid[2] !== 1'b1)
+            $fatal(1, "FAIL: out_valid must remain asserted during backpressure");
+        if (out_data[2] !== 32'hCAFE_1234)
+            $fatal(1, "FAIL: stalled output data mismatch");
 
         if (in_ready[0] !== 1'b0)
             $fatal(1, "FAIL: source reported ready while destination was stalled");
@@ -70,8 +72,8 @@ module tb_xbar_backpressure_stability;
         repeat (3) begin
             @(posedge clk);
             #1;
-            if (out_valid[2] !== 1'b0)
-                $fatal(1, "FAIL: out_valid asserted during sustained backpressure");
+            if (out_valid[2] !== 1'b1 || out_data[2] !== 32'hCAFE_1234)
+                $fatal(1, "FAIL: VALID/data did not remain stable during sustained backpressure");
 
             if (in_ready[0] !== 1'b0)
                 $fatal(1, "FAIL: in_ready asserted during sustained backpressure");
@@ -111,7 +113,7 @@ module tb_xbar_backpressure_stability;
         if (in_ready !== '0)
             $fatal(1, "FAIL: input ready did not clear after source deassertion");
 
-        $display("TB RESULT: PASS - sustained backpressure, ready/valid suppression, data stability and recovery checks passed.");
+        $display("TB RESULT: PASS - sustained backpressure, persistent VALID, stable data and recovery checks passed.");
         $finish;
     end
 
