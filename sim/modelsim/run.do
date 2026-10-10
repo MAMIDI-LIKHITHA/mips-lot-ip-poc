@@ -1,5 +1,6 @@
-vlib work
-vmap work work
+if {![file exists work]} {
+  vlib work
+}
 
 vlog -sv \
   rtl/crossbar/xbar_scheduler.sv \
@@ -12,7 +13,20 @@ vlog -sv \
   tb/tb_lot_rsp_router.sv \
   tb/tb_end_to_end_candidate.sv
 
-vsim -c tb_xbar_4x4 -do "run -all; quit -f"
-vsim -c tb_lot_txn_router -do "run -all; quit -f"
-vsim -c tb_lot_rsp_router -do "run -all; quit -f"
-vsim -c tb_end_to_end_candidate -do "run -all; quit -f"
+vsim work.tb_xbar_4x4
+run -all
+quit -sim
+
+vsim work.tb_lot_txn_router
+run -all
+quit -sim
+
+vsim work.tb_lot_rsp_router
+run -all
+quit -sim
+
+vsim work.tb_end_to_end_candidate
+run -all
+quit -sim
+
+quit -f
