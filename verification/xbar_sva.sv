@@ -1,4 +1,4 @@
-// Lightweight SystemVerilog assertions for the ready-aware 4x4 crossbar.
+// Lightweight SystemVerilog assertions for the ready/valid 4x4 crossbar.
 // These properties are intended to run alongside directed testbenches.
 
 module xbar_sva #(
@@ -11,7 +11,8 @@ module xbar_sva #(
     input logic [N-1:0] in_ready,
     input logic [N-1:0][N-1:0] grant,
     input logic [N-1:0] out_valid,
-    input logic [N-1:0] out_ready
+    input logic [N-1:0] out_ready,
+    input logic [N-1:0][DATA_W-1:0] out_data
 );
 
     // An input can be granted to at most one output.
@@ -42,14 +43,14 @@ module xbar_sva #(
         end
     endgenerate
 
-    // A visible transfer requires both VALID and READY.
+    // VALID may remain asserted while READY is low; the payload must hold.
     genvar j;
     generate
         for (j = 0; j < N; j = j + 1) begin : g_transfer_handshake
-            assert_valid_ready: assert property (
+            assert_stable_when_stalled: assert property (
                 @(posedge clk) disable iff (!rst_n)
-                out_valid[j] |-> out_ready[j]
-            ) else $error("XBAR SVA: output %0d VALID asserted while not READY", j);
+                (out_valid[j] && !out_ready[j]) |=> (out_valid[j] && $stable(out_data[j]))
+            ) else $error("XBAR SVA: output %0d VALID/data changed while stalled", j);
         end
     endgenerate
 
