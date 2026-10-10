@@ -34,4 +34,4 @@ if {[catch {vsim -c work.tb_xbar_reset -do "run -all; quit -f"} err]} { puts $er
 if {[catch {vsim -c work.tb_xbar_stress_latency -do "run -all; quit -f"} err]} { puts $err; quit -code 1 }
 
 puts "Ready/valid crossbar regression completed. Confirm every TB RESULT is PASS in the transcript."
-quit -f
+# Intentionally do not quit here so the ModelSim GUI remains open for log review.
