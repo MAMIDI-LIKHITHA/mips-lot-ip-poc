@@ -16,12 +16,12 @@ Behavioral endpoint adapters provide CONTROL, DATA, STATUS and ID registers so t
 
 | Area | Status |
 |---|---|
-| 4×4 crossbar + round-robin arbitration | **Handshake-hardening changes: regression pending** |
+| 4×4 crossbar + round-robin arbitration | **Handshake-hardening changes: 7/7 functional regression tests passed locally** |
 | LOT transaction / response routers | **Verified (directed simulation)** |
 | Endpoint adapter + four-endpoint fabric | **Verified (directed simulation)** |
 | Candidate MIPS MMIO adapter | **Verified (directed simulation)** |
 | Concurrent / mixed traffic | **Verified by simulation** |
-| Assertions / functional coverage | **Updated for handshake semantics; regression pending** |
+| Assertions / functional coverage | **Updated for handshake semantics; exercised in the local functional regression (concurrent SVA support remains tool-dependent)** |
 | Stress traffic | **500-cycle deterministic stress run passed** |
 | Final MIPS bus protocol | **To Verify** |
 | Thread / Wi-Fi / BLE / Ethernet interfaces | **Research / To Verify** |
@@ -45,7 +45,7 @@ Testbenches use an explicit `1ns/1ps` simulation timescale. Raw simulator timest
 
 ## Branch verification note
 
-On branch `feat/ready-valid-handshake`, request generation is independent of `out_ready`, output VALID/data are intended to remain stable during backpressure, and the round-robin pointer advances only on a completed handshake. The affected testbenches and a focused ModelSim regression script were updated, but this branch must not be treated as verified until that regression is run and the results are reviewed. The existing `results/` logs describe the previously verified baseline, not this unrerun branch.
+On branch `feat/ready-valid-handshake`, request generation is independent of `out_ready`, output VALID/data are intended to remain stable during backpressure, and the round-robin pointer advances only on a completed handshake. The seven-test focused regression (`sim/modelsim/run_xbar_handshake.do`) was run locally with ModelSim Intel FPGA Edition 2021.1 on 2026-10-10; all seven testbenches printed explicit `TB RESULT: PASS` messages, including 16/16 routes and the 500-cycle stress test. This is local functional-simulation evidence, not proof of synthesis, timing closure, hardware operation, or full concurrent-SVA support. The checked-in `results/` logs may describe the prior baseline unless explicitly regenerated.
 
 ## Important boundary
 
