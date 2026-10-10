@@ -32,6 +32,7 @@ module tb_xbar_sva;
         .out_valid(out_valid),
         .out_ready(out_ready),
         .out_data(out_data),
+        .out_data(out_data),
         .grant(grant)
     );
 
