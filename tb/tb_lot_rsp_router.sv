@@ -83,8 +83,12 @@ module tb_lot_rsp_router;
         dst_ready[2] = 1'b0;
         src_valid[1] = 1'b1; src_id[1] = 2'd2; src_data[1] = 32'hC002;
         #1;
-        if (dst_valid[2] !== 1'b0 || src_ready[1] !== 1'b0) begin
-            $error("Response backpressure test failed"); $fatal;
+        if (dst_valid[2] !== 1'b1 ||
+            dst_data[2] !== 32'hC002 ||
+            dst_error[2] !== 1'b0 ||
+            src_ready[1] !== 1'b0) begin
+            $error("Response backpressure test failed: VALID/data/error must remain asserted and stable while READY is low");
+            $fatal;
         end
 
         $display("TB RESULT: PASS - response routing, error propagation, contention and backpressure checks passed.");
