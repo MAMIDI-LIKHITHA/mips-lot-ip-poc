@@ -3,16 +3,17 @@
 #   do sim/modelsim/run_xbar_handshake.do
 #
 # The script compiles once and runs all seven functional testbenches.
-# -onfinish stop keeps $finish in a testbench from closing the simulator,
-# allowing the Tcl loop to continue with the next test.
+# -onfinish stop makes each testbench $finish stop the current run without
+# closing ModelSim, so the Tcl loop can load the next testbench.
 # SVA remains a separate optional run because some ModelSim Intel FPGA Edition
 # versions have limited/unsupported concurrent assertion support.
 
 transcript on
 
-# Fail fast on simulator errors or an unexpected break (for example, $stop).
+# Fail fast on simulator errors. Do not install an onbreak handler here:
+# with -onfinish stop, ModelSim reports $finish as a break too, and an onbreak
+# handler that quits would terminate the whole regression after the first test.
 onerror {quit -code 1}
-onbreak {quit -code 1}
 
 # Unload any design left from a previous manual simulation.
 catch {quit -sim}
