@@ -1,67 +1,98 @@
 # MIPS LOT IP POC
 
-A simulation-focused RTL POC for studying an insertable **LAN of Things (LOT) IP block** around a MIPS-based architecture.
+A simulation-focused RTL proof of concept for exploring an insertable **LAN of Things (LOT) IP block** around a MIPS-based architecture. The repository currently demonstrates a candidate CPU-side memory-mapped interface, transaction routing, a 4×4 crossbar, behavioral endpoints, and response routing in functional simulation.
 
-## What I built
+> **Scope:** this is a functional RTL simulation POC. It is not yet a production-ready IP block, and no FPGA synthesis, place-and-route, timing closure, or hardware validation is claimed.
 
-**MIPS-side candidate adapter → LOT transaction router → 4 independent endpoints → LOT response router → MIPS-side candidate adapter**
+## Architecture at a glance
 
-The request fabric is a **4×4 ready/valid crossbar** with per-output round-robin arbitration. The candidate CPU adapter converts a simple memory-mapped request into a protocol-neutral LOT transaction:
+```text
+Candidate MIPS MMIO adapter
+          |
+          v
+   LOT transaction router
+          |
+          v
+   4×4 ready/valid crossbar
+   (round-robin arbitration)
+     |      |      |      |
+     v      v      v      v
+ CONTROL   DATA   STATUS   ID
+ endpoint endpoint endpoint endpoint
+     |      |      |      |
+     +------+---+--+------+
+                |
+                v
+      LOT response router
+                |
+                v
+ Candidate MIPS MMIO adapter
+```
 
-**{write, address[31:0], write_data[31:0]}**
+The candidate CPU adapter converts a simple memory-mapped request into a protocol-neutral LOT transaction containing write direction, a 32-bit address, and 32-bit write data. Behavioral endpoint adapters expose CONTROL, DATA, STATUS, and ID registers so the request/response path can be tested end to end without assuming that the final MIPS bus or network protocol has been selected.
 
-Behavioral endpoint adapters provide CONTROL, DATA, STATUS and ID registers so the complete path can be exercised without claiming that the final MIPS or network protocol is already defined.
+The request fabric uses ready/valid handshakes and per-output round-robin arbitration. The crossbar is currently combinational, so zero-cycle transfers can occur in simulation; this is not an FPGA timing or achievable-frequency claim.
 
-## Current status
+## Current verification status
 
-| Area | Status |
+**Latest local run on merged `main`: ModelSim Intel FPGA Edition 2021.1 — 10 passed, 0 failed.**
+
+| Verification area | Result |
 |---|---|
-| 4×4 crossbar + round-robin arbitration | **Handshake-hardening changes: 7/7 functional regression tests passed locally** |
-| LOT transaction / response routers | **Verified (directed simulation)** |
-| Endpoint adapter + four-endpoint fabric | **Verified (directed simulation)** |
-| Candidate MIPS MMIO adapter | **Verified (directed simulation)** |
-| Concurrent / mixed traffic | **Verified by simulation** |
-| Assertions / functional coverage | **Updated for handshake semantics; exercised in the local functional regression (concurrent SVA support remains tool-dependent)** |
-| Stress traffic | **500-cycle deterministic stress run passed** |
-| Final MIPS bus protocol | **To Verify** |
-| Thread / Wi-Fi / BLE / Ethernet interfaces | **Research / To Verify** |
-| Synthesis, timing and resource measurements | **Pending suitable implementation toolchain** |
-| Production-ready IP | **Not claimed** |
+| Regression harness | **PASS** — requires an explicit `TB RESULT: PASS` marker from every testbench |
+| Compilation | **0 errors, 14 warnings** in the reported run |
+| Crossbar functional route coverage | **16/16 routes (100%)** |
+| Crossbar connectivity, contention, input exclusivity, fairness | **PASS** |
+| Backpressure stability and handshake recovery | **PASS** |
+| Multi-output routing and partial backpressure | **PASS** |
+| Invalid destination and reset behavior | **PASS** |
+| LOT transaction router and response router | **PASS** |
+| End-to-end candidate CPU/LOT/endpoint path | **PASS** |
+| Stress test | **500 cycles; 1,175 accepted and 1,175 delivered transfers** |
+| Synthesis, timing closure, area/resource measurements | **Not yet performed** |
+| FPGA or ASIC hardware validation | **Not yet performed** |
+| Final MIPS bus and network-facing protocol mapping | **Open / to be defined** |
 
-## Verification evidence
+The stress run also exercised 407 contention cycles, 200 output backpressure stalls, and 32 cycles with four simultaneous outputs. The measured zero-cycle crossbar latency is a property of the current combinational simulation model, not a post-synthesis timing result.
 
-Detailed logs are in `results/`.
+### Running the ModelSim regression
 
-- **16/16 crossbar routes** exercised — 100% route coverage
-- Connectivity, contention, input exclusivity, backpressure and round-robin fairness — **PASS**
-- Reset and invalid-destination behavior — **PASS**
-- Four-output simultaneous traffic — **PASS**
-- Sustained backpressure and held-data stability — **PASS**
-- Four concurrent sources and mixed LOT traffic — **PASS**
-- Candidate MIPS request/response path through all four endpoints — **PASS**
-- End-to-end register access, error propagation and CPU response backpressure — **PASS**
+From the repository root in ModelSim Intel FPGA Edition 2021.1, run:
 
-Testbenches use an explicit `1ns/1ps` simulation timescale. Raw simulator timestamps are not used as FPGA timing claims.
+```tcl
+do sim/modelsim/run.do
+```
 
-## Branch verification note
+The regression script compiles the RTL and testbenches, runs all ten testbenches, checks each test-specific transcript for the explicit `TB RESULT: PASS` marker, and prints a final summary. A successful run ends with output equivalent to:
 
-On branch `feat/ready-valid-handshake`, request generation is independent of `out_ready`, output VALID/data are intended to remain stable during backpressure, and the round-robin pointer advances only on a completed handshake. The seven-test focused regression (`sim/modelsim/run_xbar_handshake.do`) was run locally with ModelSim Intel FPGA Edition 2021.1 on 2026-10-10; all seven testbenches printed explicit `TB RESULT: PASS` messages, including 16/16 routes and the 500-cycle stress test. This is local functional-simulation evidence, not proof of synthesis, timing closure, hardware operation, or full concurrent-SVA support. The checked-in `results/` logs may describe the prior baseline unless explicitly regenerated.
+```text
+REGRESSION SUMMARY: 10 passed, 0 failed
+REGRESSION RESULT: PASS
+Per-test transcripts: sim/modelsim/regression_<testbench>.log
+```
 
-## Important boundary
-
-This is a **functional simulation POC**, not a finished implementation. The final MIPS bus, address-map requirements, endpoint interfaces and network-facing protocol mapping are still open.
-
-The current crossbar is combinational from request/grant to output transfer, so same-cycle transfers are possible in simulation. This does **not** establish achievable FPGA Fmax, latency after implementation, area or resource utilization.
+The per-test transcripts are generated locally and are not required to be committed. Warning counts can depend on simulator settings; investigate any compilation or simulation errors rather than treating a PASS summary as a substitute for reviewing new warnings.
 
 ## Repository structure
 
 ```text
 rtl/           RTL implementation
-tb/            Testbenches
-verification/  Assertions and coverage
-docs/          Architecture / requirements / research notes
-sim/           Simulator scripts/configuration
-results/       Verification evidence
+tb/            SystemVerilog testbenches
+verification/  Assertions and functional coverage
+sim/           Simulator scripts and configuration
+docs/          Architecture, requirements, and research notes
+results/       Checked-in verification evidence, where available
 ```
 
-**Engineering rule:** do not claim completion where the interface, implementation result or verification evidence has not actually been established.
+## Open engineering questions and next steps
+
+1. **Freeze interface requirements:** select the target MIPS core/bus protocol, define address decoding and error behavior, and document transaction semantics.
+2. **Specify endpoint contracts:** define the register map, reset values, access permissions, and behavior for unmapped addresses.
+3. **Clarify network integration:** evaluate how LOT transactions map to intended Thread, Wi-Fi, BLE, or Ethernet-connected endpoints; do not treat these technologies as implemented by this POC.
+4. **Expand verification:** add requirements-driven corner cases and tool-compatible assertion checking; document any simulator limitations around concurrent SystemVerilog assertions.
+5. **Measure implementation results:** once the target device and implementation flow are selected, run synthesis and implementation to obtain resource use and timing data.
+6. **Validate on hardware:** only after implementation and board-level tests should hardware-operation claims be made.
+
+## Engineering boundary
+
+The current evidence establishes **functional behavior in simulation only**. It does not establish a final CPU interface, network interoperability, synthesis quality, FPGA Fmax, post-implementation latency, resource utilization, power, or production readiness. Keep these limitations explicit in reviews and project updates.
