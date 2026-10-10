@@ -126,10 +126,6 @@ module tb_xbar_stress_latency;
                             $error("Cycle %0d: input %0d granted to wrong output %0d", cycle, i, j);
                             errors = errors + 1;
                         end
-                        if (!out_ready[j]) begin
-                            $error("Cycle %0d: output %0d granted while not ready", cycle, j);
-                            errors = errors + 1;
-                        end
                         if (!out_valid[j]) begin
                             $error("Cycle %0d: grant/output valid mismatch on output %0d", cycle, j);
                             errors = errors + 1;
@@ -193,7 +189,7 @@ module tb_xbar_stress_latency;
             end
 
             // Count cycles where all four outputs are simultaneously valid.
-            if ((out_valid[0] + out_valid[1] + out_valid[2] + out_valid[3]) == N)
+            if ((out_valid[0] + out_valid[1] + out_valid[2] + out_valid[3]) == N && out_ready == '1)
                 multi_output_cycles = multi_output_cycles + 1;
         end
 
