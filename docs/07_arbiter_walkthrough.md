@@ -2,43 +2,27 @@
 
 ## Purpose
 
-The POC uses a simple per-output round-robin scheduler for a 4×4 crossbar. The goal is a deterministic, understandable baseline—not a claim that this is a production NoC scheduler.
+The POC uses a simple per-output round-robin scheduler for a 4×4 crossbar. It is a deterministic functional baseline, not a production NoC scheduler.
 
 ## Signal path
 
-1. **Build requests — `xbar_4x4.sv`**  
-   Each input presents `in_valid`, a destination `in_dst`, and payload `in_data`. A request is placed in `req[input][destination]` when the source is valid and its destination encoding is in range. In the current baseline, downstream `out_ready` is also included in this request condition.
-
-2. **Select winners — `xbar_scheduler.sv`**  
-   Each output has its own `rr_ptr[output]`. For output `o`, the scheduler scans inputs starting at `rr_ptr[o]`, wraps around the end of the input range, and selects the first eligible requester. `used_input` prevents one input from being granted to more than one output in the same cycle.
-
-3. **Route the payload — `xbar_4x4.sv`**  
-   The grant matrix controls the output data mux. A granted input's payload is routed to the corresponding output. The baseline is combinational, so no register stage is added to the data path.
-
-4. **Advance fairness state**  
-   The scheduler computes `next_rr[o]` as the input after the selected winner, wrapping to input 0 after input `N-1`. The current baseline writes this next pointer on the clock edge. Because request generation currently includes `out_ready`, the selected grant is suppressed when the destination is stalled.
+1. **Build requests — `xbar_4x4.sv`**: each input presents `in_valid`, `in_dst`, and `in_data`. A request is formed when the source is valid and its destination encoding is legal. Request generation does not depend on `out_ready`.
+2. **Select winners — `xbar_scheduler.sv`**: each output has its own `rr_ptr[output]`. It scans from that pointer, wraps around, and selects the first eligible requester. `used_input` prevents an input from being granted to multiple outputs in the same cycle.
+3. **Route payload**: the grant matrix routes the selected input payload to the output. `out_valid` stays asserted for a selected request even while the destination is not ready.
+4. **Handshake and pointer update**: `in_ready` is asserted for a selected source only when its destination is ready. The output transfer is complete when `out_valid && out_ready`; only then does that output's round-robin pointer advance past the winner.
 
 ## Fairness example
 
-With all four inputs continuously requesting output 0, and with output 0 ready, reset initializes the pointer to input 0. Consecutive successful cycles select inputs 0, 1, 2, and 3, then wrap back to 0. The directed testbench checks this deterministic progression.
+With all four inputs continuously requesting output 0 and output 0 ready, reset starts the pointer at input 0. Consecutive successful transfers select inputs 0, 1, 2, and 3, then wrap to 0. If output 0 is stalled, its pointer does not advance and the selected request/data must remain stable under the source ready/valid contract.
 
-## Current design limitation
+## Verification focus
 
-The current request condition is:
-
-```systemverilog
-if (in_valid[i] && valid_dst[i] && out_ready[in_dst[i]])
-    req[i][in_dst[i]] = 1'b1;
-```
-
-Consequently, `out_valid` can depend combinationally on `out_ready`. This is a known limitation of the functional baseline. A protocol-hardening iteration should form requests independently of `out_ready`, drive `out_valid` from arbitration, assert `in_ready` only for an accepted transfer, and advance each output's round-robin pointer only on its completed handshake. That change must also add checks that `out_valid` and `out_data` remain stable while `out_valid && !out_ready`.
-
-Do not describe the current implementation as a fully timing-closed or production-ready ready/valid crossbar.
+The testbench suite should check connectivity, arbitration uniqueness, fairness under sustained contention, output VALID persistence during backpressure, stable output payload while stalled, and recovery after READY returns.
 
 ## What iSLIP would add
 
-The current scheduler performs one simple round-robin selection per output with a shared input-exclusivity check. iSLIP is an iterative matching algorithm with request, grant, and accept phases. It coordinates input and output decisions over iterations and has specific pointer-update rules intended to improve matching under contention. It would add complexity and should be evaluated against this baseline using comparable traffic patterns and measured throughput/fairness—not added merely as a name.
+The current scheduler performs one simple round-robin selection per output with an input-exclusivity mask. iSLIP uses iterative request, grant, and accept phases with coordinated matching and specific pointer-update rules. It adds scheduler complexity, so it should be compared against this baseline using equivalent traffic and measured throughput/fairness.
 
 ## Suggested call explanation
 
-> “I implemented a 4×4 combinational crossbar with one round-robin pointer per output. Each output scans from its pointer, grants the first eligible input, and the input-exclusivity mask prevents one source from being selected by multiple outputs. After a selected transfer, the pointer advances to the next input. This is a verified functional baseline. I documented the current ready/valid dependency as a limitation; a next iteration would make request generation independent of ready and update fairness state only on a completed handshake. iSLIP would be a separate iterative matching comparison.”
+> “Each output has a round-robin pointer. It scans requesters from that pointer, and an input-exclusivity mask prevents one source from being selected by multiple outputs. VALID is independent of READY, so a selected request remains visible during backpressure; the pointer advances only after a completed handshake. This is a functional baseline. iSLIP would be a separate iterative matching comparison.”
