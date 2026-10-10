@@ -112,7 +112,11 @@ foreach tb $testbenches {
 
 puts "\n=============================================="
 puts "REGRESSION SUMMARY: $passed passed, $failed failed"
-puts "REGRESSION RESULT: [expr {$failed == 0 && $passed == [llength $testbenches] ? \"PASS\" : \"FAIL\"}]"
+if {$failed == 0 && $passed == [llength $testbenches]} {
+    puts "REGRESSION RESULT: PASS"
+} else {
+    puts "REGRESSION RESULT: FAIL"
+}
 puts "Per-test transcripts: sim/modelsim/regression_<testbench>.log"
 puts "=============================================="
 
