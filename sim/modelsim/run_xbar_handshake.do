@@ -2,9 +2,9 @@
 # Run from the repository root in ModelSim/Questa:
 #   do sim/modelsim/run_xbar_handshake.do
 #
-# The script compiles once, runs every functional testbench in sequence, and
-# exits with a non-zero status on Tcl/simulator errors. The stress test ends
-# with $finish so it does not leave the simulator paused at an unexpected $stop.
+# The script compiles once and runs all seven functional testbenches.
+# -onfinish stop keeps $finish in a testbench from closing the simulator,
+# allowing the Tcl loop to continue with the next test.
 # SVA remains a separate optional run because some ModelSim Intel FPGA Edition
 # versions have limited/unsupported concurrent assertion support.
 
@@ -14,18 +14,16 @@ transcript on
 onerror {quit -code 1}
 onbreak {quit -code 1}
 
-# Unload any design left from a previous manual simulation before rebuilding work.
+# Unload any design left from a previous manual simulation.
 catch {quit -sim}
 
-if {[file exists work]} {
-    if {[catch {vdel -lib work -all} err]} {
-        puts "ERROR: Could not remove existing work library: $err"
+# Reuse an existing work library instead of deleting it (vdel can fail on
+# Windows when library database files are locked). Create it only if absent.
+if {![file exists work]} {
+    if {[catch {vlib work} err]} {
+        puts "ERROR: Could not create work library: $err"
         quit -code 1
     }
-}
-if {[catch {vlib work} err]} {
-    puts "ERROR: Could not create work library: $err"
-    quit -code 1
 }
 if {[catch {vmap work work} err]} {
     puts "ERROR: Could not map work library: $err"
@@ -61,7 +59,7 @@ set testbenches {
 
 foreach tb $testbenches {
     puts "\n========== RUNNING $tb =========="
-    if {[catch {vsim -voptargs=+acc work.$tb} err]} {
+    if {[catch {vsim -onfinish stop -voptargs=+acc work.$tb} err]} {
         puts "ERROR: Could not load $tb: $err"
         quit -code 1
     }
@@ -73,4 +71,3 @@ foreach tb $testbenches {
 }
 
 puts "\nREGRESSION RESULT: PASS - all seven functional testbenches completed."
-# Leave the ModelSim GUI open after a successful run so the transcript can be reviewed.
