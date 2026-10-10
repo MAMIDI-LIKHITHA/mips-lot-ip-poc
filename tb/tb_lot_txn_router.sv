@@ -106,7 +106,7 @@ module tb_lot_txn_router;
         check_route(2, 2, 32'hC222_2223);
         check_route(3, 3, 32'hD333_3334);
 
-        // 2. Backpressure: destination 2 is stalled.
+        // 2. Backpressure: VALID and payload remain asserted/stable while READY is low.
         clear_inputs();
         dst_ready = '1;
         dst_ready[2] = 1'b0;
@@ -115,8 +115,10 @@ module tb_lot_txn_router;
         src_data[1] = 32'hBEEF_0002;
         #1;
 
-        if (src_ready[1] !== 1'b0 || dst_valid[2] !== 1'b0) begin
-            $error("Backpressure check failed: blocked destination accepted a request");
+        if (src_ready[1] !== 1'b0 ||
+            dst_valid[2] !== 1'b1 ||
+            dst_data[2] !== 32'hBEEF_0002) begin
+            $error("Backpressure check failed: VALID/data must remain asserted and stable while READY is low");
             $fatal;
         end
 
