@@ -16,12 +16,12 @@ Behavioral endpoint adapters provide CONTROL, DATA, STATUS and ID registers so t
 
 | Area | Status |
 |---|---|
-| 4×4 crossbar + round-robin arbitration | **Verified (directed simulation)** |
+| 4×4 crossbar + round-robin arbitration | **Handshake-hardening changes: regression pending** |
 | LOT transaction / response routers | **Verified (directed simulation)** |
 | Endpoint adapter + four-endpoint fabric | **Verified (directed simulation)** |
 | Candidate MIPS MMIO adapter | **Verified (directed simulation)** |
 | Concurrent / mixed traffic | **Verified by simulation** |
-| Assertions / functional coverage | **Verified by available ModelSim flow** |
+| Assertions / functional coverage | **Updated for handshake semantics; regression pending** |
 | Stress traffic | **500-cycle deterministic stress run passed** |
 | Final MIPS bus protocol | **To Verify** |
 | Thread / Wi-Fi / BLE / Ethernet interfaces | **Research / To Verify** |
@@ -42,6 +42,10 @@ Detailed logs are in `results/`.
 - End-to-end register access, error propagation and CPU response backpressure — **PASS**
 
 Testbenches use an explicit `1ns/1ps` simulation timescale. Raw simulator timestamps are not used as FPGA timing claims.
+
+## Branch verification note
+
+On branch `feat/ready-valid-handshake`, request generation is independent of `out_ready`, output VALID/data are intended to remain stable during backpressure, and the round-robin pointer advances only on a completed handshake. The affected testbenches and a focused ModelSim regression script were updated, but this branch must not be treated as verified until that regression is run and the results are reviewed. The existing `results/` logs describe the previously verified baseline, not this unrerun branch.
 
 ## Important boundary
 
