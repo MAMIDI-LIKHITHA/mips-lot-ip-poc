@@ -1,0 +1,7 @@
+
+# Local ModelSim simulation artifacts
+modelsim.ini
+modelsim_regression.log
+transcript
+work/
+work_old/
