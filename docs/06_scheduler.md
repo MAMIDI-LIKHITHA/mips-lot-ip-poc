@@ -10,20 +10,20 @@ Round-robin arbitration is the first POC policy because it is easy to reason abo
 2. An input cannot be granted to more than one output in the same cycle.
 3. A granted request must correspond to an asserted request.
 4. Reset must remove all grants.
-5. Arbitration state must advance only according to a defined grant policy.
+5. Each output's round-robin pointer advances only when that output completes a valid/ready handshake.
 
-## Backpressure and head-of-line behavior
+## Ready/valid and backpressure
 
-The baseline crossbar uses ready/valid handshaking. An output transfer occurs only when both `out_valid` and `out_ready` are asserted.
+Requests are formed from source `in_valid` and a legal destination, independently of downstream `out_ready`. Arbitration can therefore assert `out_valid` while the destination is stalled. The selected input's `in_ready` is asserted only when its destination is ready, so the transfer occurs when VALID and READY are both high.
 
-In the current implementation, the selected grant drives `out_valid`, while downstream `out_ready` also participates in the combinational transfer path. This means the current crossbar can complete a transfer in the same simulation cycle when the selected request is valid and the destination is ready. It also creates a combinational ready/valid dependency that should be considered during synthesis and timing analysis.
+While `out_valid && !out_ready`, the source must hold its request and payload stable. With the pointer held on a stall, the same requester remains selected as long as it obeys that source-side ready/valid contract. The round-robin pointer advances after a completed transfer, not merely because a request is visible.
 
-This is intentional for the current functional POC, but it is not a claim about final implementation timing. If timing closure or interface integration requires it, the path can later be broken with registered/elastic buffering.
+This RTL remains combinational from request/grant to output transfer; this change does not add pipeline registers or establish implementation timing/Fmax. If timing closure or interface integration requires it, registered or elastic buffering can later break long combinational paths.
 
-The current design is a simple single-request-per-source model rather than a buffered virtual-channel architecture. Because of that, a source that cannot make progress can limit the traffic behind it; this is a head-of-line blocking limitation to keep in mind when evaluating scalability. The POC does not claim to eliminate head-of-line blocking.
+## Head-of-line limitation
+
+The current design is a simple single-request-per-source model rather than a buffered virtual-channel architecture. A source that cannot make progress can limit traffic behind it; the POC does not claim to eliminate head-of-line blocking.
 
 ## Future evaluation
 
-McKeown-style scheduling/iSLIP is a research and comparison topic. It should be implemented only after the baseline scheduler is understood and verified.
-
-The repository will keep the baseline implementation separate from research notes so algorithm names are not used as a substitute for measured behavior.
+McKeown-style scheduling/iSLIP is a research and comparison topic. Implement it only after the baseline is verified, then compare both designs with equivalent traffic for fairness and throughput.

@@ -4,6 +4,7 @@ module xbar_scheduler #(
     input  logic                  clk,
     input  logic                  rst_n,
     input  logic [N-1:0][N-1:0]   req,
+    input  logic [N-1:0]          out_ready,
     output logic [N-1:0][N-1:0]   grant
 );
 
@@ -17,6 +18,8 @@ module xbar_scheduler #(
     integer k;
     integer idx;
 
+    // Arbitration is independent of downstream READY. This allows VALID
+    // and payload to remain asserted while a selected output is stalled.
     always_comb begin
         grant      = '0;
         used_input = '0;
@@ -31,7 +34,11 @@ module xbar_scheduler #(
                 if (!used_input[idx] && req[idx][o]) begin
                     grant[idx][o] = 1'b1;
                     used_input[idx] = 1'b1;
-                    next_rr[o] = (idx == N-1) ? '0 : idx + 1'b1;
+
+                    // Advance fairness state only when this output
+                    // completes a valid/ready handshake.
+                    if (out_ready[o])
+                        next_rr[o] = (idx == N-1) ? '0 : idx + 1'b1;
                     break;
                 end
             end

@@ -16,12 +16,12 @@ Behavioral endpoint adapters provide CONTROL, DATA, STATUS and ID registers so t
 
 | Area | Status |
 |---|---|
-| 4×4 crossbar + round-robin arbitration | **Verified (directed simulation)** |
+| 4×4 crossbar + round-robin arbitration | **Handshake-hardening changes: 7/7 functional regression tests passed locally** |
 | LOT transaction / response routers | **Verified (directed simulation)** |
 | Endpoint adapter + four-endpoint fabric | **Verified (directed simulation)** |
 | Candidate MIPS MMIO adapter | **Verified (directed simulation)** |
 | Concurrent / mixed traffic | **Verified by simulation** |
-| Assertions / functional coverage | **Verified by available ModelSim flow** |
+| Assertions / functional coverage | **Updated for handshake semantics; exercised in the local functional regression (concurrent SVA support remains tool-dependent)** |
 | Stress traffic | **500-cycle deterministic stress run passed** |
 | Final MIPS bus protocol | **To Verify** |
 | Thread / Wi-Fi / BLE / Ethernet interfaces | **Research / To Verify** |
@@ -42,6 +42,10 @@ Detailed logs are in `results/`.
 - End-to-end register access, error propagation and CPU response backpressure — **PASS**
 
 Testbenches use an explicit `1ns/1ps` simulation timescale. Raw simulator timestamps are not used as FPGA timing claims.
+
+## Branch verification note
+
+On branch `feat/ready-valid-handshake`, request generation is independent of `out_ready`, output VALID/data are intended to remain stable during backpressure, and the round-robin pointer advances only on a completed handshake. The seven-test focused regression (`sim/modelsim/run_xbar_handshake.do`) was run locally with ModelSim Intel FPGA Edition 2021.1 on 2026-10-10; all seven testbenches printed explicit `TB RESULT: PASS` messages, including 16/16 routes and the 500-cycle stress test. This is local functional-simulation evidence, not proof of synthesis, timing closure, hardware operation, or full concurrent-SVA support. The checked-in `results/` logs may describe the prior baseline unless explicitly regenerated.
 
 ## Important boundary
 

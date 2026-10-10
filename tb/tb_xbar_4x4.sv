@@ -120,8 +120,8 @@ module tb_xbar_4x4;
         in_dst[2] = 2'd1;
         in_data[2] = 32'h4000;
         #1;
-        if (out_valid[1] !== 1'b0 || in_ready[2] !== 1'b0) begin
-            $error("Backpressure test failed");
+        if (out_valid[1] !== 1'b1 || in_ready[2] !== 1'b0) begin
+            $error("Backpressure must hold VALID while withholding READY");
             $fatal;
         end
         out_ready[1] = 1'b1;

@@ -45,7 +45,8 @@ module tb_xbar_sva;
         .in_ready(in_ready),
         .grant(grant),
         .out_valid(out_valid),
-        .out_ready(out_ready)
+        .out_ready(out_ready),
+        .out_data(out_data)
     );
 
     always #5 clk = ~clk;
@@ -103,8 +104,8 @@ module tb_xbar_sva;
         in_data[2] = 32'hBEEF_0002;
 
         #10;
-        if (out_valid[1] !== 1'b0 || in_ready[2] !== 1'b0) begin
-            $error("TB: backpressure behavior failed");
+        if (out_valid[1] !== 1'b1 || in_ready[2] !== 1'b0 || out_data[1] !== 32'hBEEF_0002) begin
+            $error("TB: backpressure VALID/data stability failed");
             $finish;
         end
 
