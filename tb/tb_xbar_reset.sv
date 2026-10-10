@@ -54,8 +54,7 @@ module tb_xbar_reset;
         // Reset must suppress all externally visible transfers.
         #2;
         if (in_ready !== '0 || out_valid !== '0 || out_data !== '0) begin
-            $display("FAIL: outputs were not quiescent while reset was asserted");
-            $finish;
+            $fatal(1, "FAIL: outputs were not quiescent while reset was asserted");
         end
 
         // Assert reset across a clock edge while presenting traffic.
@@ -67,8 +66,7 @@ module tb_xbar_reset;
         @(posedge clk);
         #1;
         if (in_ready !== '0 || out_valid !== '0) begin
-            $display("FAIL: traffic transferred while reset was asserted");
-            $finish;
+            $fatal(1, "FAIL: traffic transferred while reset was asserted");
         end
 
         // Release reset and verify normal traffic resumes.
@@ -79,8 +77,7 @@ module tb_xbar_reset;
         if (out_valid[2] !== 1'b1 ||
             in_ready[0] !== 1'b1 ||
             out_data[2] !== 32'hCAFE_0001) begin
-            $display("FAIL: traffic did not resume correctly after reset");
-            $finish;
+            $fatal(1, "FAIL: traffic did not resume correctly after reset");
         end
 
         // Remove traffic and reassert reset; outputs must return to quiescent.
@@ -89,8 +86,7 @@ module tb_xbar_reset;
         #2;
 
         if (in_ready !== '0 || out_valid !== '0 || out_data !== '0) begin
-            $display("FAIL: outputs were not cleared after reset reassertion");
-            $finish;
+            $fatal(1, "FAIL: outputs were not cleared after reset reassertion");
         end
 
         // Release reset again and verify the crossbar can operate normally.
@@ -106,8 +102,7 @@ module tb_xbar_reset;
         if (out_valid[1] !== 1'b1 ||
             in_ready[3] !== 1'b1 ||
             out_data[1] !== 32'hBEEF_0002) begin
-            $display("FAIL: traffic did not recover after second reset");
-            $finish;
+            $fatal(1, "FAIL: traffic did not recover after second reset");
         end
 
         $display("TB RESULT: PASS - reset quiescence, reset-time traffic suppression, post-reset recovery and repeated reset behavior checks passed.");
