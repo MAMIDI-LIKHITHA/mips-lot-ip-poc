@@ -8,6 +8,7 @@ vlog -sv \
   rtl/interconnect/lot_txn_router.sv \
   rtl/interconnect/lot_rsp_router.sv \
   rtl/mips_if/mips_mmio_adapter_candidate.sv \
+  rtl/endpoints/lot_endpoint_adapter.sv \
   tb/tb_xbar_4x4.sv \
   tb/tb_lot_txn_router.sv \
   tb/tb_lot_rsp_router.sv \
