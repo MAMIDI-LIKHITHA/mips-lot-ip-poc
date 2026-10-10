@@ -1,7 +1,3 @@
-# Keep the simulator alive when a testbench calls $finish so the
-# remaining testbenches in this regression can execute.
-onfinish stop
-
 if {![file exists work]} {
   vlib work
 }
@@ -18,18 +14,22 @@ vlog -sv \
   tb/tb_end_to_end_candidate.sv
 
 vsim work.tb_xbar_4x4
+onfinish stop
 run -all
 quit -sim
 
 vsim work.tb_lot_txn_router
+onfinish stop
 run -all
 quit -sim
 
 vsim work.tb_lot_rsp_router
+onfinish stop
 run -all
 quit -sim
 
 vsim work.tb_end_to_end_candidate
+onfinish stop
 run -all
 quit -sim
 
