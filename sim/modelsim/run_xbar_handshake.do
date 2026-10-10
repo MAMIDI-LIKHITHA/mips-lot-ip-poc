@@ -14,6 +14,9 @@ transcript on
 onerror {quit -code 1}
 onbreak {quit -code 1}
 
+# Unload any design left from a previous manual simulation before rebuilding work.
+catch {quit -sim}
+
 if {[file exists work]} {
     if {[catch {vdel -lib work -all} err]} {
         puts "ERROR: Could not remove existing work library: $err"
