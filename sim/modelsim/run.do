@@ -2,9 +2,9 @@
 # Run from the repository root:
 #   do sim/modelsim/run.do
 #
-# This runs seven crossbar tests plus the transaction router, response router,
-# and end-to-end candidate integration test. It is a simulation-only regression;
-# it does not claim FPGA hardware, synthesis, or timing validation.
+# Runs seven crossbar tests plus the transaction router, response router,
+# and end-to-end integration test. Simulation-only: no FPGA hardware,
+# synthesis, or timing-closure claims.
 
 transcript on
 onerror {quit -code 1}
@@ -15,12 +15,12 @@ catch {quit -sim}
 # Reuse the work library if present; create it only when absent.
 if {![file exists work]} {
     if {[catch {vlib work} err]} {
-        puts "ERROR: Could not create work library: $err"
+        puts "REGRESSION RESULT: FAIL - could not create work library: $err"
         quit -code 1
     }
 }
 if {[catch {vmap work work} err]} {
-    puts "ERROR: Could not map work library: $err"
+    puts "REGRESSION RESULT: FAIL - could not map work library: $err"
     quit -code 1
 }
 
@@ -62,20 +62,65 @@ set testbenches {
     tb_end_to_end_candidate
 }
 
+set passed 0
+set failed 0
+
 foreach tb $testbenches {
+    set log_file "sim/modelsim/regression_${tb}.log"
     puts "\n========== RUNNING $tb =========="
+
+    # Capture this test alone so a prior PASS cannot hide a later failure.
+    catch {transcript file -close}
+    catch {file delete -force $log_file}
+    transcript file $log_file
+
     if {[catch {vsim -onfinish stop -voptargs=+acc work.$tb} err]} {
+        catch {transcript file -close}
         puts "REGRESSION RESULT: FAIL - could not load $tb"
         puts $err
         quit -code 1
     }
     if {[catch {run -all} err]} {
-        puts "REGRESSION RESULT: FAIL - simulation failed in $tb"
+        catch {transcript file -close}
+        puts "REGRESSION RESULT: FAIL - simulation error in $tb"
         puts $err
         quit -code 1
     }
+
+    # Close the transcript before reading the test-specific log.
+    catch {transcript file -close}
+    if {![file exists $log_file]} {
+        puts "REGRESSION RESULT: FAIL - no transcript generated for $tb"
+        quit -code 1
+    }
+
+    set fp [open $log_file r]
+    set output [read $fp]
+    close $fp
+
+    if {![string match "*TB RESULT: PASS*" $output]} {
+        incr failed
+        puts "FAIL: $tb did not emit the required 'TB RESULT: PASS' marker."
+        puts "See $log_file for the test transcript."
+        quit -code 1
+    }
+
+    incr passed
+    puts "PASS: $tb"
     quit -sim
 }
 
-puts "\nREGRESSION RESULT: SCRIPT COMPLETED - all 10 testbenches executed."
+puts "\n=============================================="
+puts "REGRESSION SUMMARY: $passed passed, $failed failed"
+if {$failed == 0 && $passed == [llength $testbenches]} {
+    puts "REGRESSION RESULT: PASS"
+} else {
+    puts "REGRESSION RESULT: FAIL"
+}
+puts "Per-test transcripts: sim/modelsim/regression_<testbench>.log"
+puts "=============================================="
+
+if {$failed != 0 || $passed != [llength $testbenches]} {
+    quit -code 1
+}
 quit -f
