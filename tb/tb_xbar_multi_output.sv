@@ -68,7 +68,8 @@ module tb_xbar_multi_output;
         if (in_ready !== 4'b1111)
             $fatal(1, "FAIL: expected all four inputs ready");
 
-        if (out_data[0] !== 32'hA000_0000 ||
+        if (out_data[2] !== 32'hA222_2222 ||
+            out_data[0] !== 32'hA000_0000 ||
             out_data[1] !== 32'hA111_1111 ||
             out_data[2] !== 32'hA222_2222 ||
             out_data[3] !== 32'hA333_3333)
@@ -101,7 +102,7 @@ module tb_xbar_multi_output;
             out_valid[1] !== 1'b1 ||
             out_valid[2] !== 1'b0 ||
             out_valid[3] !== 1'b1)
-            $fatal(1, "FAIL: independent outputs were not preserved under partial backpressure");
+            $fatal(1, "FAIL: VALID/data was not preserved under partial backpressure");
 
         if (in_ready[0] !== 1'b1 ||
             in_ready[1] !== 1'b1 ||
