@@ -1,3 +1,7 @@
+# Keep the simulator alive when a testbench calls $finish so the
+# remaining testbenches in this regression can execute.
+onfinish stop
+
 if {![file exists work]} {
   vlib work
 }
