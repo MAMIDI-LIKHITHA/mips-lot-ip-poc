@@ -66,8 +66,7 @@ module tb_xbar_coverage;
             if (out_valid[dst] !== 1'b1 ||
                 out_data[dst] !== data ||
                 in_ready[src] !== 1'b1) begin
-                $error("TB: route failed src=%0d dst=%0d", src, dst);
-                $finish;
+                $fatal(1, "TB: route failed src=%0d dst=%0d", src, dst);
             end
         end
     endtask
@@ -84,8 +83,7 @@ module tb_xbar_coverage;
         // coverage tracker can record the reset-asserted bin.
         #7;
         if (in_ready !== '0 || out_valid !== '0 || out_data !== '0) begin
-            $error("TB: reset did not quiesce crossbar");
-            $finish;
+            $fatal(1, "TB: reset did not quiesce crossbar");
         end
 
         rst_n = 1'b1;
@@ -121,8 +119,7 @@ module tb_xbar_coverage;
         #10;
         if (out_valid[3] !== 1'b1 ||
             (in_ready[0] + in_ready[1]) !== 1) begin
-            $error("TB: contention scenario failed");
-            $finish;
+            $fatal(1, "TB: contention scenario failed");
         end
 
         // Four-way simultaneous traffic.
@@ -138,16 +135,14 @@ module tb_xbar_coverage;
         out_ready = 4'b1111;
         #10;
         if (out_valid !== 4'b1111) begin
-            $error("TB: multi-output scenario failed");
-            $finish;
+            $fatal(1, "TB: multi-output scenario failed");
         end
 
         // Partial backpressure.
         out_ready = 4'b1011;
         #10;
         if (out_valid[2] !== 1'b1 || in_ready[2] !== 1'b0) begin
-            $error("TB: partial backpressure scenario failed: VALID should stay high while READY is low");
-            $finish;
+            $fatal(1, "TB: partial backpressure scenario failed: VALID should stay high while READY is low");
         end
 
         // Return to idle and cover reset again.
@@ -156,8 +151,7 @@ module tb_xbar_coverage;
         rst_n = 1'b0;
         #7;
         if (in_ready !== '0 || out_valid !== '0 || out_data !== '0) begin
-            $error("TB: reset recovery check failed");
-            $finish;
+            $fatal(1, "TB: reset recovery check failed");
         end
 
         cov.report();
