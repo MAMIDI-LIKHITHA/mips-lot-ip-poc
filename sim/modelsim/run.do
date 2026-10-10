@@ -8,9 +8,11 @@ vlog -sv \
   rtl/interconnect/lot_rsp_router.sv \
   rtl/mips_if/mips_mmio_adapter_candidate.sv \
   tb/tb_xbar_4x4.sv \
+  tb/tb_lot_txn_router.sv \
   tb/tb_lot_rsp_router.sv \
   tb/tb_end_to_end_candidate.sv
 
 vsim -c tb_xbar_4x4 -do "run -all; quit -f"
+vsim -c tb_lot_txn_router -do "run -all; quit -f"
 vsim -c tb_lot_rsp_router -do "run -all; quit -f"
 vsim -c tb_end_to_end_candidate -do "run -all; quit -f"
