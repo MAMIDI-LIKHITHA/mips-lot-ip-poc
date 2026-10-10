@@ -145,8 +145,8 @@ module tb_xbar_coverage;
         // Partial backpressure.
         out_ready = 4'b1011;
         #10;
-        if (out_valid[2] !== 1'b0 || in_ready[2] !== 1'b0) begin
-            $error("TB: partial backpressure scenario failed");
+        if (out_valid[2] !== 1'b1 || in_ready[2] !== 1'b0) begin
+            $error("TB: partial backpressure scenario failed: VALID should stay high while READY is low");
             $finish;
         end
 
