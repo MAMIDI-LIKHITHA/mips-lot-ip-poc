@@ -13,6 +13,13 @@ These drawings are intended as a quick engineering overview for reviewers who pr
 
 See [existing-IP research notes](docs/research/existing-interconnect-and-connectivity-ip.md) for traceable vendor/project sources and open selection questions.
 
+Additional engineering drawings:
+
+- [LOT transaction lifecycle](docs/images/lot-transaction-lifecycle.svg) — conceptual request/response path and ready/valid handshake reminder; not a cycle-accurate timing diagram.
+- [Reusable interconnect IP evaluation scorecard](docs/images/interconnect-ip-evaluation-scorecard.svg) — requirements checklist for comparing candidate IP without inventing scores before the target bus is known.
+- [LOT / Silicon Labs / Matter boundary](docs/images/lot-silicon-labs-matter-boundary.svg) — distinguishes the on-chip interconnect from external connectivity and shows SoC/NCP as alternative device modes.
+
+
 ## Architecture
 
 ```text
