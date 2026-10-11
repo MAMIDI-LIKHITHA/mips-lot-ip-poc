@@ -96,3 +96,16 @@ results/       Checked-in verification evidence, where available
 ## Engineering boundary
 
 The current evidence supports **functional behavior in simulation only**. It does not establish a finalized CPU interface, network interoperability, synthesis quality, FPGA Fmax, post-implementation latency, resource utilization, power, or production readiness.
+
+
+## Research and architecture decision notes
+
+The following documents record the current architecture hypothesis and source-linked research. They distinguish confirmed documentation/repository evidence from inference and open checks.
+
+- [LOT research brief and recommended architecture hypothesis](docs/lot-research-brief.md)
+- [Silicon Labs host-interface research](docs/silicon-labs-host-interface-research.md)
+- [Interconnect and crossbar options](docs/interconnect-options.md)
+
+**Current working hypothesis, not a frozen design:** MIPS core/bus → CPU-side adapter → LOT transaction router/crossbar → a compatible memory-mapped SPI controller (reuse if present) → SiWx917 NCP, if that device family is selected. First inspect the actual MIPS subsystem and existing peripherals. The EFR32-host examples demonstrate a host/NCP pattern, not a direct MIPS integration. Exact hardware, bus protocol, SDK configuration, pins and interface limits remain to be confirmed.
+
+The new notes are research artifacts only; they do not change RTL or expand the current verification claims.
