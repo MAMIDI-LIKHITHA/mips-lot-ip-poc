@@ -343,7 +343,10 @@ module tb_end_to_end_candidate;
         $display("[7] Invalid endpoint register");
         cpu_read(32'h0002_0010, 32'h0000_0000, 1'b1);
 
-        $display("[8] Response backpressure stability");
+        $display("[8] Unmapped destination returns an error instead of stalling");
+        cpu_read(32'h0004_0000, 32'h0000_0000, 1'b1);
+
+        $display("[9] Response backpressure stability");
         cpu_read_with_backpressure(32'h0002_0008, 32'h0000_0001);
 
         $display("TB RESULT: PASS - CPU requests traversed the MIPS candidate adapter, LOT transaction router, request XBAR, endpoint register adapter, response XBAR and LOT response router; register access, error propagation and response backpressure were verified.");
