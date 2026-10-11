@@ -349,7 +349,7 @@ module tb_end_to_end_candidate;
         $display("[9] Response backpressure stability");
         cpu_read_with_backpressure(32'h0002_0008, 32'h0000_0001);
 
-        $display("TB RESULT: PASS - CPU requests traversed the MIPS candidate adapter, LOT transaction router, request XBAR, endpoint register adapter, response XBAR and LOT response router; register access, error propagation and response backpressure were verified.");
+        $display("TB RESULT: PASS - CPU requests traversed the MIPS candidate adapter, LOT transaction router, request XBAR, endpoint register adapter, response XBAR and LOT response router; register access, invalid-register and unmapped-address error responses, and response backpressure were verified.");
 
         $stop;
     end
