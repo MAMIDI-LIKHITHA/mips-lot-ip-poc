@@ -4,14 +4,26 @@ A simulation-focused RTL proof of concept exploring an insertable **LAN of Thing
 
 > **Scope:** This repository demonstrates functional RTL behavior in simulation. It is not a production-ready IP block. FPGA/ASIC synthesis, place-and-route, timing closure, resource measurement, and hardware validation have not yet been performed.
 
-## Visual architecture drawings
+## Visual overview for architecture review
 
-These drawings are intended as a quick engineering overview for reviewers who prefer block diagrams to source code:
+Start here if you prefer block diagrams before reading RTL. **Solid blocks indicate the current simulation POC; dashed blocks or TBD labels indicate proposed or unselected integration.** These are conceptual/architecture drawings, not a cycle-accurate timing specification.
 
-- [Current LOT RTL POC architecture](docs/images/lot-poc-current-architecture.svg) — solid blocks are present in the simulation POC; dashed blocks are future options, not integrated.
-- [LOT connectivity research and selection map](docs/images/lot-connectivity-research-map.svg) — separates the on-chip interconnect question from external network connectivity and identifies candidates for evaluation.
+| Diagram | What it answers |
+|---|---|
+| [1. Current LOT RTL POC architecture](docs/images/lot-poc-current-architecture.svg) | What is currently present in simulation versus future integration? |
+| [2. LOT transaction lifecycle](docs/images/lot-transaction-lifecycle.svg) | How does a request travel to an endpoint and how does the response return? |
+| [3. Connectivity research and selection map](docs/images/lot-connectivity-research-map.svg) | Which problem is the on-chip interconnect, and which is external networking? |
+| [4. Reusable interconnect evaluation scorecard](docs/images/interconnect-ip-evaluation-scorecard.svg) | What evidence is needed before choosing or reusing an interconnect? |
+| [5. Silicon Labs / Matter integration boundary](docs/images/lot-silicon-labs-matter-boundary.svg) | Where would the host interface end and the external connectivity device/network begin? |
 
-See [existing-IP research notes](docs/research/existing-interconnect-and-connectivity-ip.md) for traceable vendor/project sources and open selection questions.
+### Decision status at a glance
+
+- **Implemented and simulated:** custom LOT request router, 4×4 ready/valid crossbar, behavioral endpoints, response router, and a candidate single-outstanding MMIO path in the testbench.
+- **Not yet selected:** actual MIPS core/native bus, reusable production interconnect, Silicon Labs part and SoC/NCP mode, host interface, and network stack ownership.
+- **Do not conflate:** Matter/Thread/Wi-Fi/BLE are not substitutes for an on-chip bus crossbar. An NCP requires a defined host interface and matching controller/driver.
+- **Current recommendation:** inspect the real MIPS subsystem and its existing peripherals first; compare only interface-compatible IP, and reuse a compatible memory-mapped SPI controller if one is already available for a selected NCP design. This is a working hypothesis, not an approved design.
+
+See the [LOT research brief](docs/lot-research-brief.md), [source-linked interconnect and connectivity IP shortlist](docs/research/existing-interconnect-and-connectivity-ip.md), [Silicon Labs host-interface notes](docs/silicon-labs-host-interface-research.md), [interconnect options](docs/interconnect-options.md), [MIPS bus compatibility matrix](docs/mips-bus-compatibility-matrix.md), [signal-level interface map](docs/lot-signal-level-interface-map.md), and [end-to-end integration trace](docs/lot-end-to-end-integration-trace.md) for details, evidence, and unresolved questions.
 
 ## Architecture
 
@@ -95,29 +107,17 @@ results/       Checked-in verification evidence, where available
 
 ## Open engineering questions
 
-1. **Freeze the CPU interface:** choose the target MIPS core and bus protocol; define address decoding, transaction semantics, and error behavior.
-2. **Specify endpoint contracts:** document the register map, reset values, access permissions, and unmapped-address behavior.
-3. **Define network integration:** determine how LOT transactions should map to Thread, Wi-Fi, BLE, or Ethernet-connected endpoints. These technologies are not implemented by this POC.
-4. **Expand verification:** add requirements-driven corner cases and tool-compatible assertion checks; document simulator limitations for concurrent SystemVerilog assertions.
-5. **Measure implementation results:** after selecting a target device and implementation flow, run synthesis and implementation to obtain timing and resource data.
-6. **Validate on hardware:** make hardware-operation claims only after implementation and board-level testing.
+1. **Identify the actual MIPS subsystem and bus:** record core/version, native protocol, widths, request/response semantics, clock/reset, address map, and available peripherals.
+2. **Freeze the LOT contract:** specify address decoding, request acceptance, response association, read/write semantics, byte enables, error behavior, reset cancellation, and outstanding-transaction policy.
+3. **Compare existing interconnect IP against requirements:** document supported interface variants, features, upstream verification, maintenance, integration dependencies, and the exact license/commercial terms. Do not select a candidate until the host interface is known.
+4. **Check the SPI path:** determine whether the target subsystem already contains a compatible memory-mapped SPI controller and driver before considering a custom LOT-to-serial bridge.
+5. **Confirm external connectivity:** select the Silicon Labs part and SoC/NCP mode, host protocol, exact SDK/board configuration, and ownership of the Matter/Thread/network stack.
+6. **Close integration and verification gaps:** especially unmapped-destination response behavior and dynamic response-source association if multiple initiators are intended.
+7. **Measure implementation results:** after selecting a target device and implementation flow, run synthesis and implementation to obtain timing and resource data.
+8. **Validate on hardware:** make hardware-operation claims only after implementation and board-level testing.
 
 ## Engineering boundary
 
 The current evidence supports **functional behavior in simulation only**. It does not establish a finalized CPU interface, network interoperability, synthesis quality, FPGA Fmax, post-implementation latency, resource utilization, power, or production readiness.
 
-
-## Research and architecture decision notes
-
-The following documents record the current architecture hypothesis and source-linked research. They distinguish confirmed documentation/repository evidence from inference and open checks.
-
-- [LOT research brief and recommended architecture hypothesis](docs/lot-research-brief.md)
-- [Silicon Labs host-interface research](docs/silicon-labs-host-interface-research.md)
-- [Interconnect and crossbar options](docs/interconnect-options.md)
-- [MIPS bus compatibility and adapter decision matrix](docs/mips-bus-compatibility-matrix.md)
-- [LOT signal-level interface map and integration gaps](docs/lot-signal-level-interface-map.md)
-- [LOT end-to-end integration trace and follow-up checks](docs/lot-end-to-end-integration-trace.md)
-
-**Current working hypothesis, not a frozen design:** MIPS core/bus → CPU-side adapter → LOT transaction router/crossbar → a compatible memory-mapped SPI controller (reuse if present) → SiWx917 NCP, if that device family is selected. First inspect the actual MIPS subsystem and existing peripherals. The EFR32-host examples demonstrate a host/NCP pattern, not a direct MIPS integration. Exact hardware, bus protocol, SDK configuration, pins and interface limits remain to be confirmed.
-
-The new notes are research artifacts only; they do not change RTL or expand the current verification claims.
+The research documents are evidence-gathering artifacts, not approval of a final architecture. Record vendor answers and the eventual decision with dates and supporting sources before integrating third-party IP.
