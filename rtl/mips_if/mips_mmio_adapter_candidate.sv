@@ -71,7 +71,7 @@ module mips_mmio_adapter_candidate #(
     // One outstanding request at a time.
     // Keep VALID independent of READY to avoid a combinational handshake loop
     // through the request crossbar: VALID -> XBAR request -> grant -> READY.
-    assign req_ready = !busy && lot_ready && addr_valid && rst_n;
+    assign req_ready = !busy && rst_n && (!addr_valid || lot_ready);
     assign lot_valid = req_valid && !busy && addr_valid && rst_n;
     assign lot_dst = decode_dst(req_addr);
 
@@ -97,6 +97,15 @@ module mips_mmio_adapter_candidate #(
             response_data <= '0;
             response_error <= 1'b0;
         end else begin
+            // Unmapped addresses complete locally with an error response instead
+            // of stalling the CPU forever. No LOT request is issued in this case.
+            if (req_valid && req_ready && !addr_valid) begin
+                busy <= 1'b1;
+                response_valid <= 1'b1;
+                response_data <= '0;
+                response_error <= 1'b1;
+            end
+
             if (lot_valid && lot_ready) begin
                 busy <= 1'b1;
                 response_valid <= 1'b0;
