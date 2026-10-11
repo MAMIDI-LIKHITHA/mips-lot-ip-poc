@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+<title id="title">Current LOT RTL proof-of-concept architecture</title>
+<desc id="desc">Solid boxes show blocks present in the simulation POC. Dashed outline shows the unselected future external connectivity integration.</desc>
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#344054"/></marker>
+  <style>
+    .heading{font:700 27px Arial,sans-serif;fill:#101828}.sub{font:16px Arial,sans-serif;fill:#475467}
+    .box{fill:#f8fafc;stroke:#344054;stroke-width:2;rx:14}.focus{fill:#e8f1ff;stroke:#175cd3;stroke-width:2.5;rx:14}
+    .endpoint{fill:#ecfdf3;stroke:#027a48;stroke-width:2;rx:12}.future{fill:#fff7e6;stroke:#b54708;stroke-width:2;stroke-dasharray:8 6;rx:14}
+    .label{font:700 18px Arial,sans-serif;fill:#101828;text-anchor:middle}.small{font:14px Arial,sans-serif;fill:#344054;text-anchor:middle}
+    .arrow{stroke:#344054;stroke-width:2.4;fill:none;marker-end:url(#arrow)}.dasharrow{stroke:#b54708;stroke-width:2.4;stroke-dasharray:8 6;fill:none;marker-end:url(#arrow)}
+  </style>
+</defs>
+<rect width="1200" height="760" fill="#ffffff"/>
+<text x="56" y="54" class="heading">LOT RTL POC — what exists today</text>
+<text x="56" y="83" class="sub">Simulation architecture from this repository; not a finalized product architecture</text>
+<rect x="390" y="115" width="420" height="70" class="box"/>
+<text x="600" y="143" class="label">Candidate CPU-side MMIO adapter</text><text x="600" y="166" class="small">Simple request → LOT payload (write, address, data)</text>
+<path d="M600 185 V222" class="arrow"/>
+<rect x="390" y="222" width="420" height="64" class="box"/>
+<text x="600" y="249" class="label">LOT transaction router</text><text x="600" y="270" class="small">Address / destination selection</text>
+<path d="M600 286 V323" class="arrow"/>
+<rect x="300" y="323" width="600" height="80" class="focus"/>
+<text x="600" y="354" class="label">4 × 4 ready/valid crossbar</text><text x="600" y="379" class="small">Round-robin arbitration per output • current POC implementation</text>
+<path d="M600 403 V427 H180 V450 M600 427 H420 V450 M600 427 H680 V450 M600 427 H940 V450" class="arrow"/>
+<rect x="80" y="450" width="200" height="68" class="endpoint"/><text x="180" y="478" class="label">CONTROL</text><text x="180" y="499" class="small">behavioral endpoint</text>
+<rect x="320" y="450" width="200" height="68" class="endpoint"/><text x="420" y="478" class="label">DATA</text><text x="420" y="499" class="small">behavioral endpoint</text>
+<rect x="580" y="450" width="200" height="68" class="endpoint"/><text x="680" y="478" class="label">STATUS</text><text x="680" y="499" class="small">behavioral endpoint</text>
+<rect x="840" y="450" width="200" height="68" class="endpoint"/><text x="940" y="478" class="label">ID</text><text x="940" y="499" class="small">behavioral endpoint</text>
+<path d="M180 518 V548 H600 M420 518 V548 M680 518 V548 M940 518 V548 H600 V570" class="arrow"/>
+<rect x="390" y="570" width="420" height="62" class="box"/><text x="600" y="596" class="label">LOT response router</text><text x="600" y="617" class="small">Returns response to candidate adapter</text>
+<path d="M600 632 V655" class="arrow"/>
+<rect x="390" y="655" width="420" height="54" class="box"/><text x="600" y="687" class="label">Candidate CPU-side adapter</text>
+<rect x="845" y="116" width="300" height="185" class="future"/>
+<text x="995" y="146" class="label">Not integrated / TBD</text>
+<text x="995" y="178" class="small">Target MIPS core and native bus</text>
+<text x="995" y="204" class="small">Reusable interconnect IP selection</text>
+<text x="995" y="230" class="small">Silicon Labs connectivity device</text>
+<text x="995" y="256" class="small">Matter / Thread / Wi-Fi / BLE</text>
+<text x="995" y="280" class="small">Physical hardware path</text>
+<path d="M810 150 H845" class="dasharrow"/>
+<text x="56" y="738" class="sub">Solid = present in simulation POC   •   Dashed = future option, not a demonstrated connection</text>
+</svg>

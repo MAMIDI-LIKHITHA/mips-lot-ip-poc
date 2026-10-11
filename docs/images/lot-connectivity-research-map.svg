@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-labelledby="title desc">
+<title id="title">LOT connectivity layer: decision path</title>
+<desc id="desc">A decision drawing separating the internal on-chip interconnect from external connectivity and listing research candidates that require interface and license checks.</desc>
+<defs><marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#344054"/></marker><style>
+.h{font:700 27px Arial,sans-serif;fill:#101828}.sub{font:16px Arial,sans-serif;fill:#475467}.box{stroke:#344054;stroke-width:2;rx:14;fill:#f8fafc}.blue{stroke:#175cd3;stroke-width:2.5;fill:#e8f1ff;rx:14}.green{stroke:#027a48;stroke-width:2;fill:#ecfdf3;rx:14}.amber{stroke:#b54708;stroke-width:2;stroke-dasharray:8 6;fill:#fff7e6;rx:14}.label{font:700 18px Arial,sans-serif;fill:#101828;text-anchor:middle}.txt{font:14px Arial,sans-serif;fill:#344054;text-anchor:middle}.arrow{stroke:#344054;stroke-width:2.4;fill:none;marker-end:url(#arr)}
+</style></defs>
+<rect width="1200" height="700" fill="#fff"/>
+<text x="54" y="52" class="h">LOT connectivity layer — research &amp; selection path</text>
+<text x="54" y="80" class="sub">Conceptual decision drawing; not a selected implementation or validated system design</text>
+<rect x="55" y="125" width="230" height="105" class="box"/><text x="170" y="158" class="label">Host / CPU</text><text x="170" y="184" class="txt">MIPS core target TBD</text><text x="170" y="205" class="txt">Native bus must be identified</text>
+<path d="M285 177 H330" class="arrow"/>
+<rect x="330" y="125" width="245" height="105" class="blue"/><text x="452" y="158" class="label">Adapter / bridge</text><text x="452" y="184" class="txt">Only if bus / protocol mismatch</text><text x="452" y="205" class="txt">Define transaction + error contract</text>
+<path d="M575 177 H620" class="arrow"/>
+<rect x="620" y="125" width="245" height="105" class="blue"/><text x="742" y="158" class="label">Reusable interconnect</text><text x="742" y="184" class="txt">Address routing + response return</text><text x="742" y="205" class="txt">Arbitration / IDs / errors</text>
+<path d="M865 177 H910" class="arrow"/>
+<rect x="910" y="125" width="235" height="105" class="green"/><text x="1027" y="158" class="label">Device / endpoint</text><text x="1027" y="184" class="txt">M2M transaction target</text><text x="1027" y="205" class="txt">Register / command interface TBD</text>
+<path d="M742 230 V278" class="arrow"/>
+<rect x="535" y="278" width="415" height="80" class="amber"/><text x="742" y="307" class="label">External network connectivity (separate layer)</text><text x="742" y="332" class="txt">Wi-Fi / Thread / Ethernet; BLE may support commissioning</text>
+<text x="55" y="415" class="h" style="font-size:22px">Candidates to compare — not yet approved</text>
+<rect x="55" y="440" width="335" height="145" class="box"/><text x="222" y="471" class="label">Arm CoreLink NIC-400</text><text x="222" y="498" class="txt">Commercial AMBA interconnect IP</text><text x="222" y="521" class="txt">AXI / AHB-Lite / APB support</text><text x="222" y="544" class="txt">Confirm access terms, target bus, fit</text><text x="222" y="565" class="txt">arm.com/products/silicon-ip-system/corelink-interconnect/nic</text>
+<rect x="432" y="440" width="335" height="145" class="box"/><text x="599" y="471" class="label">PULP Platform AXI</text><text x="599" y="498" class="txt">Open-source AXI interconnect</text><text x="599" y="521" class="txt">Review interface fit + license</text><text x="599" y="544" class="txt">Not a drop-in for arbitrary MIPS bus</text><text x="599" y="565" class="txt">github.com/pulp-platform/axi</text>
+<rect x="809" y="440" width="336" height="145" class="box"/><text x="977" y="471" class="label">Silicon Labs + Matter</text><text x="977" y="498" class="txt">Connectivity device / SDK / host interface</text><text x="977" y="521" class="txt">Not an on-chip crossbar substitute</text><text x="977" y="544" class="txt">Confirm NCP vs SoC and SPI / host model</text><text x="977" y="565" class="txt">docs.silabs.com/matter/latest/</text>
+<text x="55" y="632" class="sub">Selection gates: native bus compatibility • transaction semantics • latency/backpressure • response IDs/errors • configurability</text>
+<text x="55" y="655" class="sub">license/access • integration effort • verified tests • availability of vendor documentation/support</text>
+<text x="55" y="680" class="sub">QRPD principle: reuse the best-fit existing IP; adapt only where a documented gap remains.</text>
+</svg>
