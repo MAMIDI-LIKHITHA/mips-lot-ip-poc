@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="t d">
+<title id="t">LOT transaction lifecycle</title><desc id="d">Conceptual request and response flow from a CPU-side adapter through LOT routing, a crossbar, an endpoint, and the response path. Handshakes are shown, not cycle-accurate timing.</desc>
+<defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#344054"/></marker><style>
+.h{font:700 27px Arial;fill:#101828}.sub{font:16px Arial;fill:#475467}.b{fill:#f8fafc;stroke:#344054;stroke-width:2;rx:12}.bl{fill:#e8f1ff;stroke:#175cd3;stroke-width:2;rx:12}.g{fill:#ecfdf3;stroke:#027a48;stroke-width:2;rx:12}.l{font:700 17px Arial;fill:#101828;text-anchor:middle}.s{font:14px Arial;fill:#344054;text-anchor:middle}.ar{stroke:#344054;stroke-width:2.4;fill:none;marker-end:url(#a)}.arr{stroke:#175cd3;stroke-width:3;fill:none;marker-end:url(#a)}.ret{stroke:#027a48;stroke-width:3;fill:none;marker-end:url(#a)}
+</style></defs><rect width="1200" height="720" fill="#fff"/>
+<text x="52" y="52" class="h">How a LOT transaction moves through the POC</text><text x="52" y="81" class="sub">Conceptual sequence • illustrates the request/response path, not a cycle-by-cycle timing diagram</text>
+<rect x="60" y="140" width="220" height="90" class="b"/><text x="170" y="173" class="l">CPU-side adapter</text><text x="170" y="197" class="s">Request + response interface</text>
+<rect x="350" y="140" width="220" height="90" class="b"/><text x="460" y="173" class="l">LOT router</text><text x="460" y="197" class="s">Decode destination</text>
+<rect x="640" y="140" width="220" height="90" class="bl"/><text x="750" y="173" class="l">Crossbar</text><text x="750" y="197" class="s">Arbitration + forwarding</text>
+<rect x="930" y="140" width="220" height="90" class="g"/><text x="1040" y="173" class="l">Endpoint</text><text x="1040" y="197" class="s">Execute register operation</text>
+<path d="M280 185 H350" class="arr"/><path d="M570 185 H640" class="arr"/><path d="M860 185 H930" class="arr"/>
+<text x="315" y="126" class="s">Request</text><text x="605" y="126" class="s">Request</text><text x="895" y="126" class="s">Request</text>
+<path d="M1040 230 V310 H750 V350" class="ret"/><text x="895" y="295" class="s">Endpoint response</text>
+<rect x="640" y="350" width="220" height="84" class="g"/><text x="750" y="382" class="l">Response router</text><text x="750" y="406" class="s">Return to request source</text>
+<path d="M640 392 H460 V465" class="ret"/>
+<rect x="350" y="465" width="220" height="84" class="b"/><text x="460" y="497" class="l">CPU-side adapter</text><text x="460" y="521" class="s">Present response to host</text>
+<path d="M350 507 H170 V230" class="ret"/>
+<rect x="60" y="590" width="1090" height="70" fill="#fff7e6" stroke="#b54708" stroke-width="2" stroke-dasharray="8 6" rx="12"/>
+<text x="605" y="618" class="l">Handshake rules to verify</text><text x="605" y="642" class="s">A transfer occurs when valid and ready are both asserted; data/control must remain stable while stalled.</text>
+<text x="52" y="696" class="sub">The diagram abstracts away signal names and latency; consult the RTL and testbench for exact implemented behavior.</text></svg>
