@@ -105,6 +105,7 @@ The following documents record the current architecture hypothesis and source-li
 - [LOT research brief and recommended architecture hypothesis](docs/lot-research-brief.md)
 - [Silicon Labs host-interface research](docs/silicon-labs-host-interface-research.md)
 - [Interconnect and crossbar options](docs/interconnect-options.md)
+- [MIPS bus compatibility and adapter decision matrix](docs/mips-bus-compatibility-matrix.md)
 
 **Current working hypothesis, not a frozen design:** MIPS core/bus → CPU-side adapter → LOT transaction router/crossbar → a compatible memory-mapped SPI controller (reuse if present) → SiWx917 NCP, if that device family is selected. First inspect the actual MIPS subsystem and existing peripherals. The EFR32-host examples demonstrate a host/NCP pattern, not a direct MIPS integration. Exact hardware, bus protocol, SDK configuration, pins and interface limits remain to be confirmed.
 
