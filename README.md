@@ -4,6 +4,15 @@ A simulation-focused RTL proof of concept exploring an insertable **LAN of Thing
 
 > **Scope:** This repository demonstrates functional RTL behavior in simulation. It is not a production-ready IP block. FPGA/ASIC synthesis, place-and-route, timing closure, resource measurement, and hardware validation have not yet been performed.
 
+## Visual architecture drawings
+
+These drawings are intended as a quick engineering overview for reviewers who prefer block diagrams to source code:
+
+- [Current LOT RTL POC architecture](docs/images/lot-poc-current-architecture.svg) — solid blocks are present in the simulation POC; dashed blocks are future options, not integrated.
+- [LOT connectivity research and selection map](docs/images/lot-connectivity-research-map.svg) — separates the on-chip interconnect question from external network connectivity and identifies candidates for evaluation.
+
+See [existing-IP research notes](docs/research/existing-interconnect-and-connectivity-ip.md) for traceable vendor/project sources and open selection questions.
+
 ## Architecture
 
 ```text
