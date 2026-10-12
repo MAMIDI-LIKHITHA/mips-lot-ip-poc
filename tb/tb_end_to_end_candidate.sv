@@ -72,8 +72,9 @@ module tb_end_to_end_candidate;
 
     assign lot_req_ready = req_src_ready[0];
 
-    // All request destinations are available. Endpoint 2 is the active one.
-    assign req_dst_ready = '1;
+    // Unused destinations are ready; endpoint 2 supplies its real ready signal.
+    logic endpoint_req_ready;
+    assign req_dst_ready = {1'b1, endpoint_req_ready, 2'b11};
 
     // Endpoint 2 response returns to source 0, the candidate adapter.
     logic endpoint_rsp_valid;
@@ -164,7 +165,7 @@ module tb_end_to_end_candidate;
         .clk(clk),
         .rst_n(rst_n),
         .req_valid(req_dst_valid[2]),
-        .req_ready(req_dst_ready[2]),
+        .req_ready(endpoint_req_ready),
         .req_payload(req_dst_data[2]),
         .rsp_valid(endpoint_rsp_valid),
         .rsp_ready(endpoint_rsp_ready),
