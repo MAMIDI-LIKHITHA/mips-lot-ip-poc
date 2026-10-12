@@ -48,7 +48,7 @@ module tb_mips_four_endpoint_integration;
     assign req_src_dst[0] = lot_req_dst;
     assign req_src_data[0] = lot_req_payload;
     assign lot_req_ready = req_src_ready[0];
-    assign req_dst_ready = '1;
+    // req_dst_ready is driven by each endpoint's actual req_ready output.
 
     assign rsp_src_valid = ep_rsp_valid;
     assign rsp_src_id = '0;
