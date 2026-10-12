@@ -42,6 +42,7 @@ if {[catch {
       tb/tb_xbar_stress_latency.sv \
       tb/tb_lot_txn_router.sv \
       tb/tb_lot_rsp_router.sv \
+      tb/tb_mips_mmio_adapter_candidate.sv \
       tb/tb_end_to_end_candidate.sv
 } err]} {
     puts "REGRESSION RESULT: FAIL - compilation failed"
