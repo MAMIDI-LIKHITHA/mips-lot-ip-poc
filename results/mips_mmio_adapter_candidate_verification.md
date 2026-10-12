@@ -1,42 +1,57 @@
 # MIPS MMIO Candidate Adapter Verification
 
-## Testbench
+## Environment
 
-- Testbench: tb/tb_mips_mmio_adapter_candidate.sv
-- DUT: rtl/mips_if/mips_mmio_adapter_candidate.sv
 - Simulator: ModelSim Intel FPGA Edition 2021.1
+- Regression script: `sim/modelsim/run.do`
+- DUT: `rtl/mips_if/mips_mmio_adapter_candidate.sv`
+- Adapter testbench: `tb/tb_mips_mmio_adapter_candidate.sv`
 
-## Result
+## Latest reported ModelSim regression — 12 October 2026
 
-**PASS**
+The user ran `do sim/modelsim/run.do` from the repository root in ModelSim. The captured Transcript ended with:
 
-Observed simulation result:
+```text
+REGRESSION SUMMARY: 11 passed, 0 failed
+REGRESSION RESULT: PASS
+```
 
-- Compilation: **0 errors, 0 warnings**
-- Testbench result: **PASS**
-- Simulation completion: **346 ps**
-- Final $stop: expected testbench termination after all checks pass
+All 11 testbenches reported PASS:
 
-## Verified scenarios
+1. `tb_xbar_4x4`
+2. `tb_xbar_backpressure_stability`
+3. `tb_xbar_multi_output`
+4. `tb_xbar_coverage`
+5. `tb_xbar_invalid_dst`
+6. `tb_xbar_reset`
+7. `tb_xbar_stress_latency`
+8. `tb_lot_txn_router`
+9. `tb_lot_rsp_router`
+10. `tb_mips_mmio_adapter_candidate`
+11. `tb_end_to_end_candidate`
+
+The run generated per-test logs under `sim/modelsim/regression_<testbench>.log`. The user checked those logs with `findstr`; each of the 11 logs contained a `TB RESULT: PASS` marker.
+
+## Adapter scenarios reported as verified
+
+The adapter test log reports checks for:
 
 1. Four destination decodes and LOT payload encoding.
 2. LOT-side request backpressure and request-data stability.
 3. Single-outstanding-request enforcement.
 4. CPU-side response backpressure and response/error stability.
-5. Invalid-address suppression.
-6. Reset quiescence and post-reset recovery.
+5. Error handling for unmapped addresses without issuing a LOT transfer.
+6. Reset quiescence and recovery.
 
-The testbench explicitly reports:
+The test log ends with a `TB RESULT: PASS` marker.
 
-> TB RESULT: PASS - candidate MIPS MMIO adapter destination decode, payload encoding, request/response backpressure, single-outstanding behavior, error propagation, invalid-address suppression and reset recovery verified.
+## Scope and limitations
 
-## Scope note
+This is behavioral simulation evidence for the candidate RTL and the testbenches listed above. It does **not** establish:
 
-This is a behavioral simulation result. It does not claim MIPS ISA functionality, timing closure, FPGA resource utilization, or implementation performance.
+- Compatibility with the native bus interface of the actual target MIPS core. That core and its bus specification still need to be confirmed.
+- MIPS ISA functionality or a complete processor implementation.
+- Synthesis success, FPGA resource utilization, timing closure, or hardware validation.
+- Production readiness of the candidate adapter or interconnect.
 
-
-## Follow-up source review — 12 October 2026
-
-A review of the checked-in RTL and testbench found that the original invalid-address test expected `req_ready=0`, while the RTL intentionally accepts an unmapped request locally and generates an error response without issuing a LOT transfer. These expectations conflict. The testbench has been updated to verify local acceptance, no LOT transfer, zero response data, asserted error, and response stability until the CPU-side handshake completes.
-
-**Validation status:** the corrected test has not yet been run in ModelSim in this environment. The historical PASS result above must be treated as pending re-validation until the updated test is executed successfully. No native MIPS bus compatibility, synthesis, timing, or hardware validation is implied.
+The regression result above is based on the ModelSim Transcript and logs supplied from the user's local Windows run. It is not a claim that the run was executed by GitHub Actions.
