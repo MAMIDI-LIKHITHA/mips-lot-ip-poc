@@ -42,7 +42,7 @@ This is a research hypothesis, not a confirmed target design. The current POC us
 | Finding | Evidence / tag |
 |---|---|
 | The current repository implements a simulation-focused candidate MIPS-MMIO → LOT transaction router → 4×4 ready/valid crossbar → behavioral endpoints → response router path. | [Confirmed — repository RTL and README](../README.md) |
-| The latest user-reported ModelSim Intel FPGA Edition 2021.1 regression passed all 10 testbenches; 16/16 routes were exercised in the reported coverage run. | [Confirmed as reported local evidence — README](../README.md). This is not a CI result. |
+| The latest user-reported ModelSim Intel FPGA Edition 2021.1 regression (12 October 2026) passed all 11 testbenches with 0 failures; the saved logs contained PASS markers, and 16/16 crossbar routes were exercised in the coverage test. | [Confirmed as reported local evidence — README](../README.md). This is not a CI result. |
 | Silicon Labs documents an EFR32-host / SiWx91x-NCP setup with SPI and UART connection examples. | [Confirmed — Silicon Labs NCP guide](https://docs.silabs.com/wiseconnect/latest/wiseconnect-getting-started/getting-started-with-ncp-mode-with-efr32) |
 | Arm AMBA describes AXI for high-frequency/high-bandwidth interconnects, AHB for embedded/low-latency use, and APB for low-bandwidth/control peripheral traffic. | [Confirmed — Arm AMBA overview](https://www.arm.com/architecture/system-architectures/amba) |
 | A small memory-mapped SPI controller is the most likely first integration point between LOT and an SPI NCP, provided one exists in the target subsystem. | [Inference — validate against the selected MIPS SoC/RTL and board] |
