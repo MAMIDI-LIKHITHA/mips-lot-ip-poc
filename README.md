@@ -56,7 +56,7 @@ The request fabric uses ready/valid handshakes. Its crossbar is currently combin
 
 ## Verification status
 
-**Latest reported local run:** ModelSim Intel FPGA Edition 2021.1 on `main` — **10 passed, 0 failed**.
+**Historical ModelSim baseline:** ModelSim Intel FPGA Edition 2021.1 on `main` — **10 passed, 0 failed** before the candidate MIPS MMIO adapter test was added to the unified regression. This historical result does not validate the current 11-test regression.
 
 | Verification area | Result |
 |---|---|
@@ -68,7 +68,8 @@ The request fabric uses ready/valid handshakes. Its crossbar is currently combin
 | Multi-output routing and partial backpressure | **PASS** |
 | Reset and invalid-destination behavior | **PASS** |
 | LOT transaction and response routers | **PASS** |
-| End-to-end candidate CPU/LOT/endpoint path | **PASS** |
+| Candidate MIPS MMIO adapter unit test (Icarus Verilog, GitHub Actions) | **PASS** — all six sections; `TB RESULT: PASS` ([workflow run](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38209876697)) |
+| End-to-end candidate CPU/LOT/endpoint path | **PASS in the previously reported ModelSim baseline**; rerun current full regression to reconfirm |
 | Deterministic stress test | **500 cycles; 1,175 accepted and 1,175 delivered transfers** |
 | Synthesis, timing closure, area/resource measurements | **Not performed** |
 | FPGA/ASIC hardware validation | **Not performed** |
@@ -84,15 +85,15 @@ From the repository root in ModelSim Intel FPGA Edition 2021.1, run:
 do sim/modelsim/run.do
 ```
 
-A successful run ends with output similar to:
+A successful run of the current script should end with output similar to:
 
 ```text
-REGRESSION SUMMARY: 10 passed, 0 failed
+REGRESSION SUMMARY: 11 passed, 0 failed
 REGRESSION RESULT: PASS
 Per-test transcripts: sim/modelsim/regression_<testbench>.log
 ```
 
-The regression script compiles the RTL and testbenches, runs all ten testbenches, checks each test-specific transcript for its explicit pass marker, and prints the final summary. Per-test transcripts are generated locally and do not need to be committed. Warning counts can vary with simulator settings; investigate new warnings and any compile or simulation errors rather than relying on the summary alone.
+The current regression script compiles the RTL and testbenches, runs eleven testbenches, checks each test-specific transcript for its explicit pass marker, and prints the final summary. The current full ModelSim regression has **not yet been rerun/confirmed** after adding the candidate adapter test. The GitHub Actions Icarus job validates only the candidate adapter unit test; it is not a substitute for the full ModelSim run. Per-test transcripts are generated locally and do not need to be committed. Warning counts can vary with simulator settings; investigate new warnings and any compile or simulation errors rather than relying on the summary alone.
 
 ## Repository layout
 
