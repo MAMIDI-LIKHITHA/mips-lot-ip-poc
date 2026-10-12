@@ -5,3 +5,6 @@ modelsim_regression.log
 transcript
 work/
 work_old/
+
+# Generated per-test regression logs
+sim/modelsim/regression_*.log
