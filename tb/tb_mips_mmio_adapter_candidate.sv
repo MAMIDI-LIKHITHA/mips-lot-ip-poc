@@ -229,7 +229,7 @@ module tb_mips_mmio_adapter_candidate;
         issue_request(1'b1, 32'h0003_0080, 32'hFACE_CAFE, 2'd3);
         return_response(32'hFACE_CAFE, 1'b0);
 
-        $display("TB RESULT: PASS - candidate MIPS MMIO adapter destination decode, payload encoding, request/response backpressure, single-outstanding behavior, error propagation, invalid-address suppression and reset recovery verified.");
+        $display("TB RESULT: PASS - candidate MIPS MMIO adapter destination decode, payload encoding, request/response backpressure, single-outstanding behavior, error propagation, unmapped-address error response and reset recovery verified.");
         $stop;
     end
 
