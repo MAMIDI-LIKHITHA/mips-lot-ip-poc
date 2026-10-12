@@ -33,3 +33,10 @@ The testbench explicitly reports:
 ## Scope note
 
 This is a behavioral simulation result. It does not claim MIPS ISA functionality, timing closure, FPGA resource utilization, or implementation performance.
+
+
+## Follow-up source review — 12 October 2026
+
+A review of the checked-in RTL and testbench found that the original invalid-address test expected `req_ready=0`, while the RTL intentionally accepts an unmapped request locally and generates an error response without issuing a LOT transfer. These expectations conflict. The testbench has been updated to verify local acceptance, no LOT transfer, zero response data, asserted error, and response stability until the CPU-side handshake completes.
+
+**Validation status:** the corrected test has not yet been run in ModelSim in this environment. The historical PASS result above must be treated as pending re-validation until the updated test is executed successfully. No native MIPS bus compatibility, synthesis, timing, or hardware validation is implied.

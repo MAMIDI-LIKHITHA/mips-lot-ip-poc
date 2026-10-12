@@ -191,16 +191,32 @@ module tb_mips_mmio_adapter_candidate;
         if (rsp_valid)
             $fatal(1, "CPU response did not complete");
 
-        $display("[5] Invalid-address suppression");
+        $display("[5] Unmapped address completes locally with an error");
         req_addr = 32'h8000_0000;
         req_write = 1'b0;
         req_wdata = '0;
         req_valid = 1'b1;
         #1;
-        if (req_ready || lot_valid)
-            $fatal(1, "Invalid address was not suppressed");
-        repeat (2) @(posedge clk);
+        if (!req_ready || lot_valid)
+            $fatal(1, "Unmapped request must be accepted locally without a LOT transfer");
+        @(posedge clk);
+        #1;
         req_valid = 1'b0;
+        wait (rsp_valid);
+        if (!rsp_error || rsp_rdata !== '0)
+            $fatal(1, "Unmapped request must return zero data with error asserted");
+        repeat (2) begin
+            @(posedge clk);
+            #1;
+            if (!rsp_valid || !rsp_error || rsp_rdata !== '0)
+                $fatal(1, "Unmapped-address error response changed under backpressure");
+        end
+        rsp_ready = 1'b1;
+        @(posedge clk);
+        #1;
+        rsp_ready = 1'b0;
+        if (rsp_valid)
+            $fatal(1, "Unmapped-address response did not complete");
 
         $display("[6] Reset quiescence + recovery");
         rst_n = 1'b0;
