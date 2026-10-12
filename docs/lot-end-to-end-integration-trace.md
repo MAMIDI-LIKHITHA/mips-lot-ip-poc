@@ -42,7 +42,7 @@ The candidate adapter decodes the upper address region using `DEST_MASK = 32'hFF
 - destination 2: `0x0002_0000` region
 - destination 3: `0x0003_0000` region
 
-For an address outside these regions, `addr_valid` is false. In the current candidate adapter, this also makes `lot_valid=0` and `req_ready=0`. **[Check / likely behavior to address]** An unmapped address can leave the CPU-side request waiting indefinitely because the adapter does not generate an error response for that case. The current end-to-end invalid-register test is at `0x0002_0010`, which is inside a valid destination region; it tests endpoint register-offset error handling, not an unmapped destination region.
+For an address outside these regions, `addr_valid` is false. In the current candidate adapter, `lot_valid=0` and `req_ready` can still assert when the adapter is idle and reset is deasserted. When the CPU-side request handshakes (`req_valid && req_ready`) with an unmapped address, the adapter creates a local response with zero read data and `rsp_error=1`; no LOT request is issued. The end-to-end candidate testbench includes a read at `0x0004_0000` to check this behavior. This is candidate-adapter behavior, not a confirmed native MIPS fault/exception mapping.
 
 ## 4. Current request/response capacity
 
@@ -61,7 +61,7 @@ A future adapter contract should say explicitly that request payload/address/con
 
 | Priority | Item | Why it matters | Recommended verification |
 |---|---|---|---|
-| High | Unmapped destination handling | Current adapter can hold `req_ready` low forever for an unmapped address | Add a test expecting a defined error response or document deliberate CPU-side fault behavior |
+| Done in candidate harness; confirm native mapping | Unmapped destination handling | Candidate adapter returns a local error response for unmapped addresses; the real CPU bus's error/fault translation remains unconfirmed | Keep the unmapped-address test in regression and map `rsp_error` to the selected CPU protocol once identified |
 | High | Dynamic response-source association | Current end-to-end test hardcodes `rsp_src_id[0]=0` | Add multi-source request/response test if multi-source CPU initiators are intended |
 | High | Address and payload contract | Current 65-bit layout is coherent in this testbench but is protocol-neutral and custom | Add packing assertions and a field/width definition shared by adapter/router/endpoint |
 | Medium | Parameter naming | Adapter parameter `DATA_W=64` yields 32-bit CPU data ports via `DATA_W/2` | Rename in a future API revision or clearly document half-width convention |
@@ -73,6 +73,6 @@ A future adapter contract should say explicitly that request payload/address/con
 
 **[Confirmed]** The testbench wires a 65-bit request payload through the request router into the endpoint and routes the response through the response router back to source 0. It tests register reads/writes, invalid offsets within the mapped endpoint region, error propagation, and CPU response backpressure.
 
-**[Not established]** Multi-source source tracking, a final MIPS native bus, AXI/AHB/APB compatibility, unmapped-address completion, synthesis, timing closure, FPGA/ASIC behavior, or network-device integration.
+**[Not established]** Dynamic multi-source request tracking, a final MIPS native bus, AXI/AHB/APB compatibility, native CPU fault/exception semantics, synthesis, timing closure, FPGA/ASIC behavior, or network-device integration.
 
 This is a static source trace only. No RTL/testbench behavior was changed, and no new regression was run as part of writing this note.
