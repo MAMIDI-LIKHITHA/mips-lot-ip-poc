@@ -1,0 +1,33 @@
+name: Candidate MIPS adapter smoke test
+
+on:
+  pull_request:
+    paths:
+      - "rtl/mips_if/mips_mmio_adapter_candidate.sv"
+      - "tb/tb_mips_mmio_adapter_candidate.sv"
+      - ".github/workflows/adapter-smoke.yml"
+  push:
+    branches: [main]
+    paths:
+      - "rtl/mips_if/mips_mmio_adapter_candidate.sv"
+      - "tb/tb_mips_mmio_adapter_candidate.sv"
+      - ".github/workflows/adapter-smoke.yml"
+
+jobs:
+  iverilog-adapter-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install Icarus Verilog
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iverilog
+      - name: Compile candidate adapter test
+        run: |
+          iverilog -g2012 -s tb_mips_mmio_adapter_candidate \
+            -o /tmp/adapter-smoke.vvp \
+            rtl/mips_if/mips_mmio_adapter_candidate.sv \
+            tb/tb_mips_mmio_adapter_candidate.sv
+      - name: Run candidate adapter test
+        run: vvp -n /tmp/adapter-smoke.vvp
