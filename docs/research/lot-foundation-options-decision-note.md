@@ -1,78 +1,88 @@
-# LOT Foundation Options — Simple Decision Note
+# LOT Foundation Options — Research and Decision Note
 
-**Purpose:** Turn the research into a practical decision for the LOT POC. This note is deliberately short. It does not select a final architecture without the actual MIPS subsystem, target use case, and licensing constraints.
+**Purpose:** Convert the NIC-400, Arm CSS, and Carbon research into a practical decision for the LOT POC. This is a public-source assessment, not a final architecture approval.
 
-## Recommendation in one minute
+## Recommendation
 
-1. **Evaluate CoreLink NIC-400 as a candidate interconnect only if the system uses compatible AMBA interfaces and the required IP/license is available.** It is the closest of these three items to the on-chip LOT interconnect problem.
-2. **Do not select Arm CSS as the default LOT POC foundation yet.** CSS is a pre-integrated compute subsystem built around Arm processors and system IP, aimed at market-specific SoC platforms. If the requirement is to keep the existing MIPS-based architecture, CSS is not a drop-in replacement; it would imply a much larger processor/platform decision.
-3. **Treat Carbon Design System as optional software/UI tooling only.** It is IBM's open-source design system for digital products, not an on-chip interconnect, CPU subsystem, or hardware IP. Consider it only if LOT needs a web dashboard or operator UI.
+1. **Evaluate Arm CoreLink NIC-400 first** as a commercial on-chip interconnect candidate, but only if the actual MIPS subsystem exposes a compatible AMBA interface (or a justified bridge is feasible) and the project can obtain the IP, configuration tools, and license.
+2. **Compare PULP Platform AXI as an open-source candidate** only if AXI is a valid interface choice. Check the exact revision, license, dependencies, features, verification, and maintenance before adopting it.
+3. **Keep the existing custom LOT RTL as the functional reference** while requirements are clarified. Do not replace it or claim it is production-ready without compatibility evidence and implementation measurements.
+4. **Treat Arm CSS as a platform-level alternative**, not a drop-in crossbar replacement. It matters only if moving from the existing MIPS-based direction to an Arm-based compute platform is in scope.
+5. **Defer IBM Carbon Design System** unless a web dashboard or operator UI is actually required; Carbon is software UI tooling, not hardware IP.
 
-## What the options actually solve
+## What each option solves
 
-| Option | What it is | Fit for LOT | Main gate before choosing |
+| Option | Role | Relevance to LOT | Main blocker |
 |---|---|---|---|
-| Arm CoreLink NIC-400 | Configurable on-chip interconnect supporting AMBA AXI3/AXI4, AHB-Lite, and APB | **Potentially relevant** to connecting CPU masters and peripheral slaves inside an SoC | Identify the actual MIPS bus, protocol/version, widths, outstanding-transaction behavior, and whether a suitable bridge and NIC-400 license/source package are available |
-| Arm Compute Subsystem (CSS) | Pre-integrated Arm CPU(s), interconnect, system IP, and supporting software, tailored to a target market | **Potentially relevant only if LOT is intended to adopt an Arm-based SoC platform**; likely too broad to assume as the starting point for a MIPS-focused RTL POC | Confirm CPU/platform can change, intended market and performance target, partner access, commercial terms, implementation flow, and target silicon |
-| IBM Carbon Design System | Reusable UI design language, components, and developer assets | **Not relevant to the hardware interconnect**; useful only for a software dashboard/control panel | Confirm that a UI is in scope and choose its software framework |
+| Arm CoreLink NIC-400 | Configurable AMBA on-chip interconnect | Closest commercial candidate for connecting compatible bus masters and peripheral targets | Actual MIPS bus compatibility; IP/license/tool access; integration effort |
+| PULP Platform AXI | Publicly inspectable AXI infrastructure, including an AXI crossbar | Candidate if the host interface can use AXI and its feature set fits | Exact revision/license/dependencies; AXI feature fit; integration verification |
+| Existing custom LOT fabric | Current simulation-focused ready/valid router and 4×4 crossbar | Useful functional reference for the behavior already exercised in the POC | Not yet shown to be required for the final design; implementation results unavailable |
+| Arm Compute Subsystem (CSS) | Pre-integrated Arm CPU and system-IP platform | Relevant only if the project may change processor/platform | Product/platform choice, access and commercial terms, target silicon and software |
+| IBM Carbon Design System | Software design system and UI components | Optional dashboard/control panel only | Confirm UI is in scope |
 
-## NIC-400: practical evaluation checklist
+## What the repository establishes
 
-Arm's product page describes NIC-400 as configurable, hierarchical connectivity for AMBA 4 AXI4, AXI3, AHB-Lite, and APB. The technical reference manual lists configurations from 1–128 slave interfaces and 1–64 master interfaces, plus configurable switching networks and timing-closure options. These figures describe the IP's supported configuration range, **not** a promise that any configuration is available to this project or suitable without integration work.
+The current repository documents a custom ready/valid transaction router, 4×4 crossbar, behavioral endpoints, response router, and candidate single-outstanding MMIO path in the testbench. The latest reported ModelSim regression is 10 passed / 0 failed, with all 16 routes exercised and a 500-cycle stress test delivering 1,175 accepted transfers.
 
-Before treating it as the LOT core IP, verify:
+These are **simulation results only**. The repository explicitly says synthesis, place-and-route, timing closure, resource measurement, and hardware validation have not been performed. The actual MIPS core/native bus, final peripheral map, Silicon Labs device/mode, and host interface remain unselected.
 
-- [ ] What processor and exact MIPS subsystem is being used?
-- [ ] What bus does it expose (including protocol revision, address/data widths, bursts, IDs, ordering, and response behavior)?
-- [ ] Does that interface match a NIC-400 configuration, or is a protocol bridge needed?
-- [ ] What are the required masters, peripherals/slaves, address map, clock/reset domains, and error-response requirements?
-- [ ] Is NIC-400 accessible under the project's commercial license and tool flow? Can the team obtain the configuration tools, deliverables, documentation, and support needed?
-- [ ] What minimum test would prove integration: one master, two targets, read/write transactions, contention, backpressure, and error handling?
+Therefore, the POC demonstrates useful transaction-routing behavior, but does not establish that the custom crossbar is the best final IP or that any third-party candidate is compatible.
 
-**Decision rule:** If the existing MIPS subsystem already has a suitable AMBA bus and NIC-400 access is confirmed, compare it against the current custom RTL on interface fit, integration effort, configurability, verification evidence, and licensing. If the bus is proprietary or incompatible, first estimate bridge effort; do not assume NIC-400 connects directly.
+## NIC-400: bounded compatibility assessment
 
-## Arm CSS: practical evaluation checklist
+Arm documents NIC-400 as configurable AMBA interconnect IP supporting AXI4, AXI3, AHB-Lite, and APB. The technical reference manual describes configurable interfaces and switching structures. Those advertised capabilities do not establish access rights, tool availability, compatibility with our undisclosed MIPS subsystem, or suitability for a specific configuration.
 
-Arm describes CSS as a pre-integrated, market-tuned compute foundation that typically combines Arm CPUs, interconnect, system IP, and supporting firmware/software. It is a platform-level choice, not just a replacement crossbar.
+Before selecting it, verify:
 
-Confirm:
+- [ ] Exact MIPS core/subsystem name, version and configuration.
+- [ ] Native bus protocol and revision; address/data widths; byte enables; burst and ID behavior; outstanding transactions; ordering and response/error semantics.
+- [ ] Whether NIC-400 supports the required interface combination directly or needs a protocol bridge.
+- [ ] Required initiators, targets, address map, clock/reset domains, and clock-domain-crossing needs.
+- [ ] Availability of IP RTL/deliverables, configuration tools, documentation, support, and commercial entitlement for this project.
+- [ ] Minimum integration test: one initiator and two targets; read/write; contention; backpressure; unmapped-address/error response; reset while a transaction is pending; and correct response association.
 
-- [ ] Is the project allowed to replace or move away from the MIPS CPU?
-- [ ] What is the target market and compute requirement (IoT/edge, mobile, infrastructure, automotive, etc.)?
-- [ ] Which specific CSS offering matches that market and is accessible to the project?
-- [ ] Does it support the required external peripherals and wireless/network device path?
-- [ ] What are the licensing, foundry/process, EDA, implementation, and partner-access requirements?
+**Decision rule:** If the native bus is compatible and access is confirmed, compare NIC-400 with the custom RTL and suitable open-source options on required features, integration effort, verification evidence, license, and measurable implementation results. If it is incompatible, estimate bridge effort before deciding. Do not assume direct connection.
 
-**Decision rule:** Keep CSS as a separate platform-level option until the CPU/platform decision is explicit. Do not describe it as the selected LOT foundation based only on public product descriptions.
+## PULP AXI: comparison candidate
 
-## Carbon Design System
+PULP Platform AXI provides publicly inspectable AXI infrastructure, including a documented crossbar. It is a reasonable candidate to investigate if AXI is selected or can be exposed cleanly by the CPU-side adapter. It is not a universal replacement for an unknown MIPS bus.
 
-Carbon provides reusable components, patterns, styles, and developer resources for building digital experiences, with official support for React and Web Components. It may be useful if the POC includes a web-based status/configuration dashboard. It does not implement hardware routing, arbitration, bus conversion, or networking protocols.
+Before adopting it, inspect the exact repository revision and license, dependencies, supported protocol/features, upstream verification, maintenance status, and integration constraints. Run project-specific tests for address decode, backpressure, ordering/IDs as needed, errors, reset, and response routing.
 
-**Decision rule:** Defer it unless a user-facing software interface is an explicit deliverable.
+## Arm CSS
 
-## Proposed next steps
+Arm CSS is a pre-integrated compute subsystem, combining Arm CPUs and system IP for a target market. It is a larger CPU/platform decision, not merely a replacement crossbar. If LOT must retain its MIPS-based architecture, CSS is not a drop-in alternative. Keep it out of the immediate interconnect decision unless the project explicitly allows a processor/platform change.
 
-1. **Get the missing facts from Swapnil:** exact MIPS core/subsystem and bus; whether CPU replacement is in scope; intended LOT use case; whether NIC-400/CSS are exploratory candidates or expected deliverables; and what the Silicon Labs boards should demonstrate.
-2. **Create a one-page requirement sheet** from those answers: initiators, targets, bus protocol, address map, throughput/latency goals, clock/reset domains, wireless device/mode, host interface, and software-stack ownership.
-3. **Run a bounded NIC-400 fit check** against the real bus and project access/licensing. Compare only compatible candidates; do not implement iSLIP or another scheduler unless requirements show that arbitration policy is the issue.
-4. **Keep the existing custom RTL as a functional reference**, not as a production IP claim. The current repository says synthesis, timing closure, area/resource measurement, and hardware validation have not been performed.
-5. **Make the decision after the evidence is available:** reuse existing interconnect IP if it fits and is accessible; otherwise document the bridge/custom-RTL trade-off. Evaluate CSS only if a platform change is in scope. Evaluate Carbon only if a UI is in scope.
+## IBM Carbon Design System
 
-## Questions to send Swapnil
+Carbon is an open-source design system for digital interfaces. It can help build a dashboard using supported web technologies, but does not implement bus routing, arbitration, bus conversion, a CPU subsystem, or network connectivity. Defer it unless a user-facing UI is a defined deliverable.
 
-1. Should LOT remain based on the existing MIPS subsystem, or is moving to an Arm-based CSS platform a real option?
-2. Can you share the exact MIPS core/subsystem, its bus interface, and the current peripheral/address-map information?
-3. Is NIC-400 expected to be the preferred candidate to evaluate, and do we have access to the IP, configuration tooling, and license?
-4. What exactly should the Silicon Labs DVKs demonstrate, and which board/part and host interface are intended?
-5. Is a Carbon-based UI actually required for this POC, or was that only a research lead?
+## Recommended next steps
+
+1. Identify the real MIPS core/subsystem and native bus from RTL, manuals, or integration documents.
+2. Record the bus contract and the intended initiators, targets, address map, error behavior, outstanding-transaction policy, clock/reset domains, and measurable latency/throughput goals.
+3. Inventory existing peripheral controllers, especially whether a suitable memory-mapped SPI controller already exists for the chosen external connectivity device.
+4. Check NIC-400 interface fit and project access; compare PULP AXI only if the bus choice supports it.
+5. Keep the custom RTL as a functional baseline. Do not implement iSLIP or another scheduler unless the requirements demonstrate that the current arbitration behavior is inadequate.
+6. After selecting a candidate and target flow, run synthesis/timing/resource analysis and then board-level validation before making implementation-performance claims.
+
+## Questions to resolve with the architecture owner
+
+- Must LOT stay with the existing MIPS subsystem, or is an Arm-based platform genuinely in scope?
+- What is the exact MIPS core/subsystem and native bus, including the current address map and available peripherals?
+- Is NIC-400 accessible to the project under suitable licensing and tool access?
+- Which Silicon Labs part/board and mode are intended (SoC, NCP, or RCP), what host interface is supported, and who owns the network stack?
+- What should the POC demonstrate: device-side connectivity, a Thread border router, or another role?
+- Is a Carbon-based UI a real requirement or just a research lead?
 
 ## Sources
 
-- Arm CoreLink Network Interconnect family (including NIC-400): https://www.arm.com/products/silicon-ip-system/corelink-interconnect/nic
-- Arm CoreLink NIC-400 Technical Reference Manual: https://documentation-service.arm.com/static/5e8f1a896db15673561aaa56
+- Arm CoreLink interconnect / NIC-400: https://www.arm.com/products/silicon-ip-system/corelink-interconnect/nic
+- Arm NIC-400 Technical Reference Manual (verify the revision applicable to any proposed configuration): https://documentation-service.arm.com/static/5e8f1ac06db15673561aaa56
 - Arm Compute Subsystems: https://www.arm.com/products/compute-subsystems
 - Arm Neoverse CSS (infrastructure example): https://www.arm.com/products/cloud-datacenter/neoverse-compute-subsystems
-- IBM Carbon Design System — overview: https://www.carbondesignsystem.com/getting-started/developing/overview
+- PULP Platform AXI crossbar documentation: https://github.com/pulp-platform/axi/blob/master/doc/axi_xbar.md
+- PULP Platform AXI repository: https://github.com/pulp-platform/axi
+- IBM Carbon Design System overview: https://www.carbondesignsystem.com/getting-started/developing/overview
 
-**Evidence boundary:** This is a public-source fit assessment, not confirmation of product availability, commercial entitlement, or compatibility with the project's undisclosed MIPS subsystem. Those require project-specific confirmation.
+**Evidence boundary:** This note distinguishes public product descriptions from project-specific facts. It does not confirm vendor availability, licensing entitlement, compatibility with the unidentified MIPS subsystem, hardware interoperability, or production readiness.
