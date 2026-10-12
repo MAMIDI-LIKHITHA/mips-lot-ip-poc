@@ -3,8 +3,8 @@
 #   do sim/modelsim/run.do
 #
 # Runs seven crossbar tests plus the transaction router, response router,
-# candidate MIPS MMIO adapter, and end-to-end integration test. Simulation-only: no FPGA hardware,
-# synthesis, or timing-closure claims.
+# candidate MIPS MMIO adapter, end-to-end candidate test, and four-endpoint integration test.
+# Simulation-only: no FPGA hardware, synthesis, or timing-closure claims.
 
 transcript on
 onerror {quit -code 1}
@@ -43,7 +43,8 @@ if {[catch {
       tb/tb_lot_txn_router.sv \
       tb/tb_lot_rsp_router.sv \
       tb/tb_mips_mmio_adapter_candidate.sv \
-      tb/tb_end_to_end_candidate.sv
+      tb/tb_end_to_end_candidate.sv \
+      tb/tb_mips_four_endpoint_integration.sv
 } err]} {
     puts "REGRESSION RESULT: FAIL - compilation failed"
     puts $err
@@ -62,6 +63,7 @@ set testbenches {
     tb_lot_rsp_router
     tb_mips_mmio_adapter_candidate
     tb_end_to_end_candidate
+    tb_mips_four_endpoint_integration
 }
 
 set passed 0
