@@ -91,6 +91,13 @@ module tb_lot_rsp_router;
         grant_count = 0;
         for (i = 0; i < N; i = i + 1) grant_count = grant_count + grant[i][0];
         if (grant_count != 1) begin $error("Expected one response grant, got %0d", grant_count); $fatal; end
+        // The candidate currently uses fixed lowest-index source priority.
+        if (grant[0][0] !== 1'b1 || grant[3][0] !== 1'b0 ||
+            dst_valid[0] !== 1'b1 || dst_data[0] !== 32'hB000 ||
+            src_ready[0] !== 1'b1 || src_ready[3] !== 1'b0) begin
+            $error("Same-destination contention did not honor documented fixed source-index priority");
+            $fatal;
+        end
 
         // Out-of-range source IDs must not be routed or acknowledged.
         clear_inputs();
