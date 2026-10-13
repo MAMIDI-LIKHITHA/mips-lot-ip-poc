@@ -41,6 +41,7 @@ module tb_xbar_multi_output;
         clear_inputs();
 
         repeat (2) @(posedge clk);
+        @(negedge clk);
         rst_n = 1'b1;
 
         // Four simultaneous requests target four different outputs.
