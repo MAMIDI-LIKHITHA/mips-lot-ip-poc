@@ -269,6 +269,14 @@ module tb_mips_mmio_adapter_candidate;
         issue_request(1'b1, 32'h0000_00B0, 32'hBEEF_00B0, 2'd0);
         return_response(32'hBEEF_00B0, 1'b0);
 
+        $display("[10] Back-to-back requests complete without stale response");
+        issue_request(1'b0, 32'h0001_00C0, '0, 2'd1);
+        return_response(32'hCAFE_00C0, 1'b0);
+        issue_request(1'b1, 32'h0002_00C4, 32'h1234_C004, 2'd2);
+        return_response(32'h1234_C004, 1'b0);
+        if (rsp_valid || !req_ready)
+            $fatal(1, "Back-to-back transactions left stale response or adapter busy");
+
         $display("TB RESULT: PASS - candidate MIPS MMIO adapter destination decode, payload encoding, request/response backpressure, single-outstanding behavior, error propagation, unmapped-address error response, reset recovery, reset cancellation of outstanding requests, and reset cancellation of stalled responses verified.");
         $stop;
     end
