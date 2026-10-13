@@ -1,6 +1,7 @@
 name: Candidate MIPS adapter smoke test
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - "rtl/mips_if/mips_mmio_adapter_candidate.sv"
