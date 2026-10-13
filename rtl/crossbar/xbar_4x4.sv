@@ -25,14 +25,16 @@ module xbar_4x4 #(
     // gate request generation or the downstream VALID signal.
     always_comb begin : build_requests
         integer i;
+        integer j;
 
         valid_dst = '0;
         req       = '0;
 
         for (i = 0; i < N; i = i + 1) begin
             valid_dst[i] = (in_dst[i] < N);
-            if (in_valid[i] && valid_dst[i])
-                req[i][in_dst[i]] = 1'b1;
+            for (j = 0; j < N; j = j + 1) begin
+                req[i][j] = in_valid[i] && valid_dst[i] && (in_dst[i] == j);
+            end
         end
     end
 
