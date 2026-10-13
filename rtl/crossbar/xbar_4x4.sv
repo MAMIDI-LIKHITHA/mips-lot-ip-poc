@@ -18,22 +18,14 @@ module xbar_4x4 #(
     output logic [N-1:0][N-1:0]     grant
 );
 
-    logic [N-1:0][N-1:0] req;
-    logic [N-1:0]        valid_dst;
+    wire [N-1:0][N-1:0] req;
 
-    // Requests describe source intent and destination only. READY must not
-    // gate request generation or the downstream VALID signal.
-    always_comb begin : build_requests
-        integer i;
-
-        valid_dst = '0;
-        req       = '0;
-
-        for (i = 0; i < N; i = i + 1) begin
-            valid_dst[i] = (in_dst[i] < N);
-            if (in_valid[i] && valid_dst[i])
-                req[i][in_dst[i]] = 1'b1;
-        end
+    // Decode each source destination into a one-hot request row. The
+    // N-bit shift naturally truncates unsupported destination values.
+    for (genvar src = 0; src < N; src = src + 1) begin : gen_req_src
+        assign req[src] = in_valid[src]
+                        ? ({{(N-1){1'b0}}, 1'b1} << in_dst[src])
+                        : '0;
     end
 
     xbar_scheduler #(.N(N)) u_scheduler (

@@ -41,27 +41,18 @@ module tb_xbar_multi_output;
         clear_inputs();
 
         repeat (2) @(posedge clk);
+        @(negedge clk);
         rst_n = 1'b1;
+        @(negedge clk);
 
         // Four simultaneous requests target four different outputs.
-        in_valid[0] = 1'b1;
-        in_dst[0] = 2'd0;
-        in_data[0] = 32'hA000_0000;
-
-        in_valid[1] = 1'b1;
-        in_dst[1] = 2'd1;
-        in_data[1] = 32'hA111_1111;
-
-        in_valid[2] = 1'b1;
-        in_dst[2] = 2'd2;
-        in_data[2] = 32'hA222_2222;
-
-        in_valid[3] = 1'b1;
-        in_dst[3] = 2'd3;
-        in_data[3] = 32'hA333_3333;
+        // Drive packed inputs as a whole to avoid per-slice scheduling ambiguity.
+        in_valid = 4'b1111;
+        in_dst   = {2'd3, 2'd2, 2'd1, 2'd0};
+        in_data  = {32'hA333_3333, 32'hA222_2222,
+                    32'hA111_1111, 32'hA000_0000};
 
         #1;
-
         if (out_valid !== 4'b1111)
             $fatal(1, "FAIL: expected all four outputs valid");
 
