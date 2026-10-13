@@ -18,25 +18,22 @@ module xbar_4x4 #(
     output logic [N-1:0][N-1:0]     grant
 );
 
-    logic [N*N-1:0] req;
+    logic [N-1:0][N-1:0] req;
     logic [N-1:0]        valid_dst;
 
-    // Flat request matrix: bit (source*N + destination) represents a
-    // request. Constant-index generate assignments are portable across simulators.
-    genvar gi, gj;
-    generate
-        for (gi = 0; gi < N; gi = gi + 1) begin : g_req_source
-            for (gj = 0; gj < N; gj = gj + 1) begin : g_req_destination
-                assign req[gi*N + gj] =
-                    in_valid[gi] && (in_dst[gi] < N) && (in_dst[gi] == gj);
-            end
-        end
-    endgenerate
-
-    always_comb begin : build_valid_destinations
+    // Requests describe source intent and destination only. READY must not
+    // gate request generation or the downstream VALID signal.
+    always_comb begin : build_requests
         integer i;
-        for (i = 0; i < N; i = i + 1)
+
+        valid_dst = '0;
+        req       = '0;
+
+        for (i = 0; i < N; i = i + 1) begin
             valid_dst[i] = (in_dst[i] < N);
+            if (in_valid[i] && valid_dst[i])
+                req[i][in_dst[i]] = 1'b1;
+        end
     end
 
     xbar_scheduler #(.N(N)) u_scheduler (
