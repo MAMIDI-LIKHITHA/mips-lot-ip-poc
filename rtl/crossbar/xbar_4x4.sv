@@ -33,7 +33,7 @@ module xbar_4x4 #(
         for (i = 0; i < N; i = i + 1) begin
             valid_dst[i] = (in_dst[i] < N);
             for (j = 0; j < N; j = j + 1) begin
-                req[i][j] = in_valid[i] && valid_dst[i] && (in_dst[i] == j);
+                req[i][j] = in_valid[i] && (in_dst[i] < N) && (in_dst[i] == j);
             end
         end
     end
