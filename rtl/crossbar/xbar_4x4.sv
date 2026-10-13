@@ -31,8 +31,15 @@ module xbar_4x4 #(
 
         for (i = 0; i < N; i = i + 1) begin
             valid_dst[i] = (in_dst[i] < N);
-            if (in_valid[i] && valid_dst[i])
-                req[i][in_dst[i]] = 1'b1;
+            if (in_valid[i] && valid_dst[i]) begin
+                // Compare destinations explicitly instead of variable-index
+                // writes into a packed multidimensional array. This is more
+                // portable across simulators while preserving one-hot routing.
+                for (j = 0; j < N; j = j + 1) begin
+                    if (in_dst[i] == j)
+                        req[i][j] = 1'b1;
+                end
+            end
         end
     end
 
