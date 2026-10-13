@@ -1,6 +1,6 @@
 # LOT POC — Next Verification Plan
 
-**Status:** Refreshed after PRs #39–#46. The test items below distinguish implemented coverage from remaining work.  
+**Status:** Refreshed after PRs #39–#47. The test items below distinguish implemented coverage from remaining work.  
 **Scope:** Planning only. This document update does not change RTL/testbench behavior and does not claim a new simulation.
 
 ## 1. Current evidence baseline
@@ -23,16 +23,15 @@ The testbench hardcodes the response source ID to source 0 and only instantiates
 | Priority | Test | Stimulus and required assertion | Why it matters |
 |---|---|---|---|
 | P0 | Target bus contract review | Obtain the exact MIPS core/manual or wrapper and define request/response semantics, reset cancellation, byte enables, and outstanding policy. | Blocks protocol-specific integration; avoid encoding unapproved assumptions. |
-| P0 | Target topology and source association | Confirm intended initiator count and response-routing contract before extending beyond source 0. | The current end-to-end harness has one active candidate initiator and hardcodes response source 0. |
-| P1 | CPU-side request stability assertion | Add a protocol assertion/test for request field stability whenever the actual CPU-side valid/ready contract requires it. | CPU-side requirements depend on the chosen native interface. |
-| P0 | Response-source association | Exercise at least two response destinations/source IDs and concurrent responses; verify data and error return only to the intended destination. | Current end-to-end harness hardcodes source ID 0. |
+| P0 | Target topology and response-source association | Confirm intended initiator count and routing contract. Once confirmed, exercise at least two source IDs and concurrent responses; verify data/error return only to the intended destination. | The current end-to-end harness has one active candidate initiator and hardcodes response source ID 0. |
 | P1 | Invalid response destination ID | **Implemented in PR #39.** Drive an out-of-range source ID and verify no destination VALID, source READY, or grant is asserted. | Protects against accidental routing of malformed response IDs. |
 | P1 | Back-to-back transactions | **Implemented in PR #43.** Complete sequential read/write requests; check matching responses and idle recovery without stale response. | Confirms sequential reuse; it does not imply multiple outstanding support. |
 | P1 | Sustained response backpressure | **Implemented in PR #40.** Hold destination READY low across multiple cycles, check response stability, then verify acceptance when READY returns. | Prevents response loss or mutation under stall. |
+| P1 | Error response under backpressure | **Implemented in PR #46.** Stall an unmapped-address error response at the CPU; verify VALID, data, and error remain stable until accepted. | Protects error semantics under response backpressure. |
 | P1 | Same-destination response contention | **Implemented in PR #41.** Assert the current fixed lowest-index priority and corresponding response data/READY behavior. | Documents current arbitration behavior; fairness remains unproven and is not promised. |
 | P1 | Response router reset gating | **Implemented in PR #42.** Verify no destination VALID, source READY, or grant during reset. | Makes candidate reset behavior explicit in regression. |
 | P1 | Request crossbar destination changes under contention | Keep multiple contenders active while the selected output stalls, then release it; verify grant, payload, and round-robin progression. | Strengthens fairness and stability evidence for changing traffic. |
-| P1 | Error response under backpressure | **Implemented in PR #46.** Stall an unmapped-address error response at the CPU; verify VALID, data, and error remain stable until accepted. | Protects error semantics under response backpressure. |
+| P1 | CPU-side request stability assertion | Add a protocol assertion/test for request field stability whenever the actual CPU-side valid/ready contract requires it. | CPU-side requirements depend on the chosen native interface. |
 | P2 | Parameter and width sanity | Compile representative legal parameter combinations and add elaboration-time checks/documentation for unsupported widths or destination counts. | Prevents silent assumptions around `DATA_W/2`, `LOT_W`, and destination widths. |
 | P2 | Assertions and coverage | Add assertions for valid/payload stability while stalled, no duplicate acceptance, response stability, and accepted-request/response accounting. | Makes the regression catch protocol regressions rather than only expected examples. |
 
