@@ -20,13 +20,12 @@ module xbar_4x4 #(
 
     logic [N-1:0][N-1:0] req;
 
-    // Requests describe source intent and destination only. READY must not
-    // gate request generation or the downstream VALID signal. Continuous
-    // per-pair assignments avoid simulator sensitivity issues on packed arrays.
+    // Decode each source destination into a one-hot request row. The
+    // N-bit shift naturally truncates unsupported destination values.
     for (genvar src = 0; src < N; src = src + 1) begin : gen_req_src
-        for (genvar dst = 0; dst < N; dst = dst + 1) begin : gen_req_dst
-            assign req[src][dst] = in_valid[src] && (in_dst[src] == dst);
-        end
+        assign req[src] = in_valid[src]
+                        ? ({{(N-1){1'b0}}, 1'b1} << in_dst[src])
+                        : '0;
     end
 
     xbar_scheduler #(.N(N)) u_scheduler (
