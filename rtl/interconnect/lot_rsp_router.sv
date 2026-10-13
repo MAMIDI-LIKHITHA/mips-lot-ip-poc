@@ -1,59 +1,54 @@
 // Protocol-neutral LOT response router.
-// Routes a completed response back to the originating source.
-// The response source ID is treated as the routing destination.
-// One response is one beat.
-
+// Routes a completed response to the source identified by src_id.
+// One response is one beat. VALID/data/error remain asserted during backpressure.
 module lot_rsp_router #(
     parameter int N = 4,
     parameter int DATA_W = 32,
     parameter int SRC_W = (N <= 1) ? 1 : $clog2(N)
 ) (
-    input logic clk,
-    input logic rst_n,
-    input logic [N-1:0] src_valid,
-    output logic [N-1:0] src_ready,
-    input logic [N-1:0][SRC_W-1:0] src_id,
-    input logic [N-1:0][DATA_W-1:0] src_data,
-    input logic [N-1:0] src_error,
-    output logic [N-1:0] dst_valid,
-    input logic [N-1:0] dst_ready,
-    output logic [N-1:0][DATA_W-1:0] dst_data,
-    output logic [N-1:0] dst_error,
-    output logic [N-1:0][N-1:0] grant
+    input  logic                      clk,
+    input  logic                      rst_n,
+    input  logic [N-1:0]              src_valid,
+    output logic [N-1:0]              src_ready,
+    input  logic [N-1:0][SRC_W-1:0]   src_id,
+    input  logic [N-1:0][DATA_W-1:0]  src_data,
+    input  logic [N-1:0]              src_error,
+    output logic [N-1:0]              dst_valid,
+    input  logic [N-1:0]              dst_ready,
+    output logic [N-1:0][DATA_W-1:0]  dst_data,
+    output logic [N-1:0]              dst_error,
+    output logic [N-1:0][N-1:0]       grant
 );
 
-    localparam int ROUTER_W = DATA_W + 1;
-    logic [N-1:0][ROUTER_W-1:0] packed_data;
-    logic [N-1:0][ROUTER_W-1:0] routed_data;
+    // Each response names exactly one destination. Arbitrate independently
+    // per destination so responses to distinct destinations can proceed in
+    // parallel, while same-destination contention grants only one source.
+    // Fixed source-index priority is intentional for this simulation candidate.
+    always_comb begin : route_responses
+        integer src;
+        integer dst;
+        logic selected;
 
-    genvar i;
-    generate
-        for (i = 0; i < N; i = i + 1) begin : g_pack
-            always_comb begin
-                packed_data[i] = '0;
-                packed_data[i][DATA_W-1:0] = src_data[i];
-                packed_data[i][DATA_W] = src_error[i];
-                dst_data[i] = routed_data[i][DATA_W-1:0];
-                dst_error[i] = routed_data[i][DATA_W];
+        src_ready = '0;
+        dst_valid = '0;
+        dst_data  = '0;
+        dst_error = '0;
+        grant     = '0;
+
+        for (dst = 0; dst < N; dst = dst + 1) begin
+            selected = 1'b0;
+            for (src = 0; src < N; src = src + 1) begin
+                if (!selected && src_valid[src] &&
+                    (src_id[src] == dst) && (src_id[src] < N) && rst_n) begin
+                    selected = 1'b1;
+                    grant[src][dst] = 1'b1;
+                    dst_valid[dst] = 1'b1;
+                    dst_data[dst] = src_data[src];
+                    dst_error[dst] = src_error[src];
+                    src_ready[src] = dst_ready[dst];
+                end
             end
         end
-    endgenerate
-
-    xbar_4x4 #(
-        .N(N),
-        .DATA_W(ROUTER_W),
-        .DST_W(SRC_W)
-    ) u_rsp_xbar (
-        .clk(clk),
-        .rst_n(rst_n),
-        .in_valid(src_valid),
-        .in_ready(src_ready),
-        .in_dst(src_id),
-        .in_data(packed_data),
-        .out_valid(dst_valid),
-        .out_ready(dst_ready),
-        .out_data(routed_data),
-        .grant(grant)
-    );
+    end
 
 endmodule

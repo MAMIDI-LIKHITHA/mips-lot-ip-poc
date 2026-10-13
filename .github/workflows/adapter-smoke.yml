@@ -5,12 +5,20 @@ on:
     paths:
       - "rtl/mips_if/mips_mmio_adapter_candidate.sv"
       - "tb/tb_mips_mmio_adapter_candidate.sv"
+      - "rtl/crossbar/xbar_scheduler.sv"
+      - "rtl/crossbar/xbar_4x4.sv"
+      - "rtl/interconnect/lot_rsp_router.sv"
+      - "tb/tb_lot_rsp_router.sv"
       - ".github/workflows/adapter-smoke.yml"
   push:
     branches: [main]
     paths:
       - "rtl/mips_if/mips_mmio_adapter_candidate.sv"
       - "tb/tb_mips_mmio_adapter_candidate.sv"
+      - "rtl/crossbar/xbar_scheduler.sv"
+      - "rtl/crossbar/xbar_4x4.sv"
+      - "rtl/interconnect/lot_rsp_router.sv"
+      - "tb/tb_lot_rsp_router.sv"
       - ".github/workflows/adapter-smoke.yml"
 
 jobs:
@@ -31,3 +39,22 @@ jobs:
             tb/tb_mips_mmio_adapter_candidate.sv
       - name: Run candidate adapter test
         run: vvp -n /tmp/adapter-smoke.vvp
+
+  verilator-response-router-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install Verilator
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y verilator
+      - name: Compile response-router test
+        run: |
+          verilator --binary --timing -Wno-fatal \
+            --top-module tb_lot_rsp_router \
+            --Mdir /tmp/obj_rsp_router \
+            rtl/interconnect/lot_rsp_router.sv \
+            tb/tb_lot_rsp_router.sv
+      - name: Run response-router test
+        run: /tmp/obj_rsp_router/Vtb_lot_rsp_router
