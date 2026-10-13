@@ -55,6 +55,8 @@ module tb_lot_rsp_router;
     initial begin
         clk = 1'b0; rst_n = 1'b0; dst_ready = '1; clear_inputs();
         repeat (2) @(posedge clk);
+        // Deassert reset away from the active clock edge to avoid testbench/DUT races.
+        @(negedge clk);
         rst_n = 1'b1;
 
         // Direct response routing.
