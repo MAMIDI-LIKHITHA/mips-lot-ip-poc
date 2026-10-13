@@ -175,6 +175,13 @@ module tb_end_to_end_candidate;
 
     always #5 clk = ~clk;
 
+    // Fail boundedly if any wait/task deadlocks instead of relying only on CI timeout.
+    initial begin
+        #1000000;
+        $fatal(1, "END-TO-END WATCHDOG: simulation exceeded 1 ms without completing");
+    end
+
+
     task automatic reset_dut;
         begin
             rst_n = 1'b0;
