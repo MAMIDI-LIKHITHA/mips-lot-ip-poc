@@ -112,10 +112,6 @@ jobs:
         run: verilator --binary --timing -Wno-fatal --top-module tb_xbar_invalid_dst --Mdir /tmp/obj_xbar_invalid_dst rtl/crossbar/xbar_scheduler.sv rtl/crossbar/xbar_4x4.sv tb/tb_xbar_invalid_dst.sv
       - name: Run parameterized invalid-destination crossbar test
         run: timeout 60s /tmp/obj_xbar_invalid_dst/Vtb_xbar_invalid_dst
-      - name: Compile multi-output crossbar test
-        run: verilator --binary --timing -Wno-fatal --top-module tb_xbar_multi_output --Mdir /tmp/obj_xbar_multi_output rtl/crossbar/xbar_scheduler.sv rtl/crossbar/xbar_4x4.sv tb/tb_xbar_multi_output.sv
-      - name: Run multi-output crossbar test
-        run: /tmp/obj_xbar_multi_output/Vtb_xbar_multi_output
       - name: Compile parameterized multi-output crossbar test
         run: verilator --binary --timing -Wno-fatal --top-module tb_xbar_multi_output --Mdir /tmp/obj_xbar_multi_output rtl/crossbar/xbar_scheduler.sv rtl/crossbar/xbar_4x4.sv tb/tb_xbar_multi_output.sv
       - name: Run parameterized multi-output crossbar test
