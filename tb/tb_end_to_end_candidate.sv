@@ -208,6 +208,7 @@ module tb_end_to_end_candidate;
 
             wait (cpu_req_ready);
             @(posedge clk);
+            #1; // Deassert after DUT sampling to avoid active-region races.
             cpu_req_valid = 1'b0;
 
             wait (cpu_rsp_valid);
@@ -241,6 +242,7 @@ module tb_end_to_end_candidate;
 
             wait (cpu_req_ready);
             @(posedge clk);
+            #1; // Deassert after DUT sampling to avoid active-region races.
             cpu_req_valid = 1'b0;
 
             wait (cpu_rsp_valid);
@@ -276,6 +278,7 @@ module tb_end_to_end_candidate;
 
             wait (cpu_req_ready);
             @(posedge clk);
+            #1; // Deassert after DUT sampling to avoid active-region races.
             cpu_req_valid = 1'b0;
 
             wait (cpu_rsp_valid);
@@ -320,6 +323,7 @@ module tb_end_to_end_candidate;
 
             wait (cpu_req_ready);
             @(posedge clk);
+            #1; // Deassert after DUT sampling to avoid active-region races.
             cpu_req_valid = 1'b0;
 
             wait (cpu_rsp_valid);
