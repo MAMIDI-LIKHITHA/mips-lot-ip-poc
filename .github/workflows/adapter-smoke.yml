@@ -20,7 +20,7 @@ on:
       - "tb/tb_xbar_reset.sv"
       - "tb/tb_xbar_stress_latency.sv"
       - "tb/tb_xbar_4x4.sv"
-      - "tb/tb_xbar_4x4.sv"
+      - "tb/tb_xbar_parameter_sanity.sv"
       - ".github/workflows/adapter-smoke.yml"
   push:
     branches: [main]
@@ -40,7 +40,7 @@ on:
       - "tb/tb_xbar_reset.sv"
       - "tb/tb_xbar_stress_latency.sv"
       - "tb/tb_xbar_4x4.sv"
-      - "tb/tb_xbar_4x4.sv"
+      - "tb/tb_xbar_parameter_sanity.sv"
       - ".github/workflows/adapter-smoke.yml"
 
 jobs:
@@ -130,6 +130,10 @@ jobs:
         run: verilator --binary --timing -Wno-fatal --top-module tb_xbar_4x4 --Mdir /tmp/obj_xbar_4x4 rtl/crossbar/xbar_scheduler.sv rtl/crossbar/xbar_4x4.sv tb/tb_xbar_4x4.sv
       - name: Run core crossbar regression
         run: timeout 60s /tmp/obj_xbar_4x4/Vtb_xbar_4x4
+      - name: Compile crossbar parameter sanity test
+        run: verilator --binary --timing -Wno-fatal --top-module tb_xbar_parameter_sanity --Mdir /tmp/obj_xbar_parameter_sanity rtl/crossbar/xbar_scheduler.sv rtl/crossbar/xbar_4x4.sv tb/tb_xbar_parameter_sanity.sv
+      - name: Run crossbar parameter sanity test
+        run: timeout 60s /tmp/obj_xbar_parameter_sanity/Vtb_xbar_parameter_sanity
 
   verilator-end-to-end-candidate-smoke:
     runs-on: ubuntu-latest
