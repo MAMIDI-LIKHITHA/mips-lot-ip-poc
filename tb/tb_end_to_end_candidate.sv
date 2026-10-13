@@ -191,8 +191,12 @@ module tb_end_to_end_candidate;
             cpu_req_wdata = '0;
             cpu_rsp_ready = 1'b0;
             repeat (2) @(posedge clk);
+            // Change reset away from the active sampling edge to avoid a
+            // reset-release race with the DUT and the first CPU request.
+            @(negedge clk);
             rst_n = 1'b1;
             @(posedge clk);
+            #1;
         end
     endtask
 
