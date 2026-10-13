@@ -59,6 +59,19 @@ module tb_lot_rsp_router;
         @(negedge clk);
         rst_n = 1'b1;
 
+        // Reset must suppress response routing and acknowledgements.
+        clear_inputs();
+        src_valid[0] = 1'b1; src_id[0] = 2'd1;
+        src_data[0] = 32'hDEAD; src_error[0] = 1'b1;
+        rst_n = 1'b0;
+        #1;
+        if (dst_valid !== '0 || src_ready !== '0 || grant !== '0) begin
+            $error("Response router must suppress VALID, READY, and grants during reset");
+            $fatal;
+        end
+        @(negedge clk);
+        rst_n = 1'b1;
+
         // Direct response routing.
         clear_inputs();
         src_valid[2] = 1'b1; src_id[2] = 2'd1;
