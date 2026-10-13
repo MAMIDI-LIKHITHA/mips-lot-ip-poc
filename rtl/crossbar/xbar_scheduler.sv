@@ -12,7 +12,6 @@ module xbar_scheduler #(
 
     logic [PTR_W-1:0] rr_ptr [N];
     logic [N-1:0]     used_input;
-    logic [N-1:0]     selected_output;
     logic [PTR_W-1:0] next_rr [N];
 
     integer o;
@@ -23,9 +22,8 @@ module xbar_scheduler #(
     // and payload to remain asserted while a selected output is stalled.
     always_comb begin
         grant      = '0;
-        used_input      = '0;
-        selected_output = '0;
-        next_rr         = rr_ptr;
+        used_input = '0;
+        next_rr    = rr_ptr;
 
         for (o = 0; o < N; o = o + 1) begin
             for (k = 0; k < N; k = k + 1) begin
@@ -33,17 +31,15 @@ module xbar_scheduler #(
                 if (idx >= N)
                     idx = idx - N;
 
-                // Icarus Verilog does not support break in procedural loops.
-                // The selected_output flag preserves first-match arbitration.
-                if (!selected_output[o] && !used_input[idx] && req[idx][o]) begin
+                if (!used_input[idx] && req[idx][o]) begin
                     grant[idx][o] = 1'b1;
                     used_input[idx] = 1'b1;
-                    selected_output[o] = 1'b1;
 
                     // Advance fairness state only when this output
                     // completes a valid/ready handshake.
                     if (out_ready[o])
                         next_rr[o] = (idx == N-1) ? '0 : idx + 1'b1;
+                    break;
                 end
             end
         end
