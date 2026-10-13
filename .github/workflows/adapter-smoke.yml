@@ -20,6 +20,7 @@ on:
       - "tb/tb_xbar_reset.sv"
       - "tb/tb_xbar_stress_latency.sv"
       - "tb/tb_xbar_4x4.sv"
+      - "tb/tb_xbar_4x4.sv"
       - ".github/workflows/adapter-smoke.yml"
   push:
     branches: [main]
@@ -38,6 +39,7 @@ on:
       - "tb/tb_xbar_multi_output.sv"
       - "tb/tb_xbar_reset.sv"
       - "tb/tb_xbar_stress_latency.sv"
+      - "tb/tb_xbar_4x4.sv"
       - "tb/tb_xbar_4x4.sv"
       - ".github/workflows/adapter-smoke.yml"
 
