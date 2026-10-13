@@ -64,6 +64,7 @@ module tb_xbar_multi_output;
 
         #1;
 
+        $display("DIAG: rst_n=%b in_valid=%b in_dst=%h req=%h grant=%h out_valid=%b", rst_n, in_valid, in_dst, dut.req, grant, out_valid);
         if (out_valid !== 4'b1111)
             $fatal(1, "FAIL: expected all four outputs valid");
 
