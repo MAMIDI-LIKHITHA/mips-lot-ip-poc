@@ -1,17 +1,20 @@
 # LOT POC — Next Verification Plan
 
-**Status:** Proposed verification work based on source inspection of `main`.  
-**Scope:** Planning only. No RTL/testbench behavior is changed by this document, and no new simulation is claimed.
+**Status:** Refreshed after PRs #39–#44. The test items below distinguish implemented coverage from remaining work.  
+**Scope:** Planning only. This document update does not change RTL/testbench behavior and does not claim a new simulation.
 
 ## 1. Current evidence baseline
 
 The README reports a user-run ModelSim Intel FPGA Edition 2021.1 regression on 12 October 2026 with 11 tests passing, 0 failing, all 16 request routes covered, and a 500-cycle stress test with 1,175 accepted and 1,175 delivered transfers. These are local simulation results reported by the project, not hardware validation.
 
-The checked-in end-to-end candidate testbench directly demonstrates:
-- CONTROL and DATA writes/readbacks.
-- STATUS and ID reads.
-- Invalid endpoint register and unmapped-address error responses.
-- Stability of a CPU response while `cpu_rsp_ready` is low for several cycles.
+The checked-in candidate adapter and router tests now additionally cover:
+- Invalid response source IDs without accidental routing.
+- Response stability across sustained destination backpressure and acceptance when READY returns.
+- Deterministic lowest-index source priority during same-destination contention (candidate behavior only; no fairness guarantee).
+- Reset gating of response VALID, source READY, and grants.
+- Sequential read/write transactions after the previous response completes, including idle recovery without a stale response.
+
+The candidate adapter test also exercises request payload stability during LOT-side backpressure, CPU response/error stability, single-outstanding enforcement, unmapped-address errors, and reset cancellation. These tests define the current candidate POC behavior; they do not establish compatibility with a target MIPS bus.
 
 The testbench hardcodes the response source ID to source 0 and only instantiates one active candidate CPU-side initiator. Therefore, it does not demonstrate dynamic response association for multiple initiators.
 
@@ -19,12 +22,15 @@ The testbench hardcodes the response source ID to source 0 and only instantiates
 
 | Priority | Test | Stimulus and required assertion | Why it matters |
 |---|---|---|---|
-| P0 | Request payload stability under CPU-side stall | Hold `cpu_req_valid=1` while `cpu_req_ready=0`; assert request fields remain stable and no duplicate LOT transfer occurs. | Protects request integrity when the downstream fabric applies backpressure. |
-| P0 | Reset during outstanding transaction | Assert reset after request acceptance but before endpoint response; verify adapter, endpoint, and routers clear pending state and recover without phantom responses. | Reset cancellation semantics are not yet a native CPU-bus contract. |
-| P0 | Reset while CPU response is stalled | Hold `cpu_rsp_ready=0` with a valid response, assert reset, then verify defined post-reset behavior and ability to accept a new request. | Exercises the response-hold state across reset. |
+| P0 | Target bus contract review | Obtain the exact MIPS core/manual or wrapper and define request/response semantics, reset cancellation, byte enables, and outstanding policy. | Blocks protocol-specific integration; avoid encoding unapproved assumptions. |
+| P0 | Target topology and source association | Confirm intended initiator count and response-routing contract before extending beyond source 0. | The current end-to-end harness has one active candidate initiator and hardcodes response source 0. |
+| P1 | CPU-side request stability assertion | Add a protocol assertion/test for request field stability whenever the actual CPU-side valid/ready contract requires it. | Existing test covers LOT-side stall; CPU-side requirements depend on the chosen native interface. |
 | P0 | Response-source association | Exercise at least two response destinations/source IDs and concurrent responses; verify data and error return only to the intended destination. | Current end-to-end harness hardcodes source ID 0. |
-| P1 | Invalid response destination ID | Drive an ID outside the configured `N`-destination range and verify documented behavior without accidental routing or unknown propagation. | Routing behavior for out-of-range IDs should be explicit. |
-| P1 | Back-to-back transactions | Complete one request and immediately offer the next; assert exactly one response per accepted request and document the throughput/bubble behavior. | Establishes the actual single-outstanding throughput contract. |
+| P1 | Invalid response destination ID | **Implemented in PR #39.** Drive an out-of-range source ID and verify no destination VALID, source READY, or grant is asserted. | Protects against accidental routing of malformed response IDs. |
+| P1 | Back-to-back transactions | **Implemented in PR #43.** Complete sequential read/write requests; check matching responses and idle recovery without stale response. | Confirms sequential reuse; it does not imply multiple outstanding support. |
+| P1 | Sustained response backpressure | **Implemented in PR #40.** Hold destination READY low across multiple cycles, check response stability, then verify acceptance when READY returns. | Prevents response loss or mutation under stall. |
+| P1 | Same-destination response contention | **Implemented in PR #41.** Assert the current fixed lowest-index priority and corresponding response data/READY behavior. | Documents current arbitration behavior; fairness remains unproven and is not promised. |
+| P1 | Response router reset gating | **Implemented in PR #42.** Verify no destination VALID, source READY, or grant during reset. | Makes candidate reset behavior explicit in regression. |
 | P1 | Request crossbar destination changes under contention | Keep multiple contenders active while the selected output stalls, then release it; verify grant, payload, and round-robin progression. | Strengthens fairness and stability evidence for changing traffic. |
 | P1 | Error response under backpressure | Stall an error response at the CPU and assert both error and data remain stable until consumed. | The existing end-to-end backpressure helper checks a successful STATUS read, not an error response. |
 | P2 | Parameter and width sanity | Compile representative legal parameter combinations and add elaboration-time checks/documentation for unsupported widths or destination counts. | Prevents silent assumptions around `DATA_W/2`, `LOT_W`, and destination widths. |
@@ -49,11 +55,11 @@ For each new test:
 
 ## 5. Suggested execution sequence
 
-1. Add the two P0 reset tests and request-stall stability test to the candidate adapter testbench.
-2. Add a dedicated response-router test for multiple destination IDs and invalid IDs.
-3. Add a multi-initiator end-to-end test only after response-source association policy is agreed.
-4. Run the complete regression and update the README with evidence from the actual run.
-5. Keep any protocol-specific adapter changes on a separate reviewed branch after the target MIPS bus is identified.
+1. Obtain the exact target MIPS core/native bus documentation and peripheral/address map; keep this as the primary integration blocker.
+2. Agree the reset contract, initiator count, response-source association, byte-enable semantics, and outstanding-request policy with the project owner.
+3. Once topology is confirmed, add a multi-initiator response-association test and any required source-ID tracking; do not invent policy before requirements are known.
+4. Add CPU-side request-stall assertions only after checking the actual native bus handshake contract.
+5. Run and record the full regression after substantive verification changes; keep simulation evidence separate from synthesis/timing/hardware claims.
 
 ## Evidence boundary
 
