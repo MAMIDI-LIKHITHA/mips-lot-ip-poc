@@ -40,22 +40,23 @@ jobs:
       - name: Run candidate adapter test
         run: vvp -n /tmp/adapter-smoke.vvp
 
-  iverilog-response-router-smoke:
+  verilator-response-router-smoke:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-      - name: Install Icarus Verilog
+      - name: Install Verilator
         run: |
           sudo apt-get update
-          sudo apt-get install -y iverilog
+          sudo apt-get install -y verilator
       - name: Compile response-router test
         run: |
-          iverilog -g2012 -s tb_lot_rsp_router \
-            -o /tmp/rsp-router-smoke.vvp \
+          verilator --binary --timing -Wno-fatal \
+            --top-module tb_lot_rsp_router \
+            --Mdir /tmp/obj_rsp_router \
             rtl/crossbar/xbar_scheduler.sv \
             rtl/crossbar/xbar_4x4.sv \
             rtl/interconnect/lot_rsp_router.sv \
             tb/tb_lot_rsp_router.sv
       - name: Run response-router test
-        run: vvp -n /tmp/rsp-router-smoke.vvp
+        run: /tmp/obj_rsp_router/Vtb_lot_rsp_router
