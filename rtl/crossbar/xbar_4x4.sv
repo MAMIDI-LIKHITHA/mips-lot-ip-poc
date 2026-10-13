@@ -25,7 +25,6 @@ module xbar_4x4 #(
     // gate request generation or the downstream VALID signal.
     always_comb begin : build_requests
         integer i;
-        integer j;
 
         valid_dst = '0;
         req       = '0;
@@ -33,13 +32,9 @@ module xbar_4x4 #(
         for (i = 0; i < N; i = i + 1) begin
             valid_dst[i] = (in_dst[i] < N);
             if (in_valid[i] && valid_dst[i]) begin
-                // Compare destinations explicitly instead of variable-index
-                // writes into a packed multidimensional array. This is more
-                // portable across simulators while preserving one-hot routing.
-                for (j = 0; j < N; j = j + 1) begin
-                    if (in_dst[i] == j)
-                        req[i][j] = 1'b1;
-                end
+                // Generate the one-hot destination mask as a whole row. This
+                // avoids variable-index writes into a packed multidimensional array.
+                req[i] = {{(N-1){1'b0}}, 1'b1} << in_dst[i];
             end
         end
     end
