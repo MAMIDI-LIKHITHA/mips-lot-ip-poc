@@ -31,6 +31,8 @@ on:
       - "rtl/endpoints/lot_endpoint_adapter.sv"
       - "rtl/interconnect/lot_txn_router.sv"
       - "tb/tb_xbar_backpressure_stability.sv"
+      - "tb/tb_xbar_invalid_dst.sv"
+      - "tb/tb_xbar_multi_output.sv"
       - ".github/workflows/adapter-smoke.yml"
 
 jobs:
