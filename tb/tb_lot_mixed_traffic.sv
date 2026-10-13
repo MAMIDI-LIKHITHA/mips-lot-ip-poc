@@ -60,6 +60,8 @@ module tb_lot_mixed_traffic;
 
     integer accepted_count;
     integer response_count;
+    integer outstanding_count;
+    integer max_outstanding;
     integer contention_cycles;
     integer backpressure_cycles;
     integer cycle;
@@ -176,6 +178,9 @@ module tb_lot_mixed_traffic;
                             source_expected_error[s] = (txn_idx[s] == 3);
                             waiting[s] <= 1'b1;
                             accepted_count = accepted_count + 1;
+                            outstanding_count = outstanding_count + 1;
+                            if (outstanding_count > max_outstanding)
+                                max_outstanding = outstanding_count;
                         end
                     end
                 end
@@ -207,6 +212,9 @@ module tb_lot_mixed_traffic;
 
                     source_response_inflight[s2] = 1'b0;
                     response_count = response_count + 1;
+                    outstanding_count = outstanding_count - 1;
+                    if (outstanding_count < 0)
+                        $fatal(1, "Outstanding transaction count became negative");
                     waiting[s2] <= 1'b0;
 
                     if (txn_idx[s2] == TXNS_PER_SRC-1)
@@ -240,6 +248,8 @@ module tb_lot_mixed_traffic;
         rst_n = 1'b0;
         accepted_count = 0;
         response_count = 0;
+        outstanding_count = 0;
+        max_outstanding = 0;
         contention_cycles = 0;
         backpressure_cycles = 0;
         cycle = 0;
@@ -297,6 +307,9 @@ module tb_lot_mixed_traffic;
         if (backpressure_cycles == 0)
             $fatal(1, "Expected response backpressure was not observed");
 
+        if (outstanding_count != 0)
+            $fatal(1, "Outstanding transaction leak at end of test: %0d", outstanding_count);
+
         if (accepted_count != (N * TXNS_PER_SRC))
             $fatal(1, "Accepted transfer count mismatch: got %0d expected %0d",
                    accepted_count, N*TXNS_PER_SRC);
@@ -306,6 +319,8 @@ module tb_lot_mixed_traffic;
         $display("[5] Source mapping preserved under contention");
         $display("Accepted transactions      : %0d", accepted_count);
         $display("Returned responses         : %0d", response_count);
+        $display("Peak outstanding requests  : %0d", max_outstanding);
+        $display("Final outstanding requests : %0d", outstanding_count);
         $display("Contention cycles          : %0d", contention_cycles);
         $display("Backpressure cycles        : %0d", backpressure_cycles);
         $display("TB RESULT: PASS - mixed concurrent LOT traffic, contention, writes, reads, error responses, backpressure and source mapping verified.");
