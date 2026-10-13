@@ -21,17 +21,11 @@ module xbar_4x4 #(
     logic [N-1:0][N-1:0] req;
 
     // Requests describe source intent and destination only. READY must not
-    // gate request generation or the downstream VALID signal.
-    always_comb begin : build_requests
-        integer i;
-        integer j;
-
-        req       = '0;
-
-        for (i = 0; i < N; i = i + 1) begin
-            for (j = 0; j < N; j = j + 1) begin
-                req[i][j] = in_valid[i] && (in_dst[i] == j);
-            end
+    // gate request generation or the downstream VALID signal. Continuous
+    // per-pair assignments avoid simulator sensitivity issues on packed arrays.
+    for (genvar src = 0; src < N; src = src + 1) begin : gen_req_src
+        for (genvar dst = 0; dst < N; dst = dst + 1) begin : gen_req_dst
+            assign req[src][dst] = in_valid[src] && (in_dst[src] == dst);
         end
     end
 
