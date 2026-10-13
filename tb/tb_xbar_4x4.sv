@@ -71,7 +71,7 @@ module tb_xbar_4x4;
             in_dst[i] = i[DST_W-1:0];
             in_data[i] = 32'h1000 + i;
             #1;
-            $display("DEBUG route i=%0d rst_n=%b valid=%b dst=%h ready=%b grant=%b out_valid=%b out_data=%h", i, rst_n, in_valid, in_dst, in_ready, grant, out_valid, out_data);
+            $display("DEBUG route i=%0d rst_n=%b valid=%b dst=%h ready=%b grant=%b out_valid=%b out_data=%h req=%h ptr0=%0d", i, rst_n, in_valid, in_dst, in_ready, grant, out_valid, out_data, dut.req, dut.u_scheduler.rr_ptr[0]);
             check_output(i, 32'h1000 + i);
         end
 
