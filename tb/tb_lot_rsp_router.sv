@@ -106,12 +106,29 @@ module tb_lot_rsp_router;
         clear_inputs();
         dst_ready[2] = 1'b0;
         src_valid[1] = 1'b1; src_id[1] = 2'd2; src_data[1] = 32'hC002;
+        // Keep the source response stable while the destination applies
+        // backpressure for several clock cycles.
+        repeat (3) begin
+            @(posedge clk);
+            #1;
+            if (dst_valid[2] !== 1'b1 ||
+                dst_data[2] !== 32'hC002 ||
+                dst_error[2] !== 1'b0 ||
+                src_ready[1] !== 1'b0) begin
+                $error("Response changed or was acknowledged during sustained backpressure");
+                $fatal;
+            end
+        end
+
+        // Once READY returns, the held response must be accepted.
+        @(negedge clk);
+        dst_ready[2] = 1'b1;
         #1;
         if (dst_valid[2] !== 1'b1 ||
             dst_data[2] !== 32'hC002 ||
             dst_error[2] !== 1'b0 ||
-            src_ready[1] !== 1'b0) begin
-            $error("Response backpressure test failed: VALID/data/error must remain asserted and stable while READY is low");
+            src_ready[1] !== 1'b1) begin
+            $error("Held response was not accepted when READY returned");
             $fatal;
         end
 
