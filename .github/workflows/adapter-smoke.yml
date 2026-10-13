@@ -1,6 +1,7 @@
 name: Candidate MIPS adapter smoke test
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - "rtl/mips_if/mips_mmio_adapter_candidate.sv"
@@ -9,6 +10,9 @@ on:
       - "rtl/crossbar/xbar_4x4.sv"
       - "rtl/interconnect/lot_rsp_router.sv"
       - "tb/tb_lot_rsp_router.sv"
+      - "tb/tb_end_to_end_candidate.sv"
+      - "rtl/endpoints/lot_endpoint_adapter.sv"
+      - "rtl/interconnect/lot_txn_router.sv"
       - "rtl/interconnect/lot_txn_router.sv"
       - "tb/tb_lot_txn_router.sv"
       - "rtl/interconnect/lot_txn_router.sv"
@@ -23,6 +27,9 @@ on:
       - "rtl/crossbar/xbar_4x4.sv"
       - "rtl/interconnect/lot_rsp_router.sv"
       - "tb/tb_lot_rsp_router.sv"
+      - "tb/tb_end_to_end_candidate.sv"
+      - "rtl/endpoints/lot_endpoint_adapter.sv"
+      - "rtl/interconnect/lot_txn_router.sv"
       - ".github/workflows/adapter-smoke.yml"
 
 jobs:
@@ -83,3 +90,28 @@ jobs:
             tb/tb_lot_txn_router.sv
       - name: Run transaction-router test
         run: /tmp/obj_txn_router/Vtb_lot_txn_router
+
+  verilator-end-to-end-candidate-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install Verilator
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y verilator
+      - name: Compile end-to-end candidate test
+        run: |
+          verilator --binary --timing -Wno-fatal \\
+            --top-module tb_end_to_end_candidate \\
+            --Mdir /tmp/obj_end_to_end \\
+            rtl/mips_if/mips_mmio_adapter_candidate.sv \\
+            rtl/interconnect/lot_txn_router.sv \\
+            rtl/crossbar/xbar_scheduler.sv \\
+            rtl/crossbar/xbar_4x4.sv \\
+            rtl/interconnect/lot_rsp_router.sv \\
+            rtl/endpoints/lot_endpoint_adapter.sv \\
+            tb/tb_end_to_end_candidate.sv
+      - name: Run end-to-end candidate test
+        run: timeout 60s /tmp/obj_end_to_end/Vtb_end_to_end_candidate
