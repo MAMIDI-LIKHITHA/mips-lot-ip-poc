@@ -1,7 +1,7 @@
 # LOT POC — Next Verification Plan
 
 **Status:** Refreshed after PRs #39–#64. The test items below distinguish implemented coverage from remaining work.  
-**Scope:** Verification-plan update only. PRs #54, #56, #58, #60, and #62 add core-crossbar, representative parameter-sanity, parameterized invalid-destination, and parameterized reset tests to CI; PR #64 makes crossbar scheduler index-width conversions explicit after Verilator reported width warnings in the parameterized smoke. this document change does not change RTL behavior or claim hardware validation.
+**Scope:** Verification-plan update only. PRs #54, #56, #58, #60, and #62 add core-crossbar, representative parameter-sanity, parameterized invalid-destination, and parameterized reset tests to CI; PR #64 makes crossbar scheduler index-width conversions explicit after Verilator reported width warnings in the parameterized smoke; this document change does not change RTL behavior or claim hardware validation.
 
 ## 1. Current evidence baseline
 
