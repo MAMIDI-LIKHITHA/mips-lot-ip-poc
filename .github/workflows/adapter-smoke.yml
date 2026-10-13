@@ -15,6 +15,8 @@ on:
       - "rtl/interconnect/lot_txn_router.sv"
       - "tb/tb_lot_txn_router.sv"
       - "tb/tb_xbar_backpressure_stability.sv"
+      - "tb/tb_xbar_invalid_dst.sv"
+      - "tb/tb_xbar_multi_output.sv"
       - ".github/workflows/adapter-smoke.yml"
   push:
     branches: [main]
@@ -96,6 +98,14 @@ jobs:
         run: verilator --binary --timing -Wno-fatal --top-module tb_xbar_backpressure_stability --Mdir /tmp/obj_xbar_backpressure rtl/crossbar/xbar_scheduler.sv rtl/crossbar/xbar_4x4.sv tb/tb_xbar_backpressure_stability.sv
       - name: Run crossbar backpressure stability test
         run: /tmp/obj_xbar_backpressure/Vtb_xbar_backpressure_stability
+      - name: Compile invalid-destination crossbar test
+        run: verilator --binary --timing -Wno-fatal --top-module tb_xbar_invalid_dst --Mdir /tmp/obj_xbar_invalid_dst rtl/crossbar/xbar_scheduler.sv rtl/crossbar/xbar_4x4.sv tb/tb_xbar_invalid_dst.sv
+      - name: Run invalid-destination crossbar test
+        run: /tmp/obj_xbar_invalid_dst/Vtb_xbar_invalid_dst
+      - name: Compile multi-output crossbar test
+        run: verilator --binary --timing -Wno-fatal --top-module tb_xbar_multi_output --Mdir /tmp/obj_xbar_multi_output rtl/crossbar/xbar_scheduler.sv rtl/crossbar/xbar_4x4.sv tb/tb_xbar_multi_output.sv
+      - name: Run multi-output crossbar test
+        run: /tmp/obj_xbar_multi_output/Vtb_xbar_multi_output
 
   verilator-end-to-end-candidate-smoke:
     runs-on: ubuntu-latest
