@@ -50,7 +50,7 @@ endmodule
 
 module tb_xbar_parameter_sanity;
     logic clk = 1'b0;
-    logic done_n1, done_n2, done_n3;
+    logic done_n1, done_n2, done_n3, done_n5;
     always #5 clk = ~clk;
 
     xbar_parameter_case #(.N(1), .DATA_W(16), .DST_W(1)) case_n1
@@ -59,10 +59,12 @@ module tb_xbar_parameter_sanity;
         (.clk(clk), .done(done_n2));
     xbar_parameter_case #(.N(3), .DATA_W(16), .DST_W(2)) case_n3
         (.clk(clk), .done(done_n3));
+    xbar_parameter_case #(.N(5), .DATA_W(64), .DST_W(3)) case_n5
+        (.clk(clk), .done(done_n5));
 
     initial begin
-        wait (done_n1 && done_n2 && done_n3);
-        $display("TB RESULT: PASS — N=1/2/3 and DATA_W=8/16 parameter smoke");
+        wait (done_n1 && done_n2 && done_n3 && done_n5);
+        $display("TB RESULT: PASS — N=1/2/3/5 and DATA_W=8/16/64 parameter smoke");
         $finish;
     end
 
