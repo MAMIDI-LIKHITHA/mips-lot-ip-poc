@@ -13,10 +13,8 @@ on:
       - "tb/tb_end_to_end_candidate.sv"
       - "rtl/endpoints/lot_endpoint_adapter.sv"
       - "rtl/interconnect/lot_txn_router.sv"
-      - "rtl/interconnect/lot_txn_router.sv"
       - "tb/tb_lot_txn_router.sv"
-      - "rtl/interconnect/lot_txn_router.sv"
-      - "tb/tb_lot_txn_router.sv"
+      - "tb/tb_xbar_backpressure_stability.sv"
       - ".github/workflows/adapter-smoke.yml"
   push:
     branches: [main]
@@ -30,6 +28,7 @@ on:
       - "tb/tb_end_to_end_candidate.sv"
       - "rtl/endpoints/lot_endpoint_adapter.sv"
       - "rtl/interconnect/lot_txn_router.sv"
+      - "tb/tb_xbar_backpressure_stability.sv"
       - ".github/workflows/adapter-smoke.yml"
 
 jobs:
@@ -93,6 +92,10 @@ jobs:
             tb/tb_lot_txn_router.sv
       - name: Run transaction-router test
         run: /tmp/obj_txn_router/Vtb_lot_txn_router
+      - name: Compile crossbar backpressure stability test
+        run: verilator --binary --timing -Wno-fatal --top-module tb_xbar_backpressure_stability --Mdir /tmp/obj_xbar_backpressure rtl/crossbar/xbar_scheduler.sv rtl/crossbar/xbar_4x4.sv tb/tb_xbar_backpressure_stability.sv
+      - name: Run crossbar backpressure stability test
+        run: /tmp/obj_xbar_backpressure/Vtb_xbar_backpressure_stability
 
   verilator-end-to-end-candidate-smoke:
     runs-on: ubuntu-latest
