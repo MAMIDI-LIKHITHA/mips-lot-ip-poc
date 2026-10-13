@@ -3,7 +3,7 @@ module xbar_scheduler #(
 ) (
     input  logic                  clk,
     input  logic                  rst_n,
-    input  logic [N-1:0]         req [N-1:0],
+    input  logic [N*N-1:0]        req,
     input  logic [N-1:0]          out_ready,
     output logic [N-1:0][N-1:0]   grant
 );
@@ -17,6 +17,7 @@ module xbar_scheduler #(
     integer o;
     integer k;
     integer idx;
+    logic found;
 
     // Arbitration is independent of downstream READY. This allows VALID
     // and payload to remain asserted while a selected output is stalled.
@@ -26,20 +27,21 @@ module xbar_scheduler #(
         next_rr    = rr_ptr;
 
         for (o = 0; o < N; o = o + 1) begin
+            found = 1'b0;
             for (k = 0; k < N; k = k + 1) begin
                 idx = rr_ptr[o] + k;
                 if (idx >= N)
                     idx = idx - N;
 
-                if (!used_input[idx] && req[idx][o]) begin
+                if (!found && !used_input[idx] && req[idx*N + o]) begin
                     grant[idx][o] = 1'b1;
                     used_input[idx] = 1'b1;
+                    found = 1'b1;
 
                     // Advance fairness state only when this output
                     // completes a valid/ready handshake.
                     if (out_ready[o])
                         next_rr[o] = (idx == N-1) ? '0 : idx + 1'b1;
-                    break;
                 end
             end
         end
