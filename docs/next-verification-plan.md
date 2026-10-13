@@ -1,7 +1,7 @@
 # LOT POC — Next Verification Plan
 
-**Status:** Refreshed after PRs #39–#54. The test items below distinguish implemented coverage from remaining work.  
-**Scope:** Verification-plan update only. PR #54 adds an existing core crossbar test to CI; this document change does not change RTL/testbench behavior or claim hardware validation.
+**Status:** Refreshed after PRs #39–#56. The test items below distinguish implemented coverage from remaining work.  
+**Scope:** Verification-plan update only. PRs #54 and #56 add existing core-crossbar and representative parameter-sanity tests to CI; this document change does not change RTL behavior or claim hardware validation.
 
 ## 1. Current evidence baseline
 
@@ -16,7 +16,7 @@ The checked-in candidate adapter and router tests now additionally cover:
 
 The candidate adapter test also exercises request payload stability during LOT-side backpressure, CPU response/error stability, single-outstanding enforcement, unmapped-address errors, and reset cancellation. PR #46 extends end-to-end backpressure coverage to an unmapped-address error response. These tests define the current candidate POC behavior; they do not establish compatibility with a target MIPS bus.
 
-The request crossbar has CI smoke coverage for stalled-output backpressure stability (PR #49), invalid-destination suppression/recovery and simultaneous multi-output routing (PR #50), reset-time transfer suppression and post-reset recovery (PR #52), 500-cycle stress and accepted/delivered transfer accounting (PR #53), and the core 4×4 crossbar test (PR #54). The core test checks basic routing, single-grant behavior under contention, input grant exclusivity, output backpressure, and round-robin winner order under persistent contention. The post-merge workflow for PR #54 passed all four jobs: [workflow run 38475880399](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38475880399). These checks validate candidate simulation behavior, not timing closure or hardware operation.
+The request crossbar has CI smoke coverage for stalled-output backpressure stability (PR #49), invalid-destination suppression/recovery and simultaneous multi-output routing (PR #50), reset-time transfer suppression and post-reset recovery (PR #52), 500-cycle stress and accepted/delivered transfer accounting (PR #53), the core 4×4 crossbar test (PR #54), and representative parameter configurations (PR #56). The core test checks basic routing, single-grant behavior under contention, input grant exclusivity, output backpressure, and round-robin winner order under persistent contention. The parameter smoke checks N=1/2/3 with 8-bit or 16-bit payloads; it does not establish support for all parameter combinations. The post-merge workflow for PR #56 passed all four jobs: [workflow run 38476438378](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38476438378). These checks validate candidate simulation behavior, not timing closure or hardware operation.
 
 The testbench hardcodes the response source ID to source 0 and only instantiates one active candidate CPU-side initiator. Therefore, it does not demonstrate dynamic response association for multiple initiators.
 
@@ -36,8 +36,9 @@ The testbench hardcodes the response source ID to source 0 and only instantiates
 | P1 | Crossbar reset/recovery | **Implemented in PR #52.** Verify quiescence during reset, suppress traffic while reset is asserted, and confirm operation resumes after repeated reset. | Checks reset gating and recovery of the request fabric. |
 | P1 | Crossbar stress and transfer accounting | **Implemented in PR #53.** Run 500 deterministic cycles; check grants, contention, backpressure, simultaneous output traffic, and accepted/delivered totals. | Exercises sustained mixed traffic in CI; zero-cycle behavior is only the combinational simulation model, not timing closure. |
 | P1 | Core 4×4 crossbar regression | **Implemented in PR #54.** Check basic routing, single-grant behavior, input grant exclusivity, output backpressure, and round-robin winner order. | Exercises the dedicated core crossbar test in CI; this remains simulation evidence. |
+| P2 | Parameter and width sanity | **Representative smoke implemented in PR #56.** Run N=1/2/3 with DATA_W=8/16 and verify a routed transfer. | Provides bounded simulation evidence only; all parameter combinations and synthesis behavior remain unverified. |
 | P1 | CPU-side request stability assertion | Add a protocol assertion/test for request field stability whenever the actual CPU-side valid/ready contract requires it. | CPU-side requirements depend on the chosen native interface. |
-| P2 | Parameter and width sanity | Compile representative legal parameter combinations and add elaboration-time checks/documentation for unsupported widths or destination counts. | Prevents silent assumptions around `DATA_W/2`, `LOT_W`, and destination widths. |
+| P2 | Broader parameter and width validation | Extend beyond the representative PR #56 smoke, add elaboration-time checks/documentation for unsupported widths or destination counts, and test additional payload/destination combinations. | Prevents silent assumptions around `DATA_W/2`, `LOT_W`, and destination widths. |
 | P2 | Assertions and coverage | Add assertions for valid/payload stability while stalled, no duplicate acceptance, response stability, and accepted-request/response accounting. | Makes the regression catch protocol regressions rather than only expected examples. |
 
 ## 3. Test acceptance rules
