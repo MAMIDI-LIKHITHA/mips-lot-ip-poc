@@ -396,7 +396,7 @@ module tb_end_to_end_candidate;
 
         $display("TB RESULT: PASS - CPU requests traversed the MIPS candidate adapter, LOT transaction router, request XBAR, endpoint register adapter, response XBAR and LOT response router; register access, invalid-register and unmapped-address error responses, and response backpressure were verified.");
 
-        $stop;
+        $finish;
     end
 
 endmodule
