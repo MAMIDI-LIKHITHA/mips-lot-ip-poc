@@ -61,15 +61,15 @@ module tb_xbar_4x4;
         out_ready = '1;
         clear_inputs();
 
-        repeat (2) @(posedge clk);
+        repeat (2) @(negedge clk);
         rst_n = 1'b1;
 
         // Test 1: one-to-one connectivity.
         for (i = 0; i < N; i = i + 1) begin
             clear_inputs();
-            in_valid[i] = 1'b1;
             in_dst[i] = i[DST_W-1:0];
             in_data[i] = 32'h1000 + i;
+            in_valid = (4'b0001 << i);
             #1;
             check_output(i, 32'h1000 + i);
         end
@@ -77,10 +77,10 @@ module tb_xbar_4x4;
         // Test 2: all inputs target output 0.
         clear_inputs();
         for (i = 0; i < N; i = i + 1) begin
-            in_valid[i] = 1'b1;
             in_dst[i] = 2'd0;
             in_data[i] = 32'h2000 + i;
         end
+        in_valid = 4'b1111;
         #1;
         grant_count = 0;
         for (i = 0; i < N; i = i + 1)
@@ -99,9 +99,9 @@ module tb_xbar_4x4;
 
         // Test 3: one input cannot be granted to multiple outputs.
         clear_inputs();
-        in_valid[0] = 1'b1;
         in_dst[0] = 2'd2;
         in_data[0] = 32'h3000;
+        in_valid = 4'b0001;
         #1;
         grant_count = 0;
         for (j = 0; j < N; j = j + 1)
@@ -116,9 +116,9 @@ module tb_xbar_4x4;
         // Test 4: output backpressure.
         clear_inputs();
         out_ready[1] = 1'b0;
-        in_valid[2] = 1'b1;
         in_dst[2] = 2'd1;
         in_data[2] = 32'h4000;
+        in_valid = 4'b0100;
         #1;
         if (out_valid[1] !== 1'b1 || in_ready[2] !== 1'b0) begin
             $error("Backpressure must hold VALID while withholding READY");
@@ -130,16 +130,16 @@ module tb_xbar_4x4;
         // pointer is deterministic and independent of previous tests.
         clear_inputs();
         rst_n = 1'b0;
-        repeat (2) @(posedge clk);
+        repeat (2) @(negedge clk);
         rst_n = 1'b1;
 
         // Test 5: round-robin fairness under persistent contention.
         clear_inputs();
         for (i = 0; i < N; i = i + 1) begin
-            in_valid[i] = 1'b1;
             in_dst[i] = 2'd0;
             in_data[i] = 32'h5000 + i;
         end
+        in_valid = 4'b1111;
 
         // The reset pointer starts at input 0. After each clocked grant,
         // the next arbitration starts at the following input.
