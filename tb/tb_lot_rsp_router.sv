@@ -3,7 +3,7 @@ module tb_lot_rsp_router;
 
     localparam int N = 4;
     localparam int DATA_W = 32;
-    localparam int SRC_W = 2;
+    localparam int SRC_W = 3;
 
     logic clk, rst_n;
     logic [N-1:0] src_valid, src_ready;
@@ -91,6 +91,16 @@ module tb_lot_rsp_router;
         grant_count = 0;
         for (i = 0; i < N; i = i + 1) grant_count = grant_count + grant[i][0];
         if (grant_count != 1) begin $error("Expected one response grant, got %0d", grant_count); $fatal; end
+
+        // Out-of-range source IDs must not be routed or acknowledged.
+        clear_inputs();
+        src_valid[1] = 1'b1; src_id[1] = 3'd7;
+        src_data[1] = 32'hBAD7; src_error[1] = 1'b1;
+        #1;
+        if (dst_valid !== '0 || src_ready !== '0 || grant !== '0) begin
+            $error("Out-of-range source ID must not assert destination VALID, source READY, or a grant");
+            $fatal;
+        end
 
         // Backpressure.
         clear_inputs();
