@@ -63,6 +63,7 @@ module tb_xbar_multi_output;
 
         #1;
 
+        $display("DEBUG: out_valid=%b in_ready=%b grant=%b", out_valid, in_ready, grant);
         if (out_valid !== 4'b1111)
             $fatal(1, "FAIL: expected all four outputs valid");
 
