@@ -43,6 +43,7 @@ module tb_xbar_multi_output;
         repeat (2) @(posedge clk);
         @(negedge clk);
         rst_n = 1'b1;
+        @(negedge clk);
 
         // Four simultaneous requests target four different outputs.
         in_valid[0] = 1'b1;
@@ -63,7 +64,6 @@ module tb_xbar_multi_output;
 
         #1;
 
-        $display("DEBUG: rst_n=%b in_valid=%b in_dst=%h req=%h out_valid=%b in_ready=%b grant=%h", rst_n, in_valid, in_dst, dut.req, out_valid, in_ready, grant);
         if (out_valid !== 4'b1111)
             $fatal(1, "FAIL: expected all four outputs valid");
 
