@@ -61,7 +61,7 @@ module tb_xbar_4x4;
         out_ready = '1;
         clear_inputs();
 
-        repeat (2) @(posedge clk);
+        repeat (2) @(negedge clk);
         rst_n = 1'b1;
 
         // Test 1: one-to-one connectivity.
@@ -130,7 +130,7 @@ module tb_xbar_4x4;
         // pointer is deterministic and independent of previous tests.
         clear_inputs();
         rst_n = 1'b0;
-        repeat (2) @(posedge clk);
+        repeat (2) @(negedge clk);
         rst_n = 1'b1;
 
         // Test 5: round-robin fairness under persistent contention.
