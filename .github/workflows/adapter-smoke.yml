@@ -9,6 +9,10 @@ on:
       - "rtl/crossbar/xbar_4x4.sv"
       - "rtl/interconnect/lot_rsp_router.sv"
       - "tb/tb_lot_rsp_router.sv"
+      - "rtl/interconnect/lot_txn_router.sv"
+      - "tb/tb_lot_txn_router.sv"
+      - "rtl/interconnect/lot_txn_router.sv"
+      - "tb/tb_lot_txn_router.sv"
       - ".github/workflows/adapter-smoke.yml"
   push:
     branches: [main]
@@ -58,3 +62,24 @@ jobs:
             tb/tb_lot_rsp_router.sv
       - name: Run response-router test
         run: /tmp/obj_rsp_router/Vtb_lot_rsp_router
+
+  verilator-transaction-router-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install Verilator
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y verilator
+      - name: Compile transaction-router test
+        run: |
+          verilator --binary --timing -Wno-fatal \
+            --top-module tb_lot_txn_router \
+            --Mdir /tmp/obj_txn_router \
+            rtl/crossbar/xbar_scheduler.sv \
+            rtl/crossbar/xbar_4x4.sv \
+            rtl/interconnect/lot_txn_router.sv \
+            tb/tb_lot_txn_router.sv
+      - name: Run transaction-router test
+        run: /tmp/obj_txn_router/Vtb_lot_txn_router
