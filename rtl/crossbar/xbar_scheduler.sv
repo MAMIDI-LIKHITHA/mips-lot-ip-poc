@@ -3,7 +3,7 @@ module xbar_scheduler #(
 ) (
     input  logic                  clk,
     input  logic                  rst_n,
-    input  logic [N-1:0][N-1:0]   req,
+    input  logic [N-1:0]         req [N-1:0],
     input  logic [N-1:0]          out_ready,
     output logic [N-1:0][N-1:0]   grant
 );
