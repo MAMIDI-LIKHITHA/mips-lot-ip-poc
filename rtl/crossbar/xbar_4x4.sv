@@ -18,7 +18,7 @@ module xbar_4x4 #(
     output logic [N-1:0][N-1:0]     grant
 );
 
-    logic [N-1:0][N-1:0] req;
+    wire [N-1:0][N-1:0] req;
 
     // Decode each source destination into a one-hot request row. The
     // N-bit shift naturally truncates unsupported destination values.
