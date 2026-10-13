@@ -40,7 +40,7 @@ module tb_lot_rsp_router;
         input logic expected_error
     );
         begin
-            if (!dst_valid[output_id]) begin $error("Expected response valid"); $fatal; end
+            if (!dst_valid[output_id]) begin $error("Expected response valid at output %0d; dst_valid=%b src_valid=%b src_ready=%b grant=%b", output_id, dst_valid, src_valid, src_ready, grant); $fatal; end
             if (dst_data[output_id] !== expected_data) begin
                 $error("Data mismatch at output %0d: got %h expected %h", output_id, dst_data[output_id], expected_data);
                 $fatal;
