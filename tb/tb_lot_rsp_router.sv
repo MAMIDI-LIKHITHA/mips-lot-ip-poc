@@ -69,6 +69,18 @@ module tb_lot_rsp_router;
         src_data[0] = 32'hE003; src_error[0] = 1'b1;
         #1; check_output(3, 32'hE003, 1'b1);
 
+        // Multiple responses can route to distinct sources in the same cycle.
+        clear_inputs();
+        src_valid[0] = 1'b1; src_id[0] = 2'd0;
+        src_data[0] = 32'hD000; src_error[0] = 1'b0;
+        src_valid[2] = 1'b1; src_id[2] = 2'd2;
+        src_data[2] = 32'hD002; src_error[2] = 1'b1;
+        #1;
+        check_output(0, 32'hD000, 1'b0);
+        check_output(2, 32'hD002, 1'b1);
+        if (src_ready[0] !== 1'b1 || src_ready[2] !== 1'b1)
+            $fatal(1, "Distinct-destination responses should both be accepted concurrently");
+
         // Two responses cannot target the same source simultaneously.
         clear_inputs();
         src_valid[0] = 1'b1; src_id[0] = 2'd0; src_data[0] = 32'hB000;
@@ -91,7 +103,7 @@ module tb_lot_rsp_router;
             $fatal;
         end
 
-        $display("TB RESULT: PASS - response routing, error propagation, contention and backpressure checks passed.");
+        $display("TB RESULT: PASS - response routing, simultaneous distinct-destination responses, error propagation, contention and backpressure checks passed.");
         $finish;
     end
 endmodule

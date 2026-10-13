@@ -229,7 +229,47 @@ module tb_mips_mmio_adapter_candidate;
         issue_request(1'b1, 32'h0003_0080, 32'hFACE_CAFE, 2'd3);
         return_response(32'hFACE_CAFE, 1'b0);
 
-        $display("TB RESULT: PASS - candidate MIPS MMIO adapter destination decode, payload encoding, request/response backpressure, single-outstanding behavior, error propagation, unmapped-address error response and reset recovery verified.");
+        $display("[7] Reset cancels an accepted request with no response yet");
+        issue_request(1'b1, 32'h0002_0090, 32'hABCD_0090, 2'd2);
+        if (req_ready || !lot_rsp_ready || rsp_valid)
+            $fatal(1, "Expected adapter to be waiting for the accepted request response");
+        rst_n = 1'b0;
+        #1;
+        if (req_ready || lot_valid || rsp_valid || lot_rsp_ready)
+            $fatal(1, "Reset did not clear outstanding-request state");
+        rst_n = 1'b1;
+        @(posedge clk);
+        #1;
+        if (!req_ready || rsp_valid || lot_rsp_ready)
+            $fatal(1, "Outstanding request produced a phantom response after reset");
+
+        $display("[8] Reset cancels a CPU response held under backpressure");
+        issue_request(1'b0, 32'h0001_00A0, '0, 2'd1);
+        wait (lot_rsp_ready);
+        lot_rsp_rdata = 32'hFACE_00A0;
+        lot_rsp_error = 1'b0;
+        lot_rsp_valid = 1'b1;
+        @(posedge clk);
+        #1;
+        lot_rsp_valid = 1'b0;
+        if (!rsp_valid || rsp_rdata !== 32'hFACE_00A0 || rsp_error)
+            $fatal(1, "Expected successful response before reset");
+        // rsp_ready remains low, so the response is intentionally stalled.
+        rst_n = 1'b0;
+        #1;
+        if (req_ready || lot_valid || rsp_valid || lot_rsp_ready)
+            $fatal(1, "Reset did not clear a stalled CPU response");
+        rst_n = 1'b1;
+        @(posedge clk);
+        #1;
+        if (!req_ready || rsp_valid)
+            $fatal(1, "Stalled response reappeared after reset");
+
+        $display("[9] New transaction succeeds after reset cancellation");
+        issue_request(1'b1, 32'h0000_00B0, 32'hBEEF_00B0, 2'd0);
+        return_response(32'hBEEF_00B0, 1'b0);
+
+        $display("TB RESULT: PASS - candidate MIPS MMIO adapter destination decode, payload encoding, request/response backpressure, single-outstanding behavior, error propagation, unmapped-address error response, reset recovery, reset cancellation of outstanding requests, and reset cancellation of stalled responses verified.");
         $stop;
     end
 
