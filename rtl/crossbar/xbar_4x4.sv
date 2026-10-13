@@ -32,12 +32,12 @@ module xbar_4x4 #(
 
     // Generate each request bit independently. This avoids simulator-specific
     // behavior around variable-index writes into packed multidimensional arrays.
-    genvar gi, gj;
+    genvar gi;
     generate
         for (gi = 0; gi < N; gi = gi + 1) begin : g_req_source
-            for (gj = 0; gj < N; gj = gj + 1) begin : g_req_destination
-                assign req[gi][gj] = in_valid[gi] && (in_dst[gi] == gj);
-            end
+            assign req[gi] = (in_valid[gi] && valid_dst[gi])
+                ? ({{(N-1){1'b0}}, 1'b1} << in_dst[gi])
+                : '0;
         end
     endgenerate
 
