@@ -1,6 +1,6 @@
 # LOT POC — Next Verification Plan
 
-**Status:** Refreshed after PRs #39–#52. The test items below distinguish implemented coverage from remaining work.  
+**Status:** Refreshed after PRs #39–#53. The test items below distinguish implemented coverage from remaining work.  
 **Scope:** Planning only. This document update does not change RTL/testbench behavior and does not claim a new simulation.
 
 ## 1. Current evidence baseline
@@ -16,7 +16,7 @@ The checked-in candidate adapter and router tests now additionally cover:
 
 The candidate adapter test also exercises request payload stability during LOT-side backpressure, CPU response/error stability, single-outstanding enforcement, unmapped-address errors, and reset cancellation. PR #46 extends end-to-end backpressure coverage to an unmapped-address error response. These tests define the current candidate POC behavior; they do not establish compatibility with a target MIPS bus.
 
-The request crossbar now also has dedicated CI smoke coverage for stalled-output backpressure stability (PR #49), invalid-destination suppression/recovery, and four simultaneous requests routed to four distinct outputs (PR #50). Reset-time transfer suppression and post-reset recovery are also now in CI (PR #52). The latest CI run after PR #52 passed all four jobs; see [workflow run 38474277917](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38474277917). These checks validate the candidate simulation behavior, not timing closure or hardware operation.
+The request crossbar now also has dedicated CI smoke coverage for stalled-output backpressure stability (PR #49), invalid-destination suppression/recovery, and four simultaneous requests routed to four distinct outputs (PR #50). Reset-time transfer suppression and recovery (PR #52), plus 500-cycle stress, transfer accounting, contention, and modeled zero-cycle latency checks (PR #53), are also included in CI. Reset-time transfer suppression and post-reset recovery are also now in CI (PR #52). The latest CI run after PR #53 passed all four jobs; see [workflow run 38474580051](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38474580051). These checks validate the candidate simulation behavior, not timing closure or hardware operation.
 
 The testbench hardcodes the response source ID to source 0 and only instantiates one active candidate CPU-side initiator. Therefore, it does not demonstrate dynamic response association for multiple initiators.
 
@@ -34,6 +34,7 @@ The testbench hardcodes the response source ID to source 0 and only instantiates
 | P1 | Response router reset gating | **Implemented in PR #42.** Verify no destination VALID, source READY, or grant during reset. | Makes candidate reset behavior explicit in regression. |
 | P1 | Request crossbar backpressure stability | **Implemented in PR #49.** Hold the selected output stalled and verify grant/payload stability, ready behavior, and round-robin pointer hold/advance. | Prevents a stalled transfer from changing or being lost. |\n| P1 | Invalid crossbar destination and recovery | **Implemented in PR #50.** Drive an out-of-range destination, verify suppression, then verify a valid request routes correctly. | Prevents malformed destinations from activating an output. |\n| P1 | Simultaneous multi-output crossbar routing | **Implemented in PR #50.** Drive four sources to four distinct outputs; verify output valids, payload mapping, grants, and partial backpressure/recovery. | Checks concurrent routing across independent outputs. |
 | P1 | Crossbar reset/recovery | **Implemented in PR #52.** Verify quiescence during reset, suppress traffic while reset is asserted, and confirm operation resumes after repeated reset. | Checks reset gating and recovery of the request fabric. |
+| P1 | Crossbar stress and transfer accounting | **Implemented in PR #53.** Run 500 deterministic cycles; check grants, contention, backpressure, simultaneous output traffic, and accepted/delivered totals. | Exercises sustained mixed traffic in CI; zero-cycle behavior is only the combinational simulation model, not timing closure. |
 | P1 | CPU-side request stability assertion | Add a protocol assertion/test for request field stability whenever the actual CPU-side valid/ready contract requires it. | CPU-side requirements depend on the chosen native interface. |
 | P2 | Parameter and width sanity | Compile representative legal parameter combinations and add elaboration-time checks/documentation for unsupported widths or destination counts. | Prevents silent assumptions around `DATA_W/2`, `LOT_W`, and destination widths. |
 | P2 | Assertions and coverage | Add assertions for valid/payload stability while stalled, no duplicate acceptance, response stability, and accepted-request/response accounting. | Makes the regression catch protocol regressions rather than only expected examples. |
