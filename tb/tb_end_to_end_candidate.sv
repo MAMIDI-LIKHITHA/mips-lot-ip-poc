@@ -270,7 +270,8 @@ module tb_end_to_end_candidate;
 
     task automatic cpu_read_with_backpressure(
         input logic [ADDR_W-1:0] addr,
-        input logic [DATA_W-1:0] expected
+        input logic [DATA_W-1:0] expected,
+        input logic expected_error
     );
         logic [DATA_W-1:0] held_data;
         logic held_error;
@@ -299,9 +300,9 @@ module tb_end_to_end_candidate;
                 end
             end
 
-            if (held_data !== expected || held_error !== 1'b0) begin
-                $error("Backpressure response mismatch: got %h error %b expected %h",
-                       held_data, held_error, expected);
+            if (held_data !== expected || held_error !== expected_error) begin
+                $error("Backpressure response mismatch: got %h error %b expected %h error %b",
+                       held_data, held_error, expected, expected_error);
                 $fatal;
             end
 
@@ -403,13 +404,16 @@ module tb_end_to_end_candidate;
         cpu_read(32'h0004_0000, 32'h0000_0000, 1'b1);
 
         $display("[9] Response backpressure stability");
-        cpu_read_with_backpressure(32'h0002_0008, 32'h0000_0001);
+        cpu_read_with_backpressure(32'h0002_0008, 32'h0000_0001, 1'b0);
 
-        $display("[10] Reset cancels a stalled end-to-end CPU response");
+        $display("[10] Error response remains stable under CPU backpressure");
+        cpu_read_with_backpressure(32'h0004_0000, 32'h0000_0000, 1'b1);
+
+        $display("[11] Reset cancels a stalled end-to-end CPU response");
         reset_while_cpu_response_stalled();
         cpu_read(32'h0002_0008, 32'h0000_0001, 1'b0);
 
-        $display("TB RESULT: PASS - CPU requests traversed the MIPS candidate adapter, LOT transaction router, request XBAR, endpoint register adapter, response XBAR and LOT response router; register access, invalid-register and unmapped-address error responses, and response backpressure were verified.");
+        $display("TB RESULT: PASS - CPU requests traversed the MIPS candidate adapter, LOT transaction router, request XBAR, endpoint register adapter, response XBAR and LOT response router; register access, invalid-register and unmapped-address error responses, and successful and error response backpressure, and reset cancellation were verified.");
 
         $finish;
     end
