@@ -32,7 +32,6 @@ module xbar_reset_case #(
 
     initial begin
         done = 1'b0;
-        clk = 1'b0;
         clear_inputs();
         rst_n = 1'b0;
         #2;
