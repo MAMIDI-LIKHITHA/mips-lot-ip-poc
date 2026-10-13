@@ -27,7 +27,7 @@ module xbar_scheduler #(
 
         for (o = 0; o < N; o = o + 1) begin
             for (k = 0; k < N; k = k + 1) begin
-                idx = rr_ptr[o] + k;
+                idx = int'(rr_ptr[o]) + k;
                 if (idx >= N)
                     idx = idx - N;
 
@@ -38,7 +38,7 @@ module xbar_scheduler #(
                     // Advance fairness state only when this output
                     // completes a valid/ready handshake.
                     if (out_ready[o])
-                        next_rr[o] = (idx == N-1) ? '0 : idx + 1'b1;
+                        next_rr[o] = (idx == N-1) ? '0 : PTR_W'(idx + 1);
                     break;
                 end
             end
