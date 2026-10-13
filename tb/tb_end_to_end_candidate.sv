@@ -303,6 +303,46 @@ module tb_end_to_end_candidate;
         end
     endtask
 
+    task automatic reset_while_cpu_response_stalled;
+        begin
+            cpu_req_write = 1'b0;
+            cpu_req_addr = 32'h0002_0008; // Endpoint 2 STATUS
+            cpu_req_wdata = '0;
+            cpu_req_valid = 1'b1;
+            cpu_rsp_ready = 1'b0;
+
+            wait (cpu_req_ready);
+            @(posedge clk);
+            cpu_req_valid = 1'b0;
+
+            wait (cpu_rsp_valid);
+            if (cpu_rsp_rdata !== 32'h0000_0001 || cpu_rsp_error !== 1'b0) begin
+                $error("Pre-reset response was not the expected STATUS value");
+                $fatal;
+            end
+
+            // Leave the response unaccepted, then reset the complete path.
+            repeat (2) @(posedge clk);
+            if (cpu_rsp_valid !== 1'b1) begin
+                $error("CPU response did not remain pending before reset");
+                $fatal;
+            end
+            @(negedge clk);
+            rst_n = 1'b0;
+            cpu_req_valid = 1'b0;
+            cpu_rsp_ready = 1'b0;
+            repeat (2) @(posedge clk);
+            @(negedge clk);
+            rst_n = 1'b1;
+            repeat (2) @(posedge clk);
+            #1;
+            if (cpu_rsp_valid !== 1'b0) begin
+                $error("Phantom CPU response remained after reset");
+                $fatal;
+            end
+        end
+    endtask
+
     initial begin
         clk = 1'b0;
         rst_n = 1'b0;
@@ -349,6 +389,10 @@ module tb_end_to_end_candidate;
 
         $display("[9] Response backpressure stability");
         cpu_read_with_backpressure(32'h0002_0008, 32'h0000_0001);
+
+        $display("[10] Reset cancels a stalled end-to-end CPU response");
+        reset_while_cpu_response_stalled();
+        cpu_read(32'h0002_0008, 32'h0000_0001, 1'b0);
 
         $display("TB RESULT: PASS - CPU requests traversed the MIPS candidate adapter, LOT transaction router, request XBAR, endpoint register adapter, response XBAR and LOT response router; register access, invalid-register and unmapped-address error responses, and response backpressure were verified.");
 
