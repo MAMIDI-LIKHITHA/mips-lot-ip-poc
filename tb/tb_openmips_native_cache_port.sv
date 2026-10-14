@@ -21,7 +21,7 @@ module tb_openmips_native_cache_port;
   wire [33:0] Address_M;
   wire ReadLine_M, ReadWord_M, LineOutReady_M, WordOutReady_M;
   wire [3:0] WordOutBE_M;
-  wire WordOutPAddressValid_M;
+  wire WordOutPAddressValid_M, ReadWordPAddressValid_M;
   wire [127:0] DataOut_M;
   reg [31:0] DataIn_M=0;
   reg [1:0] DataInOffset_M=0;
@@ -39,6 +39,7 @@ module tb_openmips_native_cache_port;
     .DataIn_M(DataIn_M), .DataInOffset_M(DataInOffset_M),
     .LineOutReady_M(LineOutReady_M), .WordOutReady_M(WordOutReady_M),
     .WordOutBE_M(WordOutBE_M), .WordOutPAddressValid_M(WordOutPAddressValid_M),
+    .ReadWordPAddressValid_M(ReadWordPAddressValid_M),
     .DataOut_M(DataOut_M), .Ready_M(Ready_M)
   );
 
@@ -82,6 +83,10 @@ module tb_openmips_native_cache_port;
     PAddressIn_C=24'h000001;
     Read_C=1;
     wait (ReadWord_M === 1'b1);
+    PAddressValid_C=0;
+    CacheAttr_C=3'b000;
+    if (ReadWordPAddressValid_M !== 1'b1)
+      $fatal(1, "uncacheable read lost its captured PAddressValid qualification");
     // The cache's FILL_WAIT_WORD state can re-sample a held CPU request;
     // retire the one-shot test request before returning the memory response.
     Read_C=0;
@@ -102,6 +107,7 @@ module tb_openmips_native_cache_port;
     // A different, cacheable address should take the four-word line-fill path.
     @(negedge clock);
     line_test=1;
+    PAddressValid_C=1;
     CacheAttr_C=3'b000;
     VAddressIn_C=10'h008; // word offset 0 within the cache line
     PAddressIn_C=24'h000002;
@@ -162,6 +168,7 @@ module tb_openmips_native_cache_port;
     // Exercise the native write buffer for an uncacheable word store. This
     // checks the buffered payload and byte enables before acknowledging it.
     @(negedge clock);
+    PAddressValid_C=1;
     CacheAttr_C=3'b010;
     VAddressIn_C=10'h00C;
     PAddressIn_C=24'h000003;
