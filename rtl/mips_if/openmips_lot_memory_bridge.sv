@@ -96,10 +96,12 @@ module openmips_lot_memory_bridge #(
     // The current POC has four endpoint destinations: CONTROL, DATA, STATUS,
     // ID. A hit elsewhere in the 4 KiB classifier window is not a valid endpoint.
     assign endpoint_dst = byte_addr[3:2];
-    assign route_lot = class_route_lot && endpoint_offset_supported;
-    assign reject_access = class_reject ||
-                           (class_route_lot && !endpoint_offset_supported);
-    assign route_ram = class_route_ram && !reject_access;
+    // Once a LOT request is accepted, keep ownership on the LOT path until its
+    // response is consumed, even if upstream sideband/address signals move.
+    assign route_lot = pending || (class_route_lot && endpoint_offset_supported);
+    assign reject_access = !pending && (class_reject ||
+                           (class_route_lot && !endpoint_offset_supported));
+    assign route_ram = !pending && class_route_ram && !reject_access;
 
     // RAM path is preserved for cache-line fills/writebacks and ordinary words.
     assign ram_addr = data_addr;
