@@ -38,10 +38,13 @@ module openmips_lot_access_classifier #(
         // Line transfers are always RAM traffic. They are never converted to
         // a single LOT word, even if their address overlaps the test window.
         if (any_line) begin
-            route_ram = 1'b1;
-            // Simultaneous line and word commands are an invalid combination.
-            if (any_word)
+            // Simultaneous line and word commands are an invalid combination;
+            // do not route either side effect when the command bundle is bad.
+            if (any_word) begin
                 reject_access = 1'b1;
+            end else begin
+                route_ram = 1'b1;
+            end
         end else if (any_word) begin
             if (!paddr_valid) begin
                 reject_access = 1'b1;
