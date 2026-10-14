@@ -83,6 +83,8 @@ module tb_openmips_native_cache_port;
     PAddressIn_C=24'h000001;
     Read_C=1;
     wait (ReadWord_M === 1'b1);
+    if (ReadWordPAddressValid_M !== 1'b1)
+      $fatal(1, "uncacheable read did not capture PAddressValid before sideband change: internal=%b state=%0d new_request=%b", dut.s_paddr_valid, dut.state, dut.new_request);
     PAddressValid_C=0;
     CacheAttr_C=3'b000;
     if (ReadWordPAddressValid_M !== 1'b1)
