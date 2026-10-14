@@ -160,3 +160,5 @@ The SVG diagrams are repository-native redraws based on the supplied asset names
 These documents are verification plans and source-inspection notes. They do not claim native OpenMIPS cycle-level testing or full CPU-to-LOT integration.
 
 - [OpenMIPS native memory-port cycle review](docs/openmips-native-memory-port-cycle-review.md) — source-level observations about cache-FSM request assertions, write-buffer indicators, `Ready_M`, and line-fill sequencing; upstream `master` is not yet pinned to a reviewed commit.
+
+- [OpenMIPS source pin and native cache-port smoke test](docs/openmips-source-pin-and-native-cache-smoke.md) — pins upstream OpenMIPS to `d606b35e9d5260aef20de2a58660c8303a681e9c` and documents the CI harness that instantiates the actual `DataCache_2KB` RTL.
