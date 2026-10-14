@@ -14,15 +14,15 @@ The CI workflow checks out this exact SHA rather than the mutable `master` branc
 
 Files in this repository:
 
-- `tb/tb_openmips_native_cache_port.sv` — instantiates the actual upstream `DataCache_2KB` module and requests one uncacheable word read.
+- `tb/tb_openmips_native_cache_port.sv` — instantiates the actual upstream `DataCache_2KB` module and requests an uncacheable word read and then a cacheable line fill.
 - `tb/models/openmips_bram_model.sv` — simulation-only behavioral replacement for the vendor-generated dual-port BRAM primitive used by the cache set.
 - `.github/workflows/openmips-native-cache-port-smoke.yml` — checks out the pinned source, compiles the actual cache RTL and dependencies with Icarus Verilog, then runs the test.
 
-The test is intended to check that the real cache asserts `ReadWord_M` for an uncacheable read and eventually produces one processor-side `Ready_C` completion after the memory model supplies a one-cycle `Ready_M` pulse. It also fails if line or write-buffer commands appear during this isolated read.
+The test checks that the real cache asserts `ReadWord_M` for an uncacheable read and eventually produces a processor-side `Ready_C` completion after the memory model supplies a one-cycle `Ready_M` pulse. It then requests a different cacheable address, observes `ReadLine_M`, supplies four data words with offsets 0 through 3, and checks for the second processor-side completion. It also fails if line or write-buffer commands appear during the isolated uncacheable read.
 
 ## Evidence and limitations
 
 - This is a **cache-module-level** test, not a full `MIPS32` processor test and not CPU-to-LOT integration.
 - The BRAM model is for simulation only; it is not vendor-equivalent sign-off and must not be used for synthesis.
-- The smoke test exercises one uncacheable read path only. It does not validate dirty-line writeback, four-beat cache-line fills, write-buffer retirement for stores, TLB/MMU qualification wiring, LOT error handling, or reset coordination.
+- The smoke test covers an uncacheable read and a basic four-beat cache-line fill. It does not validate dirty-line writeback, write-buffer retirement for stores, TLB/MMU qualification wiring, LOT error handling, or reset coordination.
 - The CI result must be checked on the workflow page before treating the new test as passing.
