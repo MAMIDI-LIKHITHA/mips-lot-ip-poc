@@ -74,7 +74,7 @@ module xbar_stress_case #(
                     if ((cycle % 10) == 0)
                         in_dst[s] = DST_W'(s);
                     else
-                        in_dst[s] = DST_W'((cycle + 2*s + (cycle/11)) % N);
+                        in_dst[s] = DST_W'((cycle + (s/2) + (cycle/11)) % N);
                     in_data[s] = DATA_W'(32'hA500_0000 | (cycle << 8) | s);
                 end
             end
