@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "tb/tb_openmips_native_cache_port.sv"
+      - "patches/openmips/0001-cache-queue-paddr-valid.patch"
       - "tb/models/openmips_bram_model.sv"
       - ".github/workflows/openmips-native-cache-port-smoke.yml"
   pull_request:
@@ -24,6 +25,10 @@ jobs:
           repository: grantae/OpenMIPS
           ref: d606b35e9d5260aef20de2a58660c8303a681e9c
           path: upstream/OpenMIPS
+      - name: Apply reviewed cache qualification patch
+        run: |
+          git -C upstream/OpenMIPS apply --check "$GITHUB_WORKSPACE/patches/openmips/0001-cache-queue-paddr-valid.patch"
+          git -C upstream/OpenMIPS apply "$GITHUB_WORKSPACE/patches/openmips/0001-cache-queue-paddr-valid.patch"
       - name: Install Icarus Verilog
         run: |
           sudo apt-get update
