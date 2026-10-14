@@ -158,6 +158,21 @@ module tb_openmips_full_core_lot_program;
     end
   end
 
+  integer dcache_debug_cycles=0;
+  always @(negedge clk) begin
+    if (!reset && dcache_debug_cycles < 80 &&
+        (cpu.DCache.state == 3 || cpu.DCache.state == 4 ||
+         cpu.DCache.ReadWord_M || cpu.DCache.WordOutReady_M)) begin
+      $display("DCACHE STATE=%0d native_rd=%b top_rd=%b qvalid=%b svalid=%b s_uncached=%b attr=%b pvalid=%b addr=%h lotvalid=%b classlot=%b classram=%b reject=%b fault=%b",
+        cpu.DCache.state, cpu.DCache.ReadWord_M, data_read_word,
+        data_read_word_paddr_valid, cpu.DCache.s_paddr_valid, cpu.DCache.s_uncacheable,
+        cpu.Core.DataMem_CacheAttr, cpu.Core.DataMem_PAddressValid,
+        data_addr, lot_valid, wrapper.u_bridge.class_route_lot,
+        wrapper.u_bridge.class_route_ram, wrapper.u_bridge.class_reject, protocol_fault);
+      dcache_debug_cycles <= dcache_debug_cycles + 1;
+    end
+  end
+
   integer debug_cycle=0;
   always @(posedge clk) begin
     if (!reset && debug_cycle < 100) begin
