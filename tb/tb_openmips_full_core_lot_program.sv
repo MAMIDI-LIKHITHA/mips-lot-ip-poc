@@ -116,8 +116,6 @@ module tb_openmips_full_core_lot_program;
       inst_ready <= 0;
       if (!(inst_read_word || inst_read_line))
         inst_command_seen <= 0;
-      if (inst_read_word || inst_read_line)
-        $display("IFETCH CMD addr=%h word=%b line=%b icache_state=%0d", inst_addr, inst_read_word, inst_read_line, cpu.ICache.state);
       if (!inst_pending && !inst_command_seen && (inst_read_word || inst_read_line)) begin
         inst_pending <= 1;
         inst_command_seen <= 1;
@@ -130,7 +128,6 @@ module tb_openmips_full_core_lot_program;
           inst_delay <= inst_delay - 1;
         end else begin
           inst_ready <= 1;
-          $display("IFETCH RSP addr=%h data=%h line=%b beat=%0d", inst_saved_addr + (inst_line_pending ? inst_beat : 0), rom_word(inst_saved_addr + (inst_line_pending ? inst_beat : 0)), inst_line_pending, inst_beat);
           inst_offset <= inst_line_pending ? inst_beat : inst_saved_addr[1:0];
           inst_in <= rom_word(inst_saved_addr + (inst_line_pending ? inst_beat : 0));
           if (inst_line_pending && inst_beat != 2'd3)
@@ -139,6 +136,23 @@ module tb_openmips_full_core_lot_program;
             inst_pending <= 0;
         end
       end
+    end
+  end
+
+  integer debug_cycle=0;
+  always @(posedge clk) begin
+    if (!reset && debug_cycle < 100) begin
+      if (cpu.Core.M1_Exception || cpu.Core.M2_Exception || cpu.Core.W1_Exception)
+        $display("EXCEPTION cycle=%0d PC=%h M1=%b code=%h kernel=%b AdEL=%b AdES=%b M2=%b M2codes=%b W1=%b W1code=%h",
+          debug_cycle, cpu.Core.F1_PC, cpu.Core.M1_Exception, cpu.Core.M1_ExcCode,
+          cpu.Core.M1_KernelMode, cpu.Core.M1_EXC_AdEL, cpu.Core.M1_EXC_AdES,
+          cpu.Core.M2_Exception, cpu.Core.M2_ExcCodes, cpu.Core.W1_Exception, cpu.Core.W1_ExcCode);
+      if (cpu.Core.DataMem_Read || (|cpu.Core.DataMem_Write))
+        $display("CPU DATA cycle=%0d vaddr=%h paddr=%h valid=%b attr=%b read=%b write=%b",
+          debug_cycle, cpu.Core.DataMem_VAddress, cpu.Core.DataMem_PAddress,
+          cpu.Core.DataMem_PAddressValid, cpu.Core.DataMem_CacheAttr,
+          cpu.Core.DataMem_Read, cpu.Core.DataMem_Write);
+      debug_cycle <= debug_cycle + 1;
     end
   end
 
@@ -204,7 +218,7 @@ module tb_openmips_full_core_lot_program;
         $finish;
       end
     end
-    $display("DBG PC=%h F1_PC=%h ICacheState=%0d ICacheReady=%b ICacheBlocked=%b inst_pending=%b cmd_seen=%b inst_ready=%b DataRead=%b DataWrite=%b DataV=%h DataP=%h PValid=%b Attr=%b DCacheState=%0d", inst_addr, cpu.Core.F1_PC, cpu.ICache.state, cpu.ICache.Ready_C, cpu.ICache.Blocked_C, inst_pending, inst_command_seen, inst_ready, cpu.Core.DataMem_Read, cpu.Core.DataMem_Write, cpu.Core.DataMem_VAddress, cpu.Core.DataMem_PAddress, cpu.Core.DataMem_PAddressValid, cpu.Core.DataMem_CacheAttr, cpu.DCache.state);
+    $display("DBG PC=%h F1_PC=%h ICacheState=%0d ICacheReady=%b ICacheBlocked=%b inst_pending=%b cmd_seen=%b inst_ready=%b DataRead=%b DataWrite=%b DataV=%h DataP=%h PValid=%b Attr=%b DCacheState=%0d M1Kernel=%b AdEL=%b AdES=%b M1Exc=%b M1Code=%h M2Exc=%b M2Codes=%b W1Exc=%b W1Code=%h", inst_addr, cpu.Core.F1_PC, cpu.ICache.state, cpu.ICache.Ready_C, cpu.ICache.Blocked_C, inst_pending, inst_command_seen, inst_ready, cpu.Core.DataMem_Read, cpu.Core.DataMem_Write, cpu.Core.DataMem_VAddress, cpu.Core.DataMem_PAddress, cpu.Core.DataMem_PAddressValid, cpu.Core.DataMem_CacheAttr, cpu.DCache.state, cpu.Core.M1_KernelMode, cpu.Core.M1_EXC_AdEL, cpu.Core.M1_EXC_AdES, cpu.Core.M1_Exception, cpu.Core.M1_ExcCode, cpu.Core.M2_Exception, cpu.Core.M2_ExcCodes, cpu.Core.W1_Exception, cpu.Core.W1_ExcCode);
     $fatal(1, "timeout: full-core program did not issue all expected LOT transactions; count=%0d PC-fetch=%h inst_readword=%b inst_readline=%b data_addr=%h data_read=%b data_write=%b state=%0d", lot_count, inst_addr, inst_read_word, inst_read_line, data_addr, data_read_word, data_write_word, cpu.DCache.state);
   end
 endmodule
