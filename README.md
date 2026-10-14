@@ -169,7 +169,7 @@ These documents are verification plans and source-inspection notes. They do not 
 
 - The pinned OpenMIPS cache smoke test now applies `scripts/apply-openmips-cache-qualification.py` to preserve the active cache attribute semantics and capture physical-address validity with queued word-write entries. The actual-cache regression passed: [CI run 38554550754](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38554550754).
 - `rtl/mips_if/openmips_native_cache_adapter.sv` combines the active uncacheable-read qualification and FIFO-aligned queued-write validity with 34-bit address guarding and separates word commands from cache-line traffic.
-- Full cache-to-bridge CPU-to-LOT operation is not yet verified; adapter standalone CI and an actual-cache + bridge + delayed endpoint end-to-end regression are the remaining gates.
+- The actual-cache + adapter + bridge + delayed endpoint regression and the full-core CPU program regression now pass; see the later dated status sections for scope and remaining hardware gates.
 
 
 ### First actual-cache-to-LOT end-to-end proof
@@ -179,7 +179,7 @@ These documents are verification plans and source-inspection notes. They do not 
 - Verified one uncacheable read at `0x1F00_0000`, one full-word store at `0x1F00_0004`, expected destination/payload, response data return, delayed write-buffer retirement, and no RAM leakage for these LOT commands.
 - CI passed: [run 38555604302](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38555604302).
 
-This does not yet prove full-core CPU program execution or all memory-path behavior. Cache-line fill/writeback through the wrapper, outstanding-request reset behavior, system fault handling, synthesis/timing/area, and hardware validation remain open.
+At that point this was a cache-to-bridge-only proof. Later regressions added cache-line fill/writeback, high-address rejection, reset/late-response behavior, and full-core CPU program execution. System-level fault/exception handling, target timing/area, and hardware validation remain open.
 
 
 ### RAM response ownership fix
@@ -189,12 +189,12 @@ The bridge now holds RAM routing after a command deasserts and keeps it through 
 
 ### Dirty-line eviction verified
 
-The actual cache + wrapper test now forces a two-way dirty-line eviction, checks the updated word is present in the 128-bit RAM writeback, acknowledges the writeback, and completes the replacement fill. [CI run 38557380566 passed](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38557380566). Full-wrapper high-address and reset/late-response checks are being validated next.
+The actual cache + wrapper test forces a two-way dirty-line eviction, checks the updated word in the 128-bit RAM writeback, acknowledges the writeback, and completes the replacement fill. [CI run 38557380566 passed](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38557380566). Later full-wrapper high-address and reset/late-response checks also passed.
 
 
 ### Full-wrapper guard and reset checks
 
-The actual-cache + adapter + bridge regression passed RAM line fill, two-way dirty writeback, LOT read/write, high physical-address rejection, and reset/late-response checks: [CI run 38557582605](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38557582605). This is not yet full-core program execution or hardware validation.
+The actual-cache + adapter + bridge regression passed RAM line fill, two-way dirty writeback, LOT read/write, high physical-address rejection, and reset/late-response checks: [CI run 38557582605](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38557582605). This is not hardware validation; full-core program execution and generic synthesis were added in later regressions.
 
 
 ### Full-core program-level LOT test passed
@@ -206,7 +206,7 @@ The new [`tb/tb_openmips_full_core_lot_program.sv`](tb/tb_openmips_full_core_lot
 
 **Full-core program simulation passed:** [CI run 38559781536](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38559781536). The complete MIPS32 core and caches also compile with the checked-in simulation-only models for generated BRAM/DSP IP: [compile run 38559048706](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38559048706).
 
-These are functional RTL simulations, not vendor timing models or hardware results. The full-core program now also covers three cacheable RAM line fills and a dirty-line writeback. Synthesis, timing/resource reports, and hardware validation remain future work.
+These are functional RTL simulations, not vendor timing models or hardware results. The full-core program covers three cacheable RAM line fills, a dirty-line writeback, and LOT MMIO. Generic synthesis has since passed; target-specific mapping, timing/resource analysis, and hardware validation remain future work.
 
 
 ### Generic synthesis smoke passed
