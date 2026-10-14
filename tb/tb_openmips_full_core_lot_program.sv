@@ -97,6 +97,13 @@ module tb_openmips_full_core_lot_program;
     end
   endfunction
 
+  function [31:0] little_endian_bus_word(input [31:0] instruction);
+    begin
+      little_endian_bus_word = {instruction[7:0], instruction[15:8],
+                                instruction[23:16], instruction[31:24]};
+    end
+  endfunction
+
   reg inst_pending=0, inst_line_pending=0, inst_command_seen=0;
   reg [33:0] inst_saved_addr=0;
   reg [1:0] inst_beat=0;
@@ -129,7 +136,9 @@ module tb_openmips_full_core_lot_program;
         end else begin
           inst_ready <= 1;
           inst_offset <= inst_line_pending ? inst_beat : inst_saved_addr[1:0];
-          inst_in <= rom_word(inst_saved_addr + (inst_line_pending ? inst_beat : 0));
+          // OpenMIPS is configured little-endian; its core byte-swaps the
+          // instruction bus before decode, so the ROM bus word is reversed.
+          inst_in <= little_endian_bus_word(rom_word(inst_saved_addr + (inst_line_pending ? inst_beat : 0)));
           if (inst_line_pending && inst_beat != 2'd3)
             inst_beat <= inst_beat + 1'b1;
           else
