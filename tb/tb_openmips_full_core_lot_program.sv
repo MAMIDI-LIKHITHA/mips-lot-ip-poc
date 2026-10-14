@@ -104,6 +104,16 @@ module tb_openmips_full_core_lot_program;
     end
   endfunction
 
+  always @(posedge clk) begin
+    if (!reset && (data_read_word || data_write_word || data_read_line || data_write_line))
+      $display("DCACHE CMD addr=%h rdw=%b wrw=%b rdl=%b wrl=%b rqual=%b wqual=%b adapt_pv=%b adapt_attr=%b class_lot=%b class_ram=%b reject=%b lot_valid=%b fault=%b",
+        data_addr, data_read_word, data_write_word, data_read_line, data_write_line,
+        data_read_word_paddr_valid, data_write_word_paddr_valid,
+        wrapper.u_adapter.bridge_paddr_valid, wrapper.u_adapter.bridge_cache_attr,
+        wrapper.u_bridge.class_route_lot, wrapper.u_bridge.class_route_ram,
+        wrapper.u_bridge.class_reject, lot_valid, protocol_fault);
+  end
+
   reg inst_pending=0, inst_line_pending=0, inst_command_seen=0;
   reg [33:0] inst_saved_addr=0;
   reg [1:0] inst_beat=0;
