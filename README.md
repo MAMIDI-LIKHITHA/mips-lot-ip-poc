@@ -195,3 +195,15 @@ The actual cache + wrapper test now forces a two-way dirty-line eviction, checks
 ### Full-wrapper guard and reset checks
 
 The actual-cache + adapter + bridge regression passed RAM line fill, two-way dirty writeback, LOT read/write, high physical-address rejection, and reset/late-response checks: [CI run 38557582605](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38557582605). This is not yet full-core program execution or hardware validation.
+
+
+### Full-core program-level LOT test passed
+
+The new [`tb/tb_openmips_full_core_lot_program.sv`](tb/tb_openmips_full_core_lot_program.sv) instantiates the pinned MIPS32 top-level core, both caches, the cache qualification patch, the LOT wrapper/bridge, a ROM instruction model, and a delayed LOT endpoint. The test program executes:
+- `lw` from virtual `0xBF000000` (physical `0x1F000000`, CONTROL), receiving `0x0BAD_C0DE`.
+- A data-dependent `sw` to virtual `0xBF000008` (physical `0x1F000008`, STATUS), verifying the returned value reaches the write transaction.
+- A `sw` to virtual `0xBF000004` (physical `0x1F000004`, DATA), verifying the expected little-endian memory-bus payload `0x78563412` for the program's `0x12345678` register value.
+
+**Full-core program simulation passed:** [CI run 38559227689](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38559227689). The complete MIPS32 core and caches also compile with the checked-in simulation-only models for generated BRAM/DSP IP: [compile run 38559048706](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38559048706).
+
+These are functional RTL simulations, not vendor timing models or hardware results. Full-core cacheable data-memory program coverage, synthesis, timing/resource reports, and hardware validation remain future work.
