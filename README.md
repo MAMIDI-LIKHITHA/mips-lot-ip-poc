@@ -207,3 +207,8 @@ The new [`tb/tb_openmips_full_core_lot_program.sv`](tb/tb_openmips_full_core_lot
 **Full-core program simulation passed:** [CI run 38559781536](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38559781536). The complete MIPS32 core and caches also compile with the checked-in simulation-only models for generated BRAM/DSP IP: [compile run 38559048706](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38559048706).
 
 These are functional RTL simulations, not vendor timing models or hardware results. The full-core program now also covers three cacheable RAM line fills and a dirty-line writeback. Synthesis, timing/resource reports, and hardware validation remain future work.
+
+
+### Generic synthesis smoke passed
+
+The integrated top `openmips_mips32_lot_system` completed a Yosys generic synthesis pass: [CI run 38560068393](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38560068393). The hierarchy reported 70,353 generic cells. Generated BRAM/DSP IP was treated as black boxes and ABC technology mapping was disabled, so this is only a synthesis-flow check—not an area, LUT, gate-equivalent, or timing estimate. See [generic synthesis limitations and next steps](docs/openmips-generic-synthesis.md).
