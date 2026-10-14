@@ -77,6 +77,14 @@ module tb_openmips_lot_memory_bridge;
         lot_ready = 0;
         check_expectation(!lot_valid && lot_rsp_ready,
                "accepted LOT request waits for response without reissuing");
+        // Mutate upstream request inputs while the bridge owns the outstanding
+        // LOT transaction; the response must not accidentally switch to RAM.
+        data_addr = 30'h0000_3000 >> 2;
+        data_read_word = 0;
+        ram_ready = 1;
+        #1;
+        check_expectation(!ram_read_word && !data_ready,
+               "outstanding LOT transaction retains path ownership");
         lot_rsp_rdata = 32'h1234_5678;
         lot_rsp_valid = 1;
         #1;
