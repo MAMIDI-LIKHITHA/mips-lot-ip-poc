@@ -195,6 +195,7 @@ module tb_openmips_native_cache_lot;
     // endpoint deliberately delays its response.
     @(negedge clk);
     VAddressIn_C=10'h001; // next word: byte address 0x1F000004 -> DATA destination
+    PAddressIn_C=24'h01F000;
     DataIn_C=32'hCAFE_BABE;
     Write_C=4'b1111;
     wait (cache.state == 2); // WRITEBACK: retire the one-shot CPU request before enqueue.
