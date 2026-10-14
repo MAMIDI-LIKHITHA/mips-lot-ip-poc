@@ -223,9 +223,55 @@ module tb_openmips_native_cache_lot;
       $fatal(1, "expected exactly two LOT requests, got %0d", lot_request_count);
     if (protocol_fault || native_address_rejected)
       $fatal(1, "unexpected fault during LOT write");
-    if (ram_line_write_count != 0 || ram_word_write_count != 0)
-      $fatal(1, "unexpected RAM write during read-only integration cases: line=%0d word=%0d", ram_line_write_count, ram_word_write_count);
-    $display("TB RESULT: PASS - actual native cache RAM line fill plus LOT read/write and delayed response");
+
+    // Dirty a cacheable line, then access a conflicting physical tag at the
+    // same virtual index. The dirty line must be written back to RAM, not LOT.
+    @(negedge clk);
+    VAddressIn_C=10'h008;
+    PAddressIn_C=24'h000002;
+    PAddressValid_C=1;
+    CacheAttr_C=3'b000;
+    DataIn_C=32'hDEAD_BEEF;
+    Write_C=4'b1111;
+    wait (cache.state == 9); // WRITE_RECOVER after the cache-hit store.
+    Write_C=0;
+    wait (Ready_C === 1'b1);
+    @(negedge clk);
+    repeat (2) @(negedge clk);
+
+    PAddressIn_C=24'h000003; // Different physical tag, same virtual index.
+    Read_C=1;
+    wait (ram_write_line_ready === 1'b1);
+    if (!(ram_data_out[31:0] === 32'hDEAD_BEEF ||
+          ram_data_out[63:32] === 32'hDEAD_BEEF ||
+          ram_data_out[95:64] === 32'hDEAD_BEEF ||
+          ram_data_out[127:96] === 32'hDEAD_BEEF))
+      $fatal(1, "dirty RAM writeback payload did not contain updated DEAD_BEEF word: %h", ram_data_out);
+    Read_C=0;
+    @(negedge clk);
+    ram_ready=1;
+    @(negedge clk);
+    ram_ready=0;
+
+    wait (ram_read_line === 1'b1);
+    wait (cache.state == 4); // FILL_WAIT_1 for the replacement line.
+    Read_C=0;
+    send_ram_line_beat(2'd0, 32'h5555_0000);
+    send_ram_line_beat(2'd1, 32'h6666_0001);
+    send_ram_line_beat(2'd2, 32'h7777_0002);
+    send_ram_line_beat(2'd3, 32'h8888_0003);
+    wait (Ready_C === 1'b1);
+    if (ram_line_write_count != 1)
+      $fatal(1, "expected exactly one dirty-line RAM writeback, got %0d", ram_line_write_count);
+    if (ram_line_count != 2)
+      $fatal(1, "expected initial and replacement line fills, got %0d", ram_line_count);
+    if (lot_request_count != 2)
+      $fatal(1, "cacheable dirty writeback incorrectly generated a LOT request");
+    if (protocol_fault || native_address_rejected)
+      $fatal(1, "unexpected fault during RAM dirty-line eviction");
+    if (ram_word_write_count != 0)
+      $fatal(1, "unexpected single-word RAM write in this regression: %0d", ram_word_write_count);
+    $display("TB RESULT: PASS - actual cache RAM line fill/dirty writeback plus LOT read/write and delayed response");
     $finish;
   end
 
