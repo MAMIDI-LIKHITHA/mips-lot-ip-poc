@@ -164,3 +164,9 @@ These documents are verification plans and source-inspection notes. They do not 
 - [OpenMIPS source pin and native cache-port smoke test](docs/openmips-source-pin-and-native-cache-smoke.md) — pins upstream OpenMIPS to `d606b35e9d5260aef20de2a58660c8303a681e9c` and documents the CI harness that instantiates the actual `DataCache_2KB` RTL.
 
 - [Native OpenMIPS address guard](docs/openmips-native-address-guard.md) — isolated 34-bit-to-30-bit native word-address guard with dedicated passing Icarus CI ([run 38552329183](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38552329183)); not yet connected to the bridge.
+
+### Native cache qualification adapter progress
+
+- The pinned OpenMIPS cache smoke test now applies `scripts/apply-openmips-cache-qualification.py` to latch qualification alongside the native service request and queued word write. The actual-cache regression passed: [CI run 38554550754](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38554550754).
+- `rtl/mips_if/openmips_native_cache_adapter.sv` combines the transaction-aligned read/write qualification with 34-bit address guarding and separates word commands from cache-line traffic.
+- Full cache-to-bridge CPU-to-LOT operation is not yet verified; adapter standalone CI and an actual-cache + bridge + delayed endpoint end-to-end regression are the remaining gates.
