@@ -1,0 +1,35 @@
+name: OpenMIPS LOT access-classifier smoke test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "rtl/mips_if/openmips_lot_access_classifier.sv"
+      - "tb/tb_openmips_lot_access_classifier.sv"
+      - ".github/workflows/openmips-classifier-smoke.yml"
+  pull_request:
+    paths:
+      - "rtl/mips_if/openmips_lot_access_classifier.sv"
+      - "tb/tb_openmips_lot_access_classifier.sv"
+      - ".github/workflows/openmips-classifier-smoke.yml"
+
+jobs:
+  iverilog-classifier-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install Icarus Verilog
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iverilog
+      - name: Compile access-classifier test
+        run: |
+          iverilog -g2012 -s tb_openmips_lot_access_classifier \
+            -o /tmp/openmips-classifier.vvp \
+            rtl/mips_if/openmips_lot_access_classifier.sv \
+            tb/tb_openmips_lot_access_classifier.sv
+      - name: Run access-classifier test
+        run: vvp -n /tmp/openmips-classifier.vvp
