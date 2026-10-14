@@ -39,7 +39,7 @@ replace_one(lambda x: "assign s_uncacheable" in x,
             "remove live cache attribute")
 
 replace_one(lambda x: "ff_using_delay_data" in x,
-            "    DFF_E #(.WIDTH(1)) ff_using_delay_data (.clock(clock), .enable(1'b1),          .D(delay_update),     .Q(using_delay_data));\n\n    // Keep qualification aligned with the service request, not live processor\n    // sidebands that may change while a queued write waits for Ready_M.\n    always @(posedge clock) begin\n        if (reset) begin\n            s_uncacheable <= 1'b0;\n            s_paddr_valid <= 1'b0;\n        end\n        else if (new_request) begin\n            s_uncacheable <= (CacheAttr_C == 3'b010);\n            s_paddr_valid <= PAddressValid_C;\n        end\n    end\n",
+            "    DFF_E #(.WIDTH(1)) ff_using_delay_data (.clock(clock), .enable(1'b1),          .D(delay_update),     .Q(using_delay_data));\n\n    // Keep qualification aligned with the service request, not live processor\n    // sidebands that may change while a queued write waits for Ready_M.\n    always @(posedge clock) begin\n        if (reset) begin\n            s_uncacheable <= 1'b0;\n            s_paddr_valid <= 1'b0;\n        end\n        else if (new_request && PAddressValid_C) begin\n            // The processor may assert a request before its TLB sideband is valid.\n            // Capture qualification only when the physical address is valid.\n            s_uncacheable <= (CacheAttr_C == 3'b010);\n            s_paddr_valid <= PAddressValid_C;\n        end\n    end\n",
             "latch request qualification")
 
 # Store the service qualification in every FIFO entry; word commands expose it.
