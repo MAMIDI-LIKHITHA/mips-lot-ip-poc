@@ -96,7 +96,7 @@ module tb_openmips_native_cache_port;
     @(negedge clock);
     line_test=1;
     CacheAttr_C=3'b000;
-    VAddressIn_C=10'h008;
+    VAddressIn_C=10'h00A; // word offset 2 within the same cache line
     PAddressIn_C=24'h000002;
     Read_C=1;
     wait (dut.state == 4); // FILL_WAIT_1: the cache has issued its line-fill request.
