@@ -83,3 +83,10 @@ End-to-end simulation passed in [CI run 38555604302](https://github.com/MAMIDI-L
 The integrated line-fill test exposed a real bridge defect: the native cache drops `ReadLine_M` after issuing the command, while four RAM response beats arrive later. The bridge previously recomputed RAM routing from the live command and therefore dropped those responses. The bridge now latches RAM ownership until a word response/acknowledgement completes or all four line-fill beats have been accepted. The bridge-level delayed-four-beat regression passed: [CI run 38557101949](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38557101949). The actual-cache wrapper regression also passed with a RAM line fill alongside LOT read/write: [CI run 38556981169](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38556981169).
 
 The next extension is a two-way dirty-line eviction test through the same wrapper. Full-core program execution and hardware validation remain outstanding.
+
+
+## Dirty-line eviction through the integrated wrapper passed
+
+The actual-cache integration regression now fills both ways at a matching virtual index, dirties one line, adjusts the replacement state, and forces that dirty line to be evicted. The test confirms the writeback payload contains the updated `DEAD_BEEF` word, the 128-bit line write is acknowledged on the RAM path, and the subsequent replacement line is filled from RAM. The integrated test passed: [CI run 38557380566](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38557380566).
+
+High-address rejection through the full wrapper and reset with a late LOT response are now added to the same regression and await CI.
