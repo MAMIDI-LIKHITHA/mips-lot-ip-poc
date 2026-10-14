@@ -48,3 +48,7 @@ Do not tie the qualification inputs high or simply connect the current PAddressV
 ## Current conclusion
 
 The existing bridge unit test proves the bridge's own classification and handshake contract. The native-cache smoke tests prove selected behavior of the upstream cache in isolation. They do not yet prove the cache and bridge can safely be wired together. The width mismatch and transaction-alignment issue above must be resolved before describing CPU-to-LOT integration as implemented.
+
+## Progress: isolated address-width guard added
+
+An isolated guard now preserves the native 34-bit word address until bits [33:30] have been checked, suppresses commands with nonzero upper bits, and only then exposes the lower 30 bits. Its dedicated Icarus workflow passed: [run 38552329183](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38552329183). See [native address guard contract](openmips-native-address-guard.md). This is an independently tested building block, not yet wired into the bridge; transaction-aligned qualification for queued writes remains unresolved.
