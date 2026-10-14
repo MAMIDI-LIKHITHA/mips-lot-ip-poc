@@ -46,7 +46,7 @@ replace_one(lambda x: "ff_using_delay_data" in x,
 la = find_all(lambda x: "// {la[160:129]" in x)
 if len(la) != 1:
     raise SystemExit(f"write-buffer data block: expected one header, got {len(la)}")
-starts = [i for i in range(la[0], min(la[0] + 5, len(lines))) if "always @(*) begin" in lines[i]]
+starts = [i for i, line in enumerate(lines) if "always @(*) begin" in line and 0 <= la[0] - i <= 6]
 if len(starts) != 1:
     raise SystemExit("write-buffer data block: could not locate its combinational block")
 lines.insert(starts[0] + 1, "        WB_DataIn[((PABITS-5)+130)] <= s_paddr_valid;\n")
