@@ -21,6 +21,7 @@ module tb_openmips_native_cache_port;
   wire [33:0] Address_M;
   wire ReadLine_M, ReadWord_M, LineOutReady_M, WordOutReady_M;
   wire [3:0] WordOutBE_M;
+  wire WordOutPAddressValid_M;
   wire [127:0] DataOut_M;
   reg [31:0] DataIn_M=0;
   reg [1:0] DataInOffset_M=0;
@@ -37,7 +38,8 @@ module tb_openmips_native_cache_port;
     .ReadLine_M(ReadLine_M), .ReadWord_M(ReadWord_M),
     .DataIn_M(DataIn_M), .DataInOffset_M(DataInOffset_M),
     .LineOutReady_M(LineOutReady_M), .WordOutReady_M(WordOutReady_M),
-    .WordOutBE_M(WordOutBE_M), .DataOut_M(DataOut_M), .Ready_M(Ready_M)
+    .WordOutBE_M(WordOutBE_M), .WordOutPAddressValid_M(WordOutPAddressValid_M),
+    .DataOut_M(DataOut_M), .Ready_M(Ready_M)
   );
 
   integer cycles=0, ready_count=0, line_request_count=0;
@@ -169,11 +171,17 @@ module tb_openmips_native_cache_port;
     // WRITEBACK, before the FIFO enqueue edge, to avoid re-sampling it.
     wait (dut.state == 2); // WRITEBACK
     Write_C=4'b0000;
+    // Change live sidebands after the service request was captured. The queued
+    // word must retain the original request's qualification metadata.
+    PAddressValid_C=0;
+    CacheAttr_C=3'b000;
     wait (WordOutReady_M === 1'b1);
     if (LineOutReady_M !== 1'b0)
       $fatal(1, "uncacheable word store was incorrectly presented as a line write");
     if (WordOutBE_M !== 4'b1111)
       $fatal(1, "buffered word-store byte enables were %b, expected 1111", WordOutBE_M);
+    if (WordOutPAddressValid_M !== 1'b1)
+      $fatal(1, "queued word lost its original PAddressValid qualification");
     if (DataOut_M[31:0] !== 32'hCAFE_BABE)
       $fatal(1, "buffered word-store data was %h, expected CAFEBABE", DataOut_M[31:0]);
     @(negedge clock);
