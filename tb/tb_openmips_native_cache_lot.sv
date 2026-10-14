@@ -224,8 +224,27 @@ module tb_openmips_native_cache_lot;
     if (protocol_fault || native_address_rejected)
       $fatal(1, "unexpected fault during LOT write");
 
-    // Dirty a cacheable line, then access a conflicting physical tag at the
-    // same virtual index. The dirty line must be written back to RAM, not LOT.
+    // Fill a second way at the same virtual index first, so the later
+    // third-tag access forces a real two-way replacement.
+    @(negedge clk);
+    VAddressIn_C=10'h008;
+    PAddressIn_C=24'h000003;
+    PAddressValid_C=1;
+    CacheAttr_C=3'b000;
+    Read_C=1;
+    wait (ram_read_line === 1'b1);
+    wait (cache.state == 4);
+    Read_C=0;
+    send_ram_line_beat(2'd0, 32'hAAAA_0000);
+    send_ram_line_beat(2'd1, 32'hBBBB_0001);
+    send_ram_line_beat(2'd2, 32'hCCCC_0002);
+    send_ram_line_beat(2'd3, 32'hDDDD_0003);
+    wait (Ready_C === 1'b1);
+    @(negedge clk);
+    repeat (2) @(negedge clk);
+
+    // Dirty tag 2 (way A), then touch tag 3 (way B) so tag 2 becomes the
+    // replacement victim. The dirty line must be written back to RAM, not LOT.
     @(negedge clk);
     VAddressIn_C=10'h008;
     PAddressIn_C=24'h000002;
@@ -239,7 +258,14 @@ module tb_openmips_native_cache_lot;
     @(negedge clk);
     repeat (2) @(negedge clk);
 
-    PAddressIn_C=24'h000003; // Different physical tag, same virtual index.
+    PAddressIn_C=24'h000003; // Hit the clean second way to make dirty tag 2 least-recently used.
+    Read_C=1;
+    wait (Ready_C === 1'b1);
+    @(negedge clk);
+    Read_C=0;
+    repeat (2) @(negedge clk);
+
+    PAddressIn_C=24'h000004; // Third physical tag forces eviction of dirty tag 2.
     Read_C=1;
     wait (ram_write_line_ready === 1'b1);
     if (!(ram_data_out[31:0] === 32'hDEAD_BEEF ||
@@ -263,8 +289,8 @@ module tb_openmips_native_cache_lot;
     wait (Ready_C === 1'b1);
     if (ram_line_write_count != 1)
       $fatal(1, "expected exactly one dirty-line RAM writeback, got %0d", ram_line_write_count);
-    if (ram_line_count != 2)
-      $fatal(1, "expected initial and replacement line fills, got %0d", ram_line_count);
+    if (ram_line_count != 3)
+      $fatal(1, "expected initial, second-way, and replacement line fills, got %0d", ram_line_count);
     if (lot_request_count != 2)
       $fatal(1, "cacheable dirty writeback incorrectly generated a LOT request");
     if (protocol_fault || native_address_rejected)
