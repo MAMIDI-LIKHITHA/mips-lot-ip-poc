@@ -157,6 +157,40 @@ module tb_openmips_native_cache_port;
     if (line_request_count != 1)
       $fatal(1, "cache-hit store/readback unexpectedly issued another line request: %0d", line_request_count);
 
+    // Miss on a different physical tag at the same cache index. The dirty
+    // resident line must be emitted as a line writeback before the new fill.
+    @(negedge clock);
+    CacheAttr_C=3'b000;
+    VAddressIn_C=10'h008; // same cache index, different physical tag
+    PAddressIn_C=24'h000004;
+    Read_C=1;
+    wait (LineOutReady_M === 1'b1);
+    if (WordOutReady_M !== 1'b0)
+      $fatal(1, "dirty cache-line eviction was incorrectly presented as a word write");
+    if ((DataOut_M[31:0] !== 32'hDEAD_BEEF) &&
+        (DataOut_M[63:32] !== 32'hDEAD_BEEF) &&
+        (DataOut_M[95:64] !== 32'hDEAD_BEEF) &&
+        (DataOut_M[127:96] !== 32'hDEAD_BEEF))
+      $fatal(1, "dirty line writeback payload did not contain the stored DEADBEEF word");
+    // Acknowledge the buffered line writeback with a single memory pulse.
+    @(negedge clock);
+    Ready_M=1;
+    @(negedge clock);
+    Ready_M=0;
+    wait (ReadLine_M === 1'b1);
+    wait (dut.state == 4);
+    Read_C=0;
+    send_line_beat(2'd0, 32'h5555_0000);
+    send_line_beat(2'd1, 32'h6666_0001);
+    send_line_beat(2'd2, 32'h7777_0002);
+    send_line_beat(2'd3, 32'h8888_0003);
+    wait (Ready_C === 1'b1);
+    if (DataOut_C !== 32'h5555_0000)
+      $fatal(1, "post-eviction fill returned %h, expected 55550000", DataOut_C);
+    @(negedge clock);
+    Read_C=0;
+    repeat (3) @(negedge clock);
+
     // Exercise the native write buffer for an uncacheable word store. This
     // checks the buffered payload and byte enables before acknowledging it.
     @(negedge clock);
