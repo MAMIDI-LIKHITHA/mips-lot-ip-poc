@@ -195,7 +195,45 @@ module tb_openmips_lot_memory_bridge;
         @(negedge clk);
         reset_n = 1;
 
-        // 7: Qualification mismatch is fail-stop and reported.
+        // 7: Verify the remaining implemented endpoint register offsets.
+        @(negedge clk);
+        data_addr = 30'h1F00_0008 >> 2;
+        data_read_word = 1;
+        data_cache_attr = 3'b010;
+        #1;
+        check_expectation(lot_valid && lot_dst == 2,
+               "STATUS endpoint offset 0x8 decodes to destination 2");
+        lot_ready = 1;
+        @(posedge clk); #1;
+        lot_ready = 0;
+        lot_rsp_valid = 1;
+        lot_rsp_rdata = 32'h0000_0001;
+        #1;
+        check_expectation(data_ready && data_in == 32'h0000_0001,
+               "STATUS endpoint response completes the read");
+        @(posedge clk); #1;
+        lot_rsp_valid = 0;
+        data_read_word = 0;
+
+        @(negedge clk);
+        data_addr = 30'h1F00_000C >> 2;
+        data_read_word = 1;
+        #1;
+        check_expectation(lot_valid && lot_dst == 3,
+               "ID endpoint offset 0xC decodes to destination 3");
+        lot_ready = 1;
+        @(posedge clk); #1;
+        lot_ready = 0;
+        lot_rsp_valid = 1;
+        lot_rsp_rdata = 32'h4C4F_5401;
+        #1;
+        check_expectation(data_ready && data_in == 32'h4C4F_5401,
+               "ID endpoint response completes the read");
+        @(posedge clk); #1;
+        lot_rsp_valid = 0;
+        data_read_word = 0;
+
+        // 8: Qualification mismatch is fail-stop and reported.
         @(negedge clk);
         data_addr = 30'h1F00_0000 >> 2;
         data_read_word = 1;
