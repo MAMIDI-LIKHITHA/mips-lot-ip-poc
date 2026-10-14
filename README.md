@@ -185,3 +185,8 @@ This does not yet prove full-core CPU program execution or all memory-path behav
 ### RAM response ownership fix
 
 The bridge now holds RAM routing after a command deasserts and keeps it through all four beats of a cache-line fill. Delayed-response tests passed: [bridge CI run 38557101949](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38557101949) and [actual-cache integration run 38556981169](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38556981169). Dirty-line eviction and full-core program execution are the next verification gates.
+
+
+### Dirty-line eviction verified
+
+The actual cache + wrapper test now forces a two-way dirty-line eviction, checks the updated word is present in the 128-bit RAM writeback, acknowledges the writeback, and completes the replacement fill. [CI run 38557380566 passed](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38557380566). Full-wrapper high-address and reset/late-response checks are being validated next.
