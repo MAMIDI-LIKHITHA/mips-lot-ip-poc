@@ -20,8 +20,8 @@ replace_one(lambda x: "output [3:0]" in x and "WordOutBE_M," in x,
             "add queued qualification port")
 
 replace_one(lambda x: "wire        s_uncacheable;" in x,
-            "    reg         s_uncacheable;         // Latched cache attribute for the service request\n    reg         s_paddr_valid;         // Latched physical-address-valid for the service request\n",
-            "latch service qualification")
+            "    wire        s_uncacheable;         // Live attribute for the active cache request\n    reg         s_paddr_valid;         // Validity captured for queued word writes\n",
+            "preserve live attribute and add queued validity")
 
 replace_one(lambda x: "WB_DataIn;" in x and "reg" in x,
             "    reg  [((PABITS-5)+130):0] WB_DataIn;    // Existing payload plus queued PAddressValid metadata\n",
@@ -31,15 +31,15 @@ replace_one(lambda x: "WB_DataOut;" in x and "wire" in x,
             "extend write buffer output")
 
 replace_one(lambda x: "assign WordOutBE_M" in x,
-            "    assign WordOutBE_M    = WB_DataOut[36:33];\n    assign WordOutPAddressValid_M = WB_DataOut[((PABITS-5)+130)];\n    assign ReadWordPAddressValid_M = ReadWord_M & s_paddr_valid;\n",
+            "    assign WordOutBE_M    = WB_DataOut[36:33];\n    assign WordOutPAddressValid_M = WB_DataOut[((PABITS-5)+130)];\n    assign ReadWordPAddressValid_M = ReadWord_M & PAddressValid_C;\n",
             "export queued qualification")
 
 replace_one(lambda x: "assign s_uncacheable" in x,
-            "",
-            "remove live cache attribute")
+            "    assign s_uncacheable = (CacheAttr_C == 3'b010);\n",
+            "preserve live cache attribute for active request")
 
 replace_one(lambda x: "ff_using_delay_data" in x,
-            "    DFF_E #(.WIDTH(1)) ff_using_delay_data (.clock(clock), .enable(1'b1),          .D(delay_update),     .Q(using_delay_data));\n\n    // Keep qualification aligned with the service request, not live processor\n    // sidebands that may change while a queued write waits for Ready_M.\n    always @(posedge clock) begin\n        if (reset) begin\n            s_uncacheable <= 1'b0;\n            s_paddr_valid <= 1'b0;\n        end\n        else if (new_request && PAddressValid_C) begin\n            // The processor may assert a request before its TLB sideband is valid.\n            // Capture qualification only when the physical address is valid.\n            s_uncacheable <= (CacheAttr_C == 3'b010);\n            s_paddr_valid <= PAddressValid_C;\n        end\n    end\n",
+            "    DFF_E #(.WIDTH(1)) ff_using_delay_data (.clock(clock), .enable(1'b1),          .D(delay_update),     .Q(using_delay_data));\n\n    // Capture validity for the write-buffer entry only once the current\n    // physical address is valid. Keep the active cache attribute live, as the\n    // native controller can assert new_request before TLB sidebands settle.\n    always @(posedge clock) begin\n        if (reset) begin\n            s_paddr_valid <= 1'b0;\n        end\n        else if (new_request && !PAddressValid_C) begin\n            s_paddr_valid <= 1'b0;\n        end\n        else if ((state == TAG_CHECK) && PAddressValid_C) begin\n            s_paddr_valid <= 1'b1;\n        end\n    end\n",
             "latch request qualification")
 
 # Store the service qualification in every FIFO entry; word commands expose it.
