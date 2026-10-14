@@ -100,7 +100,6 @@ module tb_openmips_native_cache_lot;
       ram_write_line_d <= ram_write_line_ready;
       ram_write_word_d <= ram_write_word_ready;
       if (ram_read_line && !ram_read_line_d) begin
-        $display("RAM READLINE edge state=%0d addr=%h attr=%b vaddr=%h Read_C=%b", cache.state, Address_M, CacheAttr_C, VAddressIn_C, Read_C);
         ram_line_count <= ram_line_count + 1;
       end
       if (ram_write_line_ready && !ram_write_line_d)
@@ -135,7 +134,6 @@ module tb_openmips_native_cache_lot;
       ram_data_in=value;
       ram_ready=1;
       @(posedge clk); #1;
-      $display("RAM BEAT offset=%0d Ready_M=%b route_ram=%b ram_pending=%b cache_state=%0d", offset, Ready_M, dut.u_bridge.route_ram, dut.u_bridge.ram_pending, cache.state);
       @(negedge clk);
       ram_ready=0;
     end
@@ -193,7 +191,6 @@ module tb_openmips_native_cache_lot;
     if (protocol_fault || native_address_rejected)
       $fatal(1, "unexpected fault during cacheable RAM line fill");
 
-    $display("RAM line-fill test complete; entering LOT write phase addr=%h PAddressIn_C=%h", Address_M, PAddressIn_C);
     // Issue a queued uncacheable store and prove it does not retire while the
     // endpoint deliberately delays its response.
     @(negedge clk);
