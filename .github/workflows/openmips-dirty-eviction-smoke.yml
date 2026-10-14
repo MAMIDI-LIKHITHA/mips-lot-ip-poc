@@ -1,0 +1,46 @@
+name: OpenMIPS dirty-line eviction regression
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "tb/tb_openmips_dirty_eviction.sv"
+      - "tb/models/openmips_bram_model.sv"
+      - ".github/workflows/openmips-dirty-eviction-smoke.yml"
+  pull_request:
+    paths:
+      - "tb/tb_openmips_dirty_eviction.sv"
+      - "tb/models/openmips_bram_model.sv"
+      - ".github/workflows/openmips-dirty-eviction-smoke.yml"
+jobs:
+  dirty-eviction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check out pinned OpenMIPS source
+        uses: actions/checkout@v4
+        with:
+          repository: grantae/OpenMIPS
+          ref: d606b35e9d5260aef20de2a58660c8303a681e9c
+          path: upstream/OpenMIPS
+      - name: Install Icarus Verilog
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iverilog
+      - name: Compile actual upstream DataCache_2KB
+        run: |
+          iverilog -g2012 -I upstream/OpenMIPS/hardware/src/MIPS32/Cache/DCache \
+            -I upstream/OpenMIPS/hardware/src/MIPS32/Core \
+            -s tb_openmips_dirty_eviction -o /tmp/dirty-eviction.vvp \
+            upstream/OpenMIPS/hardware/src/MIPS32/Cache/DCache/DataCache_2KB.v \
+            upstream/OpenMIPS/hardware/src/MIPS32/Cache/DCache/Set_RW_128x64.v \
+            upstream/OpenMIPS/hardware/src/MIPS32/Cache/DCache/TagFlagRam_RW_64.v \
+            upstream/OpenMIPS/hardware/src/Common/RAM/RAM_SP_ZI.v \
+            upstream/OpenMIPS/hardware/src/Common/FIFO/FIFO.v \
+            upstream/OpenMIPS/hardware/src/Common/SRAM.v \
+            upstream/OpenMIPS/hardware/src/Common/DFF_E.v \
+            upstream/OpenMIPS/hardware/src/Common/DFF_SRE.v \
+            tb/models/openmips_bram_model.sv tb/tb_openmips_dirty_eviction.sv
+      - name: Run dirty-line eviction regression
+        run: vvp -n /tmp/dirty-eviction.vvp
