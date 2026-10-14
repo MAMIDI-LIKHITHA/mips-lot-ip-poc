@@ -156,7 +156,27 @@ module tb_openmips_lot_memory_bridge;
         data_read_word = 0;
         ram_ready = 0;
 
-        // 6: Qualification mismatch is fail-stop and reported.
+        // 6: The aperture does not alias unimplemented register offsets.
+        @(negedge clk);
+        data_addr = 30'h1F00_0010 >> 2;
+        data_read_word = 1;
+        data_cache_attr = 3'b010;
+        #1;
+        check_expectation(!lot_valid && !ram_read_word && !data_ready,
+               "unmapped offset inside LOT aperture is rejected");
+        @(posedge clk); #1;
+        check_expectation(protocol_fault, "unmapped LOT offset sets sticky fault");
+        data_read_word = 0;
+
+        // Reset clears the diagnostic fault before the next independent case.
+        @(negedge clk);
+        reset_n = 0;
+        @(posedge clk); #1;
+        check_expectation(!protocol_fault, "reset clears sticky protocol fault");
+        @(negedge clk);
+        reset_n = 1;
+
+        // 7: Qualification mismatch is fail-stop and reported.
         @(negedge clk);
         data_addr = 30'h1F00_0000 >> 2;
         data_read_word = 1;
