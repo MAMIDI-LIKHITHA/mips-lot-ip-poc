@@ -40,7 +40,8 @@ module tb_openmips_native_cache_port;
     .WordOutBE_M(WordOutBE_M), .DataOut_M(DataOut_M), .Ready_M(Ready_M)
   );
 
-  integer cycles=0, ready_count=0;\n  reg saw_readword=0;
+  integer cycles=0, ready_count=0;
+  reg saw_readword=0;
   always @(posedge clock) begin
     if (!reset) begin
       cycles <= cycles + 1;
