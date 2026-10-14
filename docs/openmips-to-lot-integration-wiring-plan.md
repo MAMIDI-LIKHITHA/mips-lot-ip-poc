@@ -112,3 +112,11 @@ The initial `openmips_native_cache_adapter` now preserves the native 34-bit word
 The first regression that instantiates the actual pinned `DataCache_2KB` plus `openmips_native_cache_lot_wrapper` passed: [CI run 38555604302](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38555604302). A delayed LOT endpoint confirmed that a native uncacheable read at `0x1F00_0000` returns its data to the cache, and a full-word store at `0x1F00_0004` generates the expected LOT write and does not retire its queued write-buffer entry until the endpoint response handshake. Neither tested LOT command leaked to RAM.
 
 This is the first actual-cache-to-bridge-to-LOT end-to-end proof in this POC, but it is not full-core CPU program execution. Next, extend the same integration bench with cache-line fill and dirty-line writeback through the RAM port, upper-address rejection, reset while LOT is outstanding, and then run a full-core program-level test before making broader integration claims.
+
+
+
+## RAM response ownership fix (14 October 2026)
+
+The bridge now latches RAM transaction ownership beyond the command pulse. Word responses/acks release ownership after one ready pulse; line reads keep the RAM route for four response beats. The delayed RAM line-response regression passed: [CI run 38557101949](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38557101949). The integrated actual-cache regression passed with a RAM line fill plus LOT read/write: [CI run 38556981169](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38556981169).
+
+A two-way dirty-line eviction regression is now being added; full-core execution remains a separate gate.
