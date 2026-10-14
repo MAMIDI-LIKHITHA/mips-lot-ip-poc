@@ -204,6 +204,6 @@ The new [`tb/tb_openmips_full_core_lot_program.sv`](tb/tb_openmips_full_core_lot
 - A data-dependent `sw` to virtual `0xBF000008` (physical `0x1F000008`, STATUS), verifying the returned value reaches the write transaction.
 - A `sw` to virtual `0xBF000004` (physical `0x1F000004`, DATA), verifying the expected little-endian memory-bus payload `0x78563412` for the program's `0x12345678` register value.
 
-**Full-core program simulation passed:** [CI run 38559227689](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38559227689). The complete MIPS32 core and caches also compile with the checked-in simulation-only models for generated BRAM/DSP IP: [compile run 38559048706](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38559048706).
+**Full-core program simulation passed:** [CI run 38559781536](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38559781536). The complete MIPS32 core and caches also compile with the checked-in simulation-only models for generated BRAM/DSP IP: [compile run 38559048706](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38559048706).
 
 These are functional RTL simulations, not vendor timing models or hardware results. The full-core program now also covers three cacheable RAM line fills and a dirty-line writeback. Synthesis, timing/resource reports, and hardware validation remain future work.
