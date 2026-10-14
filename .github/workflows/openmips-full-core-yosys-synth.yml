@@ -1,0 +1,60 @@
+name: OpenMIPS full-core generic synthesis smoke test
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/apply-openmips-cache-qualification.py"
+      - "scripts/apply-openmips-lot-top-ports.py"
+      - "rtl/mips_if/openmips_native_addr_guard.sv"
+      - "rtl/mips_if/openmips_native_cache_adapter.sv"
+      - "rtl/mips_if/openmips_native_cache_lot_wrapper.sv"
+      - "rtl/mips_if/openmips_lot_memory_bridge.sv"
+      - "rtl/mips_if/openmips_lot_access_classifier.sv"
+      - "rtl/mips_if/openmips_mips32_lot_system.sv"
+      - "synth/openmips_synth_ip_blackboxes.v"
+      - ".github/workflows/openmips-full-core-yosys-synth.yml"
+  pull_request:
+    paths:
+      - "scripts/apply-openmips-cache-qualification.py"
+      - "scripts/apply-openmips-lot-top-ports.py"
+      - "rtl/mips_if/openmips_native_addr_guard.sv"
+      - "rtl/mips_if/openmips_native_cache_adapter.sv"
+      - "rtl/mips_if/openmips_native_cache_lot_wrapper.sv"
+      - "rtl/mips_if/openmips_lot_memory_bridge.sv"
+      - "rtl/mips_if/openmips_lot_access_classifier.sv"
+      - "rtl/mips_if/openmips_mips32_lot_system.sv"
+      - "synth/openmips_synth_ip_blackboxes.v"
+      - ".github/workflows/openmips-full-core-yosys-synth.yml"
+jobs:
+  generic-synthesis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check out pinned OpenMIPS source
+        uses: actions/checkout@v4
+        with:
+          repository: grantae/OpenMIPS
+          ref: d606b35e9d5260aef20de2a58660c8303a681e9c
+          path: upstream/OpenMIPS
+      - name: Apply cache and top-level qualification patches
+        run: |
+          python3 scripts/apply-openmips-cache-qualification.py
+          python3 scripts/apply-openmips-lot-top-ports.py
+      - name: Install Yosys
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yosys
+      - name: Synthesize integrated MIPS32 + LOT top
+        shell: bash
+        run: |
+          mapfile -t SOURCES < <(find upstream/OpenMIPS/hardware/src/MIPS32 upstream/OpenMIPS/hardware/src/Common -name '*.v' -type f | sort)
+          yosys -p "read_verilog -sv -Iupstream/OpenMIPS/hardware/src/MIPS32/Core -Iupstream/OpenMIPS/hardware/src/MIPS32/Cache/DCache -Iupstream/OpenMIPS/hardware/src/MIPS32/Cache/ICache synth/openmips_synth_ip_blackboxes.v rtl/mips_if/openmips_native_addr_guard.sv rtl/mips_if/openmips_native_cache_adapter.sv rtl/mips_if/openmips_lot_access_classifier.sv rtl/mips_if/openmips_lot_memory_bridge.sv rtl/mips_if/openmips_native_cache_lot_wrapper.sv rtl/mips_if/openmips_mips32_lot_system.sv ${SOURCES[*]}; hierarchy -check -top openmips_mips32_lot_system; synth -top openmips_mips32_lot_system -noabc; tee -o /tmp/openmips-synth-stat.txt stat; write_json /tmp/openmips-mips32-lot.json"
+      - name: Upload generic synthesis report
+        uses: actions/upload-artifact@v4
+        with:
+          name: openmips-mips32-lot-generic-synthesis
+          path: |
+            /tmp/openmips-synth-stat.txt
+            /tmp/openmips-mips32-lot.json
