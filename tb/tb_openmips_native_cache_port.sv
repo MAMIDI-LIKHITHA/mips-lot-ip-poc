@@ -40,7 +40,7 @@ module tb_openmips_native_cache_port;
     .WordOutBE_M(WordOutBE_M), .DataOut_M(DataOut_M), .Ready_M(Ready_M)
   );
 
-  integer cycles=0, ready_count=0;
+  integer cycles=0, ready_count=0, line_request_count=0;
   reg saw_readword=0, saw_readline=0, line_test=0;
 
   task send_line_beat;
@@ -59,7 +59,10 @@ module tb_openmips_native_cache_port;
     if (!reset) begin
       cycles <= cycles + 1;
       if (ReadWord_M) saw_readword <= 1'b1;
-      if (ReadLine_M) saw_readline <= 1'b1;
+      if (ReadLine_M) begin
+        saw_readline <= 1'b1;
+        line_request_count <= line_request_count + 1;
+      end
       if (Ready_C) ready_count <= ready_count + 1;
       if (!line_test && (ReadLine_M || LineOutReady_M || WordOutReady_M))
         $fatal(1, "unexpected line/write-buffer traffic during isolated uncacheable read");
@@ -131,6 +134,8 @@ module tb_openmips_native_cache_port;
     repeat (3) @(negedge clock);
     if (ready_count != 3)
       $fatal(1, "expected third processor-side completion for cache hit, got %0d", ready_count);
+    if (line_request_count != 1)
+      $fatal(1, "expected exactly one external line request (fill only), got %0d", line_request_count);
     $display("TB RESULT: PASS - OpenMIPS DataCache_2KB uncacheable read, four-beat line fill, and cache hit");
     $finish;
   end
