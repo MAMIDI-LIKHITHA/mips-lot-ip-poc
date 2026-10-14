@@ -134,3 +134,10 @@ Full-wrapper high-address rejection and reset/late-response cases have been adde
 The actual-cache integration regression now covers: RAM line fills; a two-way dirty-line eviction/writeback; LOT read/write with delayed response; high physical-address rejection through the complete wrapper; and reset while a LOT request is outstanding followed by an injected late response. CI passed: [run 38557582605](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38557582605).
 
 The next major gate is a full-core program-level test, followed by synthesis, timing/resource reports, and hardware validation.
+
+
+## Full-core program test milestone
+
+The integration now has a program-level test using the actual pinned MIPS32 top-level and caches. A short ROM program performs a LOT CONTROL read, a STATUS write using the returned value, and a DATA write. The delayed endpoint checks the exact physical addresses and write payloads. [CI run 38559227689 passed](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38559227689).
+
+The test uses functional simulation models for generated BRAM/DSP IP; it is not synthesis or hardware validation. Cacheable RAM line fills and dirty writebacks are verified in the separate actual-cache integration regression. Next work is to extend full-core testing to cacheable data accesses and then run synthesis/timing/resource analysis.
