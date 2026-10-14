@@ -16,7 +16,7 @@ def replace_one(predicate, replacement, label):
 
 # Add a sideband sourced from the exact FIFO head, not live CPU-side pins.
 replace_one(lambda x: "output [3:0]" in x and "WordOutBE_M," in x,
-            "    output [3:0]           WordOutBE_M,      // Byte enable bits for single-word memory writes (using 'WordOutReady_M').\n    output                 WordOutPAddressValid_M, // Validity captured with this queued word transaction.\n",
+            "    output [3:0]           WordOutBE_M,      // Byte enable bits for single-word memory writes (using 'WordOutReady_M').\n    output                 WordOutPAddressValid_M, // Validity captured with this queued word transaction.\n    output                 ReadWordPAddressValid_M, // Validity captured with this uncacheable read transaction.\n",
             "add queued qualification port")
 
 replace_one(lambda x: "wire        s_uncacheable;" in x,
@@ -31,7 +31,7 @@ replace_one(lambda x: "WB_DataOut;" in x and "wire" in x,
             "extend write buffer output")
 
 replace_one(lambda x: "assign WordOutBE_M" in x,
-            "    assign WordOutBE_M    = WB_DataOut[36:33];\n    assign WordOutPAddressValid_M = WB_DataOut[((PABITS-5)+130)];\n",
+            "    assign WordOutBE_M    = WB_DataOut[36:33];\n    assign WordOutPAddressValid_M = WB_DataOut[((PABITS-5)+130)];\n    assign ReadWordPAddressValid_M = ReadWord_M & s_paddr_valid;\n",
             "export queued qualification")
 
 replace_one(lambda x: "assign s_uncacheable" in x,
