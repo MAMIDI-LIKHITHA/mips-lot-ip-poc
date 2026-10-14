@@ -104,16 +104,6 @@ module tb_openmips_full_core_lot_program;
     end
   endfunction
 
-  always @(posedge clk) begin
-    if (!reset && (data_read_word || data_write_word || data_read_line || data_write_line))
-      $display("DCACHE CMD addr=%h rdw=%b wrw=%b rdl=%b wrl=%b rqual=%b wqual=%b adapt_pv=%b adapt_attr=%b class_lot=%b class_ram=%b reject=%b lot_valid=%b fault=%b",
-        data_addr, data_read_word, data_write_word, data_read_line, data_write_line,
-        data_read_word_paddr_valid, data_write_word_paddr_valid,
-        wrapper.u_adapter.bridge_paddr_valid, wrapper.u_adapter.bridge_cache_attr,
-        wrapper.u_bridge.class_route_lot, wrapper.u_bridge.class_route_ram,
-        wrapper.u_bridge.class_reject, lot_valid, protocol_fault);
-  end
-
   reg inst_pending=0, inst_line_pending=0, inst_command_seen=0;
   reg [33:0] inst_saved_addr=0;
   reg [1:0] inst_beat=0;
@@ -155,38 +145,6 @@ module tb_openmips_full_core_lot_program;
             inst_pending <= 0;
         end
       end
-    end
-  end
-
-  integer dcache_debug_cycles=0;
-  always @(negedge clk) begin
-    if (!reset && dcache_debug_cycles < 80 &&
-        (cpu.DCache.state == 3 || cpu.DCache.state == 4 ||
-         cpu.DCache.ReadWord_M || cpu.DCache.WordOutReady_M)) begin
-      $display("DCACHE STATE=%0d native_rd=%b top_rd=%b qvalid=%b svalid=%b s_uncached=%b attr=%b pvalid=%b addr=%h lotvalid=%b classlot=%b classram=%b reject=%b fault=%b",
-        cpu.DCache.state, cpu.DCache.ReadWord_M, data_read_word,
-        data_read_word_paddr_valid, cpu.DCache.s_paddr_valid, cpu.DCache.s_uncacheable,
-        cpu.Core.DataMem_CacheAttr, cpu.Core.DataMem_PAddressValid,
-        data_addr, lot_valid, wrapper.u_bridge.class_route_lot,
-        wrapper.u_bridge.class_route_ram, wrapper.u_bridge.class_reject, protocol_fault);
-      dcache_debug_cycles <= dcache_debug_cycles + 1;
-    end
-  end
-
-  integer debug_cycle=0;
-  always @(posedge clk) begin
-    if (!reset && debug_cycle < 100) begin
-      if (cpu.Core.M1_Exception || cpu.Core.M2_Exception || cpu.Core.W1_ExcActive)
-        $display("EXCEPTION cycle=%0d PC=%h M1=%b code=%h kernel=%b AdEL=%b AdES=%b M2=%b M2codes=%b W1=%b W1code=%h",
-          debug_cycle, cpu.Core.F1_PC, cpu.Core.M1_Exception, cpu.Core.M1_ExcCode,
-          cpu.Core.M1_KernelMode, cpu.Core.M1_EXC_AdEL, cpu.Core.M1_EXC_AdES,
-          cpu.Core.M2_Exception, cpu.Core.M2_ExcCodes, cpu.Core.W1_ExcActive, cpu.Core.W1_ExcCode);
-      if (cpu.Core.DataMem_Read || (|cpu.Core.DataMem_Write))
-        $display("CPU DATA cycle=%0d vaddr=%h paddr=%h valid=%b attr=%b read=%b write=%b",
-          debug_cycle, cpu.Core.DataMem_VAddress, cpu.Core.DataMem_PAddress,
-          cpu.Core.DataMem_PAddressValid, cpu.Core.DataMem_CacheAttr,
-          cpu.Core.DataMem_Read, cpu.Core.DataMem_Write);
-      debug_cycle <= debug_cycle + 1;
     end
   end
 
