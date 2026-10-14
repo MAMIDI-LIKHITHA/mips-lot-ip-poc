@@ -51,19 +51,19 @@ The existing bridge unit test proves the bridge's own classification and handsha
 
 ## Progress: isolated address-width guard added
 
-An isolated guard now preserves the native 34-bit word address until bits [33:30] have been checked, suppresses commands with nonzero upper bits, and only then exposes the lower 30 bits. Its dedicated Icarus workflow passed: [run 38552329183](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38552329183). See [native address guard contract](openmips-native-address-guard.md). This is an independently tested building block, not yet wired into the bridge; transaction-aligned qualification for queued writes remains unresolved.
+An isolated guard now preserves the native 34-bit word address until bits [33:30] have been checked, suppresses commands with nonzero upper bits, and only then exposes the lower 30 bits. Its dedicated Icarus workflow passed: [run 38552329183](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38552329183). See [native address guard contract](openmips-native-address-guard.md). The guard is now wired through the adapter and wrapper; queued word-write validity is carried with the write-buffer entry and covered by the actual-cache regression.
 
 ## Qualification patch implemented and smoke-tested
 
 The repository now carries a deterministic source transformation in `scripts/apply-openmips-cache-qualification.py`, applied in CI to the exact pinned OpenMIPS revision before compiling the actual `DataCache_2KB`. The patch:
-- Latches the service request's cache attribute and physical-address-valid bit instead of consulting live processor-side sidebands while a transaction is pending.
+- Preserves the native cache's live `CacheAttr_C` semantics for the active service request; captures physical-address validity once the address is valid and stores that validity alongside queued word-write entries. The active read command exports current `PAddressValid_C`.
 - Extends the native write-buffer entry by one metadata bit and exports `WordOutPAddressValid_M` from the FIFO head for queued word writes.
 - Exports `ReadWordPAddressValid_M` for the active uncacheable word-read command.
-- Tests that changing live processor-side qualification after command issue does not change the qualification attached to the native read/write command.
+- Tests that changing live processor-side sidebands after command issue does not change validity metadata attached to queued word writes.
 
 The pinned-cache regression passed on 14 October 2026: [run 38554550754](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38554550754).
 
-A first adapter module, `rtl/mips_if/openmips_native_cache_adapter.sv`, now combines those aligned sidebands with the 34-bit address guard and maps native word/line commands to bridge-facing signals. Its standalone CI is running separately. **The adapter is not yet wired into `openmips_lot_memory_bridge`, and there is not yet an actual-cache + adapter + bridge + delayed-LOT-endpoint end-to-end regression.** CPU-to-LOT integration therefore remains unproven.
+A first adapter module, `rtl/mips_if/openmips_native_cache_adapter.sv`, now combines those aligned sidebands with the 34-bit address guard and maps native word/line commands to bridge-facing signals. Its standalone CI is running separately. The adapter is wired into `openmips_lot_memory_bridge`; actual-cache RAM/LOT integration and a full-core program-level LOT regression now pass. Full-core synthesis and hardware validation remain unproven.
 
 
 ## First actual-cache-to-LOT integration regression passed
