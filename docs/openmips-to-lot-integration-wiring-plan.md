@@ -140,4 +140,4 @@ The next major gate is a full-core program-level test, followed by synthesis, ti
 
 The integration now has a program-level test using the actual pinned MIPS32 top-level and caches. A short ROM program performs a LOT CONTROL read, a STATUS write using the returned value, and a DATA write. The delayed endpoint checks the exact physical addresses and write payloads. [CI run 38559227689 passed](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38559227689).
 
-The test uses functional simulation models for generated BRAM/DSP IP; it is not synthesis or hardware validation. Cacheable RAM line fills and dirty writebacks are verified in the separate actual-cache integration regression. Next work is to extend full-core testing to cacheable data accesses and then run synthesis/timing/resource analysis.
+The test uses functional simulation models for generated BRAM/DSP IP; it is not synthesis or hardware validation. The full-core program now verifies cacheable RAM line fills, dirty-line writeback, and LOT MMIO. Next work is synthesis/timing/resource analysis.
