@@ -32,7 +32,7 @@ See the [OpenMIPS-to-LOT integration wiring plan](openmips-to-lot-integration-wi
 1. Confirm the exact timing of `ReadWord_M`, buffered `WordOutReady_M`, and `Ready_M` on the selected OpenMIPS revision using a source-level timing test or full-core simulation.
 2. Review simultaneous line and word commands against the cache write-buffer behavior. The classifier rejects conflicting command bundles.
 3. Decide how a protocol fault should stop or recover the CPU; a sticky output alone is diagnostic, not architectural exception handling.
-4. Test reset during an already accepted outstanding LOT transaction and define how a late/orphan response is handled; current unit coverage verifies fault reset, not reset cancellation semantics.
+4. The unit test now covers reset during an accepted outstanding LOT request: reset clears local pending state and a late response is not consumed or returned to the cache. This exposes the system-level limitation rather than solving it: use coordinated bridge/fabric/endpoint reset or define a drain/cancel contract so a late response cannot remain orphaned.
 5. Add the bridge to a full-core integration top only after sideband wiring and RAM controller semantics are explicit.
 6. Keep the passing unit-test evidence separate from full-core validation. The passing workflow proves only the bridge/classifier testbench behavior under Icarus, not native OpenMIPS handshake compatibility or CPU boot.
 
