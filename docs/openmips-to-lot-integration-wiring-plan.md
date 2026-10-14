@@ -127,3 +127,10 @@ A two-way dirty-line eviction regression is now being added; full-core execution
 The actual pinned cache regression now exercises a real two-way replacement: it fills two tags, dirties one line, makes it the replacement victim, and verifies the dirty 128-bit writeback contains the updated `DEAD_BEEF` word. The RAM writeback is acknowledged before the replacement fill completes. CI passed: [run 38557380566](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38557380566).
 
 Full-wrapper high-address rejection and reset/late-response cases have been added to the next CI run. Full-core CPU program execution, synthesis, timing, area, and hardware validation remain outstanding.
+
+
+## Full-wrapper address and reset tests passed
+
+The actual-cache integration regression now covers: RAM line fills; a two-way dirty-line eviction/writeback; LOT read/write with delayed response; high physical-address rejection through the complete wrapper; and reset while a LOT request is outstanding followed by an injected late response. CI passed: [run 38557582605](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38557582605).
+
+The next major gate is a full-core program-level test, followed by synthesis, timing/resource reports, and hardware validation.
