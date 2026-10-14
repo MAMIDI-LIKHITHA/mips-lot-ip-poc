@@ -40,11 +40,11 @@ module tb_openmips_native_cache_port;
     .WordOutBE_M(WordOutBE_M), .DataOut_M(DataOut_M), .Ready_M(Ready_M)
   );
 
-  integer cycles=0, readword_count=0, ready_count=0;
+  integer cycles=0, ready_count=0;\n  reg saw_readword=0;
   always @(posedge clock) begin
     if (!reset) begin
       cycles <= cycles + 1;
-      if (ReadWord_M) readword_count <= readword_count + 1;
+      if (ReadWord_M) saw_readword <= 1'b1;
       if (Ready_C) ready_count <= ready_count + 1;
       if (ReadLine_M || LineOutReady_M || WordOutReady_M)
         $fatal(1, "unexpected line/write-buffer traffic during isolated uncacheable read");
