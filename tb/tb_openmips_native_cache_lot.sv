@@ -78,8 +78,6 @@ module tb_openmips_native_cache_lot;
   integer delay_count=0, lot_request_count=0;
   integer ram_line_count=0, ram_line_write_count=0, ram_word_write_count=0;
   reg ram_read_line_d=0, ram_write_line_d=0, ram_write_word_d=0;
-  reg ram_line_pending=0;
-  integer ram_beat=0;
   reg endpoint_pending=0;
   reg [64:0] captured_payload=0;
   always @(posedge clk) begin
@@ -93,8 +91,6 @@ module tb_openmips_native_cache_lot;
       ram_read_line_d <= 0;
       ram_write_line_d <= 0;
       ram_write_word_d <= 0;
-      ram_line_pending <= 0;
-      ram_beat <= 0;
       ram_line_count <= 0;
       ram_line_write_count <= 0;
       ram_word_write_count <= 0;
@@ -104,8 +100,6 @@ module tb_openmips_native_cache_lot;
       ram_write_word_d <= ram_write_word_ready;
       if (ram_read_line && !ram_read_line_d) begin
         ram_line_count <= ram_line_count + 1;
-        ram_line_pending <= 1;
-        ram_beat <= 0;
       end
       if (ram_write_line_ready && !ram_write_line_d)
         ram_line_write_count <= ram_line_write_count + 1;
@@ -130,20 +124,19 @@ module tb_openmips_native_cache_lot;
     end
   end
 
-  // Simulation RAM responder: four ordered 32-bit beats per cache-line fill.
-  always @(negedge clk) begin
-    if (reset) begin
-      ram_ready <= 0; ram_data_in <= 0; ram_data_offset <= 0;
-    end else if (ram_line_pending) begin
-      ram_ready <= 1; ram_data_offset <= ram_beat[1:0];
-      ram_data_in <= 32'h1111_0000 + ram_beat;
-      if (ram_beat == 3) begin ram_line_pending <= 0; ram_beat <= 0; end
-      else ram_beat <= ram_beat + 1;
-    end else if (ram_write_line_ready || ram_write_word_ready) begin
-      ram_ready <= 1; ram_data_offset <= 0;
-    end else begin ram_ready <= 0;
+  task send_ram_line_beat;
+    input [1:0] offset;
+    input [31:0] value;
+    begin
+      @(negedge clk);
+      ram_data_offset=offset;
+      ram_data_in=value;
+      ram_ready=1;
+      @(negedge clk);
+      ram_ready=0;
     end
-  end
+  endtask
+
   initial begin
     repeat (3) @(negedge clk);
     reset=0;
@@ -177,6 +170,12 @@ module tb_openmips_native_cache_lot;
     VAddressIn_C=10'h008;
     Read_C=1;
     wait (ram_read_line === 1'b1);
+    wait (cache.state == 4); // FILL_WAIT_1: line request captured; begin RAM beats only now.
+    Read_C=0;
+    send_ram_line_beat(2'd0, 32'h1111_0000);
+    send_ram_line_beat(2'd1, 32'h2222_0001);
+    send_ram_line_beat(2'd2, 32'h3333_0002);
+    send_ram_line_beat(2'd3, 32'h4444_0003);
     wait (Ready_C === 1'b1);
     if (DataOut_C !== 32'h1111_0000)
       $fatal(1, "RAM line fill returned %h, expected 11110000", DataOut_C);
@@ -225,7 +224,7 @@ module tb_openmips_native_cache_lot;
 
   initial begin
     repeat (400) @(posedge clk);
-    $display("TIMEOUT state=%0d Ready_C=%b ReadLine=%b ReadWord=%b ram_line=%b ram_pending=%b ram_beat=%0d ram_ready=%b ram_lines=%0d lot_valid=%b lot_count=%0d", cache.state, Ready_C, ReadLine_M, ReadWord_M, ram_read_line, ram_line_pending, ram_beat, ram_ready, ram_line_count, lot_valid, lot_request_count);
+    $display("TIMEOUT state=%0d Ready_C=%b ReadLine=%b ReadWord=%b ram_line=%b ram_ready=%b ram_lines=%0d lot_valid=%b lot_count=%0d", cache.state, Ready_C, ReadLine_M, ReadWord_M, ram_read_line, ram_ready, ram_line_count, lot_valid, lot_request_count);
     $fatal(1, "timeout waiting for cache-to-LOT integration test");
   end
 endmodule
