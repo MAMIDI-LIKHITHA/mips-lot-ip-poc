@@ -1,0 +1,32 @@
+name: OpenMIPS native address guard smoke test
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "rtl/mips_if/openmips_native_addr_guard.sv"
+      - "tb/tb_openmips_native_addr_guard.sv"
+      - ".github/workflows/openmips-native-addr-guard-smoke.yml"
+  pull_request:
+    paths:
+      - "rtl/mips_if/openmips_native_addr_guard.sv"
+      - "tb/tb_openmips_native_addr_guard.sv"
+      - ".github/workflows/openmips-native-addr-guard-smoke.yml"
+jobs:
+  native-address-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Icarus Verilog
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iverilog
+      - name: Compile native address guard
+        run: |
+          iverilog -g2012 -s tb_openmips_native_addr_guard \
+            -o /tmp/native-addr-guard.vvp \
+            rtl/mips_if/openmips_native_addr_guard.sv \
+            tb/tb_openmips_native_addr_guard.sv
+      - name: Run native address guard test
+        run: vvp -n /tmp/native-addr-guard.vvp
