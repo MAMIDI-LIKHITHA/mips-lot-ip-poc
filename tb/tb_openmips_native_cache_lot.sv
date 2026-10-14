@@ -144,7 +144,8 @@ module tb_openmips_native_cache_lot;
     repeat (2) @(negedge clk);
     if (!WordOutReady_M)
       $fatal(1, "write-buffer entry retired before delayed LOT response");
-    wait (Ready_C === 1'b1);
+    wait (lot_rsp_valid && lot_rsp_ready);
+    @(posedge clk);
     @(negedge clk);
     repeat (2) @(negedge clk);
     if (WordOutReady_M || LineOutReady_M)
