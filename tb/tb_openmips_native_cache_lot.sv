@@ -38,6 +38,7 @@ module tb_openmips_native_cache_lot;
   wire [64:0] lot_payload;
   reg [31:0] lot_rsp_rdata=0;
   reg lot_rsp_error=0;
+  reg endpoint_model_enable=1;
   wire native_address_rejected, protocol_fault;
 
   DataCache_2KB #(.PABITS(PABITS)) cache (
@@ -94,7 +95,7 @@ module tb_openmips_native_cache_lot;
       ram_line_count <= 0;
       ram_line_write_count <= 0;
       ram_word_write_count <= 0;
-    end else begin
+    end else if (endpoint_model_enable) begin
       ram_read_line_d <= ram_read_line;
       ram_write_line_d <= ram_write_line_ready;
       ram_write_word_d <= ram_write_word_ready;
@@ -297,7 +298,52 @@ module tb_openmips_native_cache_lot;
       $fatal(1, "unexpected fault during RAM dirty-line eviction");
     if (ram_word_write_count != 0)
       $fatal(1, "unexpected single-word RAM write in this regression: %0d", ram_word_write_count);
-    $display("TB RESULT: PASS - actual cache RAM line fill/dirty writeback plus LOT read/write and delayed response");
+
+    // Full-wrapper fail-closed check: physical addresses above 32 bits must
+    // be rejected before narrowing and must not leak to either RAM or LOT.
+    @(negedge clk);
+    PAddressIn_C=24'h100000;
+    PAddressValid_C=1;
+    CacheAttr_C=3'b010;
+    VAddressIn_C=10'h000;
+    Read_C=1;
+    wait (ReadWord_M === 1'b1);
+    #1;
+    if (!native_address_rejected || !protocol_fault || lot_valid ||
+        ram_read_word || ram_read_line)
+      $fatal(1, "high physical address was not rejected fail-closed at the wrapper");
+    Read_C=0;
+
+    // Disable the automatic endpoint responder to hold a LOT request in flight,
+    // reset cache and bridge, then inject a late response from the independent
+    // endpoint. The reset bridge must not consume it as a current transaction.
+    endpoint_model_enable=0;
+    @(negedge clk);
+    reset=1;
+    repeat (2) @(negedge clk);
+    reset=0;
+    @(negedge clk);
+    PAddressIn_C=24'h01F000;
+    PAddressValid_C=1;
+    CacheAttr_C=3'b010;
+    VAddressIn_C=10'h000;
+    Read_C=1;
+    wait (lot_valid === 1'b1);
+    @(posedge clk); #1;
+    if (!lot_rsp_ready)
+      $fatal(1, "expected an accepted outstanding LOT request before reset");
+    @(negedge clk);
+    Read_C=0;
+    reset=1;
+    repeat (2) @(negedge clk);
+    reset=0;
+    lot_rsp_valid=1;
+    lot_rsp_rdata=32'hDEAD_BEEF;
+    #1;
+    if (lot_rsp_ready || native_ready || protocol_fault)
+      $fatal(1, "late LOT response after reset was consumed or caused a spurious fault");
+    lot_rsp_valid=0;
+    $display("TB RESULT: PASS - actual cache RAM fill/dirty eviction, LOT read/write, high-address guard, and reset/late-response checks");
     $finish;
   end
 
