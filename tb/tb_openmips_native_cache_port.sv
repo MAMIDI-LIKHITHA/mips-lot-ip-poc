@@ -1,0 +1,82 @@
+`timescale 1ns/1ps
+// Drives the real upstream DataCache_2KB module from a minimal processor-side
+// request and supplies one native uncacheable-word memory completion.
+module tb_openmips_native_cache_port;
+  localparam PABITS=36;
+  reg clock=0, reset=1;
+  always #5 clock=~clock;
+  reg [9:0] VAddressIn_C=0;
+  reg [23:0] PAddressIn_C=0;
+  reg PAddressValid_C=0;
+  reg [2:0] CacheAttr_C=3'b010;
+  reg Stall_C=0;
+  reg [31:0] DataIn_C=0;
+  reg Read_C=0;
+  reg [3:0] Write_C=0;
+  reg DoCacheOp_C=0;
+  reg [2:0] CacheOp_C=0;
+  reg [27:0] CacheOpData_C=0;
+  wire [31:0] DataOut_C;
+  wire Ready_C;
+  wire [33:0] Address_M;
+  wire ReadLine_M, ReadWord_M, LineOutReady_M, WordOutReady_M;
+  wire [3:0] WordOutBE_M;
+  wire [127:0] DataOut_M;
+  reg [31:0] DataIn_M=0;
+  reg [1:0] DataInOffset_M=0;
+  reg Ready_M=0;
+
+  DataCache_2KB #(.PABITS(PABITS)) dut (
+    .clock(clock), .reset(reset),
+    .VAddressIn_C(VAddressIn_C), .PAddressIn_C(PAddressIn_C),
+    .PAddressValid_C(PAddressValid_C), .CacheAttr_C(CacheAttr_C),
+    .Stall_C(Stall_C), .DataIn_C(DataIn_C), .Read_C(Read_C),
+    .Write_C(Write_C), .DataOut_C(DataOut_C), .Ready_C(Ready_C),
+    .DoCacheOp_C(DoCacheOp_C), .CacheOp_C(CacheOp_C),
+    .CacheOpData_C(CacheOpData_C), .Address_M(Address_M),
+    .ReadLine_M(ReadLine_M), .ReadWord_M(ReadWord_M),
+    .DataIn_M(DataIn_M), .DataInOffset_M(DataInOffset_M),
+    .LineOutReady_M(LineOutReady_M), .WordOutReady_M(WordOutReady_M),
+    .WordOutBE_M(WordOutBE_M), .DataOut_M(DataOut_M), .Ready_M(Ready_M)
+  );
+
+  integer cycles=0, readword_count=0, ready_count=0;
+  always @(posedge clock) begin
+    if (!reset) begin
+      cycles <= cycles + 1;
+      if (ReadWord_M) readword_count <= readword_count + 1;
+      if (Ready_C) ready_count <= ready_count + 1;
+      if (ReadLine_M || LineOutReady_M || WordOutReady_M)
+        $fatal(1, "unexpected line/write-buffer traffic during isolated uncacheable read");
+      if (cycles > 80) $fatal(1, "timeout waiting for native cache completion");
+    end
+  end
+
+  initial begin
+    repeat (3) @(negedge clock);
+    reset=0;
+    @(negedge clock);
+    PAddressValid_C=1;
+    CacheAttr_C=3'b010;
+    VAddressIn_C=10'h004;
+    PAddressIn_C=24'h000001;
+    Read_C=1;
+    wait (ReadWord_M === 1'b1);
+    // Keep the native read request present until its single-word completion.
+    repeat (2) @(negedge clock);
+    DataIn_M=32'hA55A_3CC3;
+    Ready_M=1;
+    @(negedge clock);
+    Ready_M=0;
+    wait (Ready_C === 1'b1);
+    @(negedge clock);
+    Read_C=0;
+    repeat (3) @(negedge clock);
+    if (readword_count != 1)
+      $fatal(1, "expected exactly one native ReadWord_M assertion, got %0d", readword_count);
+    if (ready_count != 1)
+      $fatal(1, "expected exactly one processor-side Ready_C completion, got %0d", ready_count);
+    $display("TB RESULT: PASS - actual OpenMIPS DataCache_2KB uncacheable-word handshake");
+    $finish;
+  end
+endmodule
