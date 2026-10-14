@@ -141,3 +141,8 @@ The next major gate is a full-core program-level test, followed by synthesis, ti
 The integration now has a program-level test using the actual pinned MIPS32 top-level and caches. A short ROM program performs a LOT CONTROL read, a STATUS write using the returned value, and a DATA write. The delayed endpoint checks the exact physical addresses and write payloads. [CI run 38559781536 passed](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38559781536).
 
 The test uses functional simulation models for generated BRAM/DSP IP; it is not synthesis or hardware validation. The full-core program now verifies cacheable RAM line fills, dirty-line writeback, and LOT MMIO. Next work is synthesis/timing/resource analysis.
+
+
+## Generic synthesis milestone
+
+A Yosys generic synthesis pass completed for the integrated `openmips_mips32_lot_system` top: [run 38560068393](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38560068393). The 70,353-cell generic hierarchy count excludes the internal resources of black-boxed BRAM/DSP IP and is not a physical area estimate. Technology mapping, target constraints, STA, and implementation reports remain open; see [the synthesis note](openmips-generic-synthesis.md).
