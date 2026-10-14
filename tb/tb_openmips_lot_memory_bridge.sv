@@ -70,22 +70,22 @@ module tb_openmips_lot_memory_bridge;
         #1;
         check_expectation(lot_valid && lot_dst == 0 && !ram_read_word,
                "qualified LOT read issues one request and suppresses RAM");
-        expect(lot_payload == {1'b0,32'h1F00_0000,32'b0},
+        check_expectation(lot_payload == {1'b0,32'h1F00_0000,32'b0},
                "LOT read payload uses byte address and zero write data");
         lot_ready = 1;
         @(posedge clk); #1;
         lot_ready = 0;
-        expect(!lot_valid && lot_rsp_ready,
+        check_expectation(!lot_valid && lot_rsp_ready,
                "accepted LOT request waits for response without reissuing");
         lot_rsp_rdata = 32'h1234_5678;
         lot_rsp_valid = 1;
         #1;
-        expect(data_ready && data_in == 32'h1234_5678 && lot_rsp_ready,
+        check_expectation(data_ready && data_in == 32'h1234_5678 && lot_rsp_ready,
                "LOT read response produces cache completion pulse and data");
         @(posedge clk); #1;
         lot_rsp_valid = 0;
         data_read_word = 0;
-        expect(!data_ready && !lot_rsp_ready,
+        check_expectation(!data_ready && !lot_rsp_ready,
                "LOT read completion is a pulse and clears outstanding state");
 
         // 2: Qualified full-word write to DATA endpoint.
@@ -95,7 +95,7 @@ module tb_openmips_lot_memory_bridge;
         data_write_word_be = 4'b1111;
         data_out[31:0] = 32'hA55A_1234;
         #1;
-        expect(lot_valid && lot_dst == 1 && lot_payload[64] &&
+        check_expectation(lot_valid && lot_dst == 1 && lot_payload[64] &&
                lot_payload[31:0] == 32'hA55A_1234 && !ram_write_word_ready,
                "full-word LOT write is routed to DATA endpoint");
         lot_ready = 1;
@@ -105,7 +105,7 @@ module tb_openmips_lot_memory_bridge;
         lot_rsp_error = 0;
         lot_rsp_valid = 1;
         #1;
-        expect(data_ready && lot_rsp_ready,
+        check_expectation(data_ready && lot_rsp_ready,
                "LOT write dequeues write-buffer entry only on response");
         @(posedge clk); #1;
         lot_rsp_valid = 0;
@@ -118,7 +118,7 @@ module tb_openmips_lot_memory_bridge;
         data_read_line = 1;
         ram_ready = 1;
         #1;
-        expect(ram_read_line && !lot_valid && data_ready &&
+        check_expectation(ram_read_line && !lot_valid && data_ready &&
                data_in == 32'hCAFE_BABE && data_offset == 2,
                "cache-line read command and response stay on RAM path");
         data_read_line = 0;
@@ -131,7 +131,7 @@ module tb_openmips_lot_memory_bridge;
         data_out = 128'h0123_4567_89AB_CDEF_FEDC_BA98_7654_3210;
         ram_ready = 1;
         #1;
-        expect(ram_write_line_ready && !lot_valid &&
+        check_expectation(ram_write_line_ready && !lot_valid &&
                ram_data_out == data_out && data_ready,
                "cache-line write and 128-bit payload stay on RAM path");
         data_write_line_ready = 0;
@@ -143,7 +143,7 @@ module tb_openmips_lot_memory_bridge;
         data_read_word = 1;
         ram_ready = 1;
         #1;
-        expect(ram_read_word && !lot_valid && data_ready,
+        check_expectation(ram_read_word && !lot_valid && data_ready,
                "ordinary word read remains on RAM path");
         data_read_word = 0;
         ram_ready = 0;
@@ -154,10 +154,10 @@ module tb_openmips_lot_memory_bridge;
         data_read_word = 1;
         data_cache_attr = 3'b011;
         #1;
-        expect(!lot_valid && !ram_read_word && !data_ready,
+        check_expectation(!lot_valid && !ram_read_word && !data_ready,
                "cacheable access to LOT window is blocked, not misrouted");
         @(posedge clk); #1;
-        expect(protocol_fault, "invalid LOT qualification sets sticky fault");
+        check_expectation(protocol_fault, "invalid LOT qualification sets sticky fault");
         data_read_word = 0;
 
         $display("TB RESULT: PASS - OpenMIPS LOT memory bridge");
