@@ -90,3 +90,10 @@ The next extension is a two-way dirty-line eviction test through the same wrappe
 The actual-cache integration regression now fills both ways at a matching virtual index, dirties one line, adjusts the replacement state, and forces that dirty line to be evicted. The test confirms the writeback payload contains the updated `DEAD_BEEF` word, the 128-bit line write is acknowledged on the RAM path, and the subsequent replacement line is filled from RAM. The integrated test passed: [CI run 38557380566](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38557380566).
 
 High-address rejection through the full wrapper and reset with a late LOT response are now added to the same regression and await CI.
+
+
+## Full wrapper guard/reset regression passed
+
+The actual-cache integration CI now also checks that a physical address above the bridge's 32-bit range is rejected without RAM/LOT traffic, and that resetting the cache/bridge while a LOT request is outstanding clears local ownership so an injected late response is not consumed as a new completion. These checks passed with the RAM line fill, two-way dirty writeback, LOT read/write, and delayed response cases in [CI run 38557582605](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38557582605).
+
+This is still simulation-only and does not yet run a program on the full CPU top-level. Synthesis/timing/area and hardware validation remain open.
