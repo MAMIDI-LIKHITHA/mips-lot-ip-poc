@@ -56,7 +56,7 @@ The request fabric uses ready/valid handshakes. Its crossbar is currently combin
 
 ## Verification status
 
-**Latest user-reported full ModelSim regression (12 October 2026):** ModelSim Intel FPGA Edition 2021.1 — **11 passed, 0 failed** at the time of that report. The currently checked-in `sim/modelsim/run.do` enumerates **12 testbenches**, so the earlier 11-test result does not establish that the current script passes. Rerun the current script and update this status only after confirming the final summary and all per-test pass markers. This is local simulation evidence, not a GitHub Actions result.
+**Latest confirmed full ModelSim regression (14 October 2026):** ModelSim Intel FPGA Edition 2021.1 — **12 passed, 0 failed**. The user's run output showed **0 compilation errors and 14 warnings**, and all twelve testbenches emitted `TB RESULT: PASS`. This is local simulation evidence, not a GitHub Actions result.
 
 | Verification area | Result |
 |---|---|
@@ -69,7 +69,7 @@ The request fabric uses ready/valid handshakes. Its crossbar is currently combin
 | Reset and invalid-destination behavior | **PASS** |
 | LOT transaction and response routers | **PASS** |
 | Candidate MIPS MMIO adapter unit test (Icarus Verilog, GitHub Actions) | **PASS** — all six sections; `TB RESULT: PASS` ([workflow run](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38209876697)) |
-| End-to-end candidate CPU/LOT/endpoint path | **PASS in the latest user-reported 11-test ModelSim regression** |
+| End-to-end candidate CPU/LOT/endpoint path | **PASS in the confirmed 12-test ModelSim regression (14 October 2026)** |
 | Deterministic stress test | **500 cycles; 1,175 accepted and 1,175 delivered transfers** |
 | Synthesis, timing closure, area/resource measurements | **Not performed** |
 | FPGA/ASIC hardware validation | **Not performed** |
@@ -93,7 +93,7 @@ REGRESSION RESULT: PASS
 Per-test transcripts: sim/modelsim/regression_<testbench>.log
 ```
 
-The regression script compiles the RTL and testbenches, currently lists twelve testbenches, checks each test-specific transcript for its explicit pass marker, and prints the final summary. On 12 October 2026, the user reported an 11-test ModelSim run with 11 passed, 0 failed; because the checked-in script now lists 12 testbenches, that historical result must not be presented as validation of the current script. The GitHub Actions Icarus job validates only the candidate adapter unit test; it is not a substitute for the full ModelSim run. Per-test transcripts are generated locally and do not need to be committed. Warning counts can vary with simulator settings; investigate new warnings and any compile or simulation errors rather than relying on the summary alone.
+The regression script compiles the RTL and testbenches, lists twelve testbenches, checks each test-specific transcript for its explicit pass marker, and prints the final summary. On 14 October 2026, the user ran the current script in ModelSim Intel FPGA Edition 2021.1 and reported `REGRESSION SUMMARY: 12 passed, 0 failed` and `REGRESSION RESULT: PASS`. The run reported 0 compilation errors and 14 warnings. The GitHub Actions Icarus job validates only the candidate adapter unit test; it is not a substitute for the full ModelSim run. Per-test transcripts are generated locally and do not need to be committed. Investigate warnings rather than assuming they are harmless, and continue to distinguish functional simulation from synthesis, timing closure, and hardware validation.
 
 ## Repository layout
 
