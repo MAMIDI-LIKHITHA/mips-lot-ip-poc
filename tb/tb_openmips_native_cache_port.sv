@@ -165,6 +165,10 @@ module tb_openmips_native_cache_port;
     PAddressIn_C=24'h000003;
     DataIn_C=32'hCAFE_BABE;
     Write_C=4'b1111;
+    // Retire the processor-side write request as soon as the cache enters
+    // WRITEBACK, before the FIFO enqueue edge, to avoid re-sampling it.
+    wait (dut.state == 2); // WRITEBACK
+    Write_C=4'b0000;
     wait (WordOutReady_M === 1'b1);
     if (LineOutReady_M !== 1'b0)
       $fatal(1, "uncacheable word store was incorrectly presented as a line write");
@@ -172,7 +176,6 @@ module tb_openmips_native_cache_port;
       $fatal(1, "buffered word-store byte enables were %b, expected 1111", WordOutBE_M);
     if (DataOut_M[31:0] !== 32'hCAFE_BABE)
       $fatal(1, "buffered word-store data was %h, expected CAFEBABE", DataOut_M[31:0]);
-    Write_C=4'b0000;
     @(negedge clock);
     Ready_M=1;
     @(negedge clock);
