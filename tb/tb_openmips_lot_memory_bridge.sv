@@ -245,6 +245,41 @@ module tb_openmips_lot_memory_bridge;
         check_expectation(protocol_fault, "invalid LOT qualification sets sticky fault");
         data_read_word = 0;
 
+        // 9: Reset while a LOT request is outstanding. Current bridge policy
+        // drops local pending state; a late response must not be mistaken for a
+        // new transaction. System integration still needs coordinated reset or
+        // a drain/cancel contract so the downstream response cannot remain orphaned.
+        @(negedge clk);
+        reset_n = 0;
+        @(posedge clk); #1;
+        check_expectation(!protocol_fault, "reset clears fault before outstanding-reset case");
+        @(negedge clk);
+        reset_n = 1;
+        data_addr = 30'h1F00_0000 >> 2;
+        data_read_word = 1;
+        #1;
+        check_expectation(lot_valid && !lot_rsp_ready,
+               "reset test starts with a new LOT request");
+        lot_ready = 1;
+        @(posedge clk); #1;
+        lot_ready = 0;
+        check_expectation(!lot_valid && lot_rsp_ready,
+               "reset test has one accepted outstanding LOT request");
+        @(negedge clk);
+        reset_n = 0;
+        @(posedge clk); #1;
+        check_expectation(!lot_rsp_ready && !protocol_fault,
+               "reset clears local pending state while request was outstanding");
+        @(negedge clk);
+        reset_n = 1;
+        lot_rsp_valid = 1;
+        lot_rsp_rdata = 32'hDEAD_BEEF;
+        #1;
+        check_expectation(!lot_rsp_ready && !data_ready,
+               "late response after reset is not consumed or returned to cache");
+        lot_rsp_valid = 0;
+        data_read_word = 0;
+
         $display("TB RESULT: PASS - OpenMIPS LOT memory bridge");
         $finish;
     end
