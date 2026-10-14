@@ -340,7 +340,7 @@ module tb_openmips_native_cache_lot;
     lot_rsp_valid=1;
     lot_rsp_rdata=32'hDEAD_BEEF;
     #1;
-    if (lot_rsp_ready || native_ready || protocol_fault)
+    if (lot_rsp_ready || Ready_M || protocol_fault)
       $fatal(1, "late LOT response after reset was consumed or caused a spurious fault");
     lot_rsp_valid=0;
     $display("TB RESULT: PASS - actual cache RAM fill/dirty eviction, LOT read/write, high-address guard, and reset/late-response checks");
