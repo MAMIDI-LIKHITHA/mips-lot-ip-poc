@@ -12,6 +12,7 @@ module openmips_lot_access_classifier #(
     input  logic [2:0]  cache_attr,
 
     input  logic        read_word,
+    input  logic        write_word,
     input  logic [3:0]  write_word_be,
     input  logic        read_line,
     input  logic        write_line,
@@ -26,7 +27,7 @@ module openmips_lot_access_classifier #(
     logic in_window;
 
     always_comb begin
-        any_word = read_word || (|write_word_be);
+        any_word = read_word || write_word || (|write_word_be);
         any_line = read_line || write_line;
         in_window = ((byte_addr & LOT_MASK) == (LOT_BASE & LOT_MASK));
 
@@ -45,6 +46,8 @@ module openmips_lot_access_classifier #(
             end else begin
                 route_ram = 1'b1;
             end
+        end else if (read_word && write_word) begin
+            reject_access = 1'b1;
         end else if (any_word) begin
             if (!paddr_valid) begin
                 reject_access = 1'b1;
@@ -55,8 +58,7 @@ module openmips_lot_access_classifier #(
                     reject_access = 1'b1;
                 end else if (byte_addr[1:0] != 2'b00) begin
                     reject_access = 1'b1;
-                end else if ((|write_word_be) &&
-                             (write_word_be != 4'b1111)) begin
+                end else if (write_word && (write_word_be != 4'b1111)) begin
                     // LOT contract has no byte enables; never silently drop
                     // partial-write information.
                     reject_access = 1'b1;
