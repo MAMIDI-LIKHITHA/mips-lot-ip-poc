@@ -19,7 +19,7 @@ index 0000000..0000000 100644
      wire WB_Full;
 -    reg  [((PABITS-5)+129):0] WB_DataIn;    // {32-bit line addr, 128-bit line, 1-bit cacheable} OR
 +    reg  [((PABITS-5)+130):0] WB_DataIn;    // {word address, payload, uncacheable/type, queued PAddressValid} OR
-     wire [((PABITS-5)+129):0] WB_DataOut;   // {34-bit word addr, 90-bit X, 4-bit write-enable, 32-bit word, 1-bit uncacheable}
+     wire [((PABITS-5)+130):0] WB_DataOut;   // Adds queued PAddressValid above the existing payload/type fields
 @@ -135,6 +137,7 @@ module DataCache_2KB #(parameter PABITS=36) (
      assign LineOutReady_M = ~WB_Empty &  WB_DataOut[0];
      assign WordOutReady_M = ~WB_Empty & ~WB_DataOut[0];
