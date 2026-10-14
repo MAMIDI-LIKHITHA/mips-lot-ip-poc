@@ -105,6 +105,8 @@ module tb_openmips_native_cache_port;
     send_line_beat(2'd2, 32'h3333_0002);
     send_line_beat(2'd3, 32'h4444_0003);
     wait (Ready_C === 1'b1);
+    if (DataOut_C !== 32'h3333_0002)
+      $fatal(1, "line-fill read returned %h, expected word at offset 2 = 33330002", DataOut_C);
     @(negedge clock);
     Read_C=0;
     repeat (3) @(negedge clock);
@@ -112,7 +114,20 @@ module tb_openmips_native_cache_port;
       $fatal(1, "expected native ReadLine_M request to be observed");
     if (ready_count != 2)
       $fatal(1, "expected two processor-side completions (word + line fill), got %0d", ready_count);
-    $display("TB RESULT: PASS - actual OpenMIPS DataCache_2KB uncacheable read and four-beat line fill");
+
+    // Re-read the same cacheable address: this should hit and return the
+    // selected word without another external line-fill request.
+    @(negedge clock);
+    Read_C=1;
+    wait (Ready_C === 1'b1);
+    if (DataOut_C !== 32'h3333_0002)
+      $fatal(1, "cache-hit read returned %h, expected 33330002", DataOut_C);
+    @(negedge clock);
+    Read_C=0;
+    repeat (3) @(negedge clock);
+    if (ready_count != 3)
+      $fatal(1, "expected third processor-side completion for cache hit, got %0d", ready_count);
+    $display("TB RESULT: PASS - OpenMIPS DataCache_2KB uncacheable read, four-beat line fill, and cache hit");
     $finish;
   end
 endmodule
