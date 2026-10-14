@@ -120,3 +120,10 @@ This is the first actual-cache-to-bridge-to-LOT end-to-end proof in this POC, bu
 The bridge now latches RAM transaction ownership beyond the command pulse. Word responses/acks release ownership after one ready pulse; line reads keep the RAM route for four response beats. The delayed RAM line-response regression passed: [CI run 38557101949](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38557101949). The integrated actual-cache regression passed with a RAM line fill plus LOT read/write: [CI run 38556981169](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38556981169).
 
 A two-way dirty-line eviction regression is now being added; full-core execution remains a separate gate.
+
+
+## Dirty-line writeback verified end-to-end
+
+The actual pinned cache regression now exercises a real two-way replacement: it fills two tags, dirties one line, makes it the replacement victim, and verifies the dirty 128-bit writeback contains the updated `DEAD_BEEF` word. The RAM writeback is acknowledged before the replacement fill completes. CI passed: [run 38557380566](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38557380566).
+
+Full-wrapper high-address rejection and reset/late-response cases have been added to the next CI run. Full-core CPU program execution, synthesis, timing, area, and hardware validation remain outstanding.
