@@ -1,6 +1,6 @@
 # OpenMIPS LOT Memory-Port Bridge — Candidate RTL
 
-**Status:** Candidate bridge RTL and focused testbench pass the dedicated Icarus Verilog GitHub Actions smoke test, including backpressure, error-response, unmapped-offset, STATUS/ID routing, and reset during an accepted outstanding request ([latest passing run](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38546466798)).  
+**Status:** Candidate bridge RTL and focused testbench pass the dedicated Icarus Verilog GitHub Actions smoke test, including multi-cycle backpressure, invalid physical-address qualification, error-response, unmapped-offset, STATUS/ID routing, and reset during an accepted outstanding request ([latest passing run](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38551287283)).  
 **Integration status:** Not connected to the unmodified OpenMIPS top-level. This is not evidence that the processor boots or that CPU-to-LOT works end to end.
 
 ## Files
@@ -32,7 +32,7 @@ See the [OpenMIPS-to-LOT integration wiring plan](openmips-to-lot-integration-wi
 1. Confirm the exact timing of `ReadWord_M`, buffered `WordOutReady_M`, and `Ready_M` on the selected OpenMIPS revision using a source-level timing test or full-core simulation.
 2. Review simultaneous line and word commands against the cache write-buffer behavior. The classifier rejects conflicting command bundles.
 3. Decide how a protocol fault should stop or recover the CPU; a sticky output alone is diagnostic, not architectural exception handling.
-4. The unit test now covers reset during an accepted outstanding LOT request: reset clears local pending state and a late response is not consumed or returned to the cache. This exposes the system-level limitation rather than solving it: use coordinated bridge/fabric/endpoint reset or define a drain/cancel contract so a late response cannot remain orphaned.
+4. The unit test covers reset during an accepted outstanding LOT request: reset clears local pending state and a late response is not consumed or returned to the cache. It also verifies that a LOT-window word access with `data_paddr_valid=0` is blocked from both LOT and RAM and sets the sticky diagnostic fault. This exposes the system-level limitation rather than solving it: use coordinated bridge/fabric/endpoint reset or define a drain/cancel contract so a late response cannot remain orphaned.
 5. Add the bridge to a full-core integration top only after sideband wiring and RAM controller semantics are explicit.
 6. Keep the passing unit-test evidence separate from full-core validation. The passing workflow proves only the bridge/classifier testbench behavior under Icarus, not native OpenMIPS handshake compatibility or CPU boot.
 
