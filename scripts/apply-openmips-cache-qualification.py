@@ -30,7 +30,7 @@ once("    assign s_uncacheable    = (CacheAttr_C == 3'b010);\n",
 once("    DFF_E #(.WIDTH(1)) ff_using_delay_data (.clock(clock), .enable(1'b1),          .D(delay_update),     .Q(using_delay_data));\n",
      "    DFF_E #(.WIDTH(1)) ff_using_delay_data (.clock(clock), .enable(1'b1),          .D(delay_update),     .Q(using_delay_data));\n\n    // Keep qualification aligned with the service request, not live processor\n    // sidebands that may change while a queued write waits for Ready_M.\n    always @(posedge clock) begin\n        if (reset) begin\n            s_uncacheable <= 1'b0;\n            s_paddr_valid <= 1'b0;\n        end\n        else if (new_request) begin\n            s_uncacheable <= (CacheAttr_C == 3'b010);\n            s_paddr_valid <= PAddressValid_C;\n        end\n    end\n",
      "latch request qualification")
-once("    // {la[160:129], line[128:1], 1-bit cacheable} OR\n    // {wa[160:127], X[126:37], we[36:33], data[32:1], cached[0]}\n    always @(*) begin\n",
+once("    // {la[160:129], line[128:1], cached[0]} OR\n    // {wa[160:127], X[126:37], we[36:33], data[32:1], cached[0]}\n    always @(*) begin\n",
      "    // {la[160:129], line[128:1], 1-bit cacheable} OR\n    // {wa[160:127], X[126:37], we[36:33], data[32:1], cached[0]}\n    always @(*) begin\n        WB_DataIn[((PABITS-5)+130)] <= s_paddr_valid;\n",
      "store qualification in FIFO entry")
 once("        .DATA_WIDTH  (((PABITS-5)+129+1)),\n",
