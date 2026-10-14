@@ -136,7 +136,27 @@ module tb_openmips_native_cache_port;
       $fatal(1, "expected third processor-side completion for cache hit, got %0d", ready_count);
     if (line_request_count != 1)
       $fatal(1, "expected exactly one external line request (fill only), got %0d", line_request_count);
-    $display("TB RESULT: PASS - OpenMIPS DataCache_2KB uncacheable read, four-beat line fill, and cache hit");
+
+    // Write a full word to the resident cache line, then verify a subsequent
+    // read observes the updated value without triggering another line fill.
+    @(negedge clock);
+    DataIn_C=32'hDEAD_BEEF;
+    Write_C=4'b1111;
+    wait (dut.state == 9); // WRITE_RECOVER after the cache-hit store.
+    Write_C=4'b0000;
+    wait (Ready_C === 1'b1);
+    @(negedge clock);
+    repeat (3) @(negedge clock);
+    Read_C=1;
+    wait (Ready_C === 1'b1);
+    if (DataOut_C !== 32'hDEAD_BEEF)
+      $fatal(1, "store/readback mismatch: got %h, expected DEADBEEF", DataOut_C);
+    @(negedge clock);
+    Read_C=0;
+    repeat (3) @(negedge clock);
+    if (line_request_count != 1)
+      $fatal(1, "cache-hit store/readback unexpectedly issued another line request: %0d", line_request_count);
+    $display("TB RESULT: PASS - uncacheable read, four-beat line fill, cache hit, cache store/readback");
     $finish;
   end
 endmodule
