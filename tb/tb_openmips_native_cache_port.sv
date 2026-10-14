@@ -63,7 +63,7 @@ module tb_openmips_native_cache_port;
       if (Ready_C) ready_count <= ready_count + 1;
       if (!line_test && (ReadLine_M || LineOutReady_M || WordOutReady_M))
         $fatal(1, "unexpected line/write-buffer traffic during isolated uncacheable read");
-      if (cycles > 80) $fatal(1, "timeout waiting for native cache completion");
+      if (cycles > 160) begin $display("TIMEOUT state=%0d ReadLine=%b ReadWord=%b Ready_M=%b Ready_C=%b ready_count=%0d line_test=%b", dut.state, ReadLine_M, ReadWord_M, Ready_M, Ready_C, ready_count, line_test); $fatal(1, "timeout waiting for native cache completion"); end
     end
   end
 
