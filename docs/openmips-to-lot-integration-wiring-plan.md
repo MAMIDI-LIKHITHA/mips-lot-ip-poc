@@ -105,3 +105,10 @@ See [Native OpenMIPS Cache-to-LOT Bridge Gap Review](openmips-native-cache-to-br
 A source-specific cache transformation now latches physical-address validity and cache attribute with the service request, then exposes the valid bit from the write-buffer head for queued word writes and from the active native uncacheable-read command. The actual pinned cache compiled and passed the regression that changes live sidebands after the original command is issued: [CI run 38554550754](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38554550754).
 
 The initial `openmips_native_cache_adapter` now preserves the native 34-bit word address until upper-bit validation, keeps line commands on the RAM route, and forwards the transaction-aligned word qualification. Its standalone tests cover word read/write qualification, line routing, and fail-closed high-address rejection. This is still a building block, not a full integration: the next acceptance gate is to connect this adapter to the candidate bridge and test the actual pinned cache with RAM, a delayed LOT endpoint, backpressure, dirty-line writeback, and response retirement.
+
+
+## End-to-end milestone update (14 October 2026)
+
+The first regression that instantiates the actual pinned `DataCache_2KB` plus `openmips_native_cache_lot_wrapper` passed: [CI run 38555604302](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38555604302). A delayed LOT endpoint confirmed that a native uncacheable read at `0x1F00_0000` returns its data to the cache, and a full-word store at `0x1F00_0004` generates the expected LOT write and does not retire its queued write-buffer entry until the endpoint response handshake. Neither tested LOT command leaked to RAM.
+
+This is the first actual-cache-to-bridge-to-LOT end-to-end proof in this POC, but it is not full-core CPU program execution. Next, extend the same integration bench with cache-line fill and dirty-line writeback through the RAM port, upper-address rejection, reset while LOT is outstanding, and then run a full-core program-level test before making broader integration claims.
