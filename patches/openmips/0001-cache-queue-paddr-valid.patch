@@ -28,7 +28,7 @@ diff --git a/hardware/src/MIPS32/Cache/DCache/DataCache_2KB.v b/hardware/src/MIP
      assign DataOut_M      = WB_DataOut[128:1];
 @@ -206,1 +209,0 @@ module DataCache_2KB #(parameter PABITS=36) (
 -    assign s_uncacheable    = (CacheAttr_C == 3'b010);
-@@ -280,2 +282,14 @@ module DataCache_2KB #(parameter PABITS=36) (
+@@ -280,2 +282,15 @@ module DataCache_2KB #(parameter PABITS=36) (
      DFF_E #(.WIDTH(1)) ff_using_delay_data (.clock(clock), .enable(1'b1),          .D(delay_update),     .Q(using_delay_data));
  
 +    // Keep qualification aligned with the service request, not live processor
