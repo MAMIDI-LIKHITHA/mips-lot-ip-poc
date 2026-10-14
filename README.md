@@ -88,7 +88,7 @@ do sim/modelsim/run.do
 A successful run of the current script should end with output similar to:
 
 ```text
-REGRESSION SUMMARY: 11 passed, 0 failed
+REGRESSION SUMMARY: 12 passed, 0 failed
 REGRESSION RESULT: PASS
 Per-test transcripts: sim/modelsim/regression_<testbench>.log
 ```
