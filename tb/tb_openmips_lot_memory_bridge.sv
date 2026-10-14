@@ -249,6 +249,26 @@ module tb_openmips_lot_memory_bridge;
         check_expectation(protocol_fault, "invalid LOT qualification sets sticky fault");
         data_read_word = 0;
 
+        // 8b: A matching virtual/address value is not sufficient when the
+        // physical-address-valid sideband is low. Fail closed, with no RAM leak.
+        @(negedge clk);
+        reset_n = 0;
+        @(posedge clk); #1;
+        check_expectation(!protocol_fault, "reset clears fault before invalid-physical-address case");
+        @(negedge clk);
+        reset_n = 1;
+        data_addr = 30'h1F00_0000 >> 2;
+        data_read_word = 1;
+        data_paddr_valid = 0;
+        data_cache_attr = 3'b010;
+        #1;
+        check_expectation(!lot_valid && !ram_read_word && !data_ready,
+               "LOT-window access with invalid physical address is blocked");
+        @(posedge clk); #1;
+        check_expectation(protocol_fault, "invalid physical-address qualification sets sticky fault");
+        data_read_word = 0;
+        data_paddr_valid = 1;
+
         // 9: Partial-byte writes in the LOT window must not be converted into
         // full-word side-effecting register writes or leak to ordinary RAM.
         @(negedge clk);
