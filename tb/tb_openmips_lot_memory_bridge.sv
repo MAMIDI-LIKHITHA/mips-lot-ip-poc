@@ -72,6 +72,13 @@ module tb_openmips_lot_memory_bridge;
                "qualified LOT read issues one request and suppresses RAM");
         check_expectation(lot_payload == {1'b0,32'h1F00_0000,32'b0},
                "LOT read payload uses byte address and zero write data");
+        check_expectation(!lot_rsp_ready && !data_ready,
+               "LOT response is not accepted before request handshake");
+        // Hold request back for a cycle: valid and payload must remain stable.
+        #2;
+        check_expectation(lot_valid &&
+               lot_payload == {1'b0,32'h1F00_0000,32'b0},
+               "LOT request remains asserted under downstream backpressure");
         lot_ready = 1;
         @(posedge clk); #1;
         lot_ready = 0;
@@ -115,10 +122,22 @@ module tb_openmips_lot_memory_bridge;
         #1;
         check_expectation(data_ready && lot_rsp_ready,
                "LOT write dequeues write-buffer entry only on response");
+        lot_rsp_error = 1;
         @(posedge clk); #1;
+        check_expectation(protocol_fault && !lot_rsp_ready,
+               "LOT error response is consumed and sets sticky fault");
         lot_rsp_valid = 0;
+        lot_rsp_error = 0;
         data_write_word_ready = 0;
         data_write_word_be = 0;
+
+        // Clear diagnostic fault before unrelated RAM-path checks.
+        @(negedge clk);
+        reset_n = 0;
+        @(posedge clk); #1;
+        check_expectation(!protocol_fault, "reset clears fault after LOT error");
+        @(negedge clk);
+        reset_n = 1;
 
         // 3: Cache-line read is never sent to LOT.
         @(negedge clk);
