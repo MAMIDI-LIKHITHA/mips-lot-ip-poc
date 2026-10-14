@@ -11,6 +11,7 @@ on:
       - "rtl/mips_if/openmips_lot_access_classifier.sv"
       - "scripts/apply-openmips-cache-qualification.py"
       - "tb/tb_openmips_native_cache_lot.sv"
+      - "tb/models/openmips_cache_bram_ip_model.v"
       - ".github/workflows/openmips-native-cache-lot-smoke.yml"
   pull_request:
     paths:
