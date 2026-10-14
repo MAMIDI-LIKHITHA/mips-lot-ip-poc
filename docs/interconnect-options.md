@@ -1,41 +1,79 @@
-# Interconnect Options for the LOT POC
+# Interconnect Options and Conditional Candidate Comparison
 
-**Last reviewed:** 2026-10-11  
-**Purpose:** Identify candidates to compare before freezing a custom LOT bus or crossbar interface.
+**Status:** research comparison only; no final IP selected.  
+**Last reviewed:** 14 October 2026
 
 ## Starting point
 
-The current POC has a custom, simple request/response contract and a 4×4 ready/valid crossbar. This is useful for exploring transaction routing, but it does not establish that a custom fabric is the best final integration choice. The target MIPS core and peripheral inventory must be known before making that decision.
+The current POC has a custom request/response contract and a 4×4 ready/valid crossbar. This is useful for exploring transaction routing, but it does not establish that a custom fabric is the best final integration choice. The target MIPS core, native bus, and peripheral inventory must be known before making that decision.
 
-## Candidates
+The guiding rule is to reuse compatible existing IP where possible. Any vendor-IP preference below is conditional on interface fit, tool/IP access, licensing, and stakeholder confirmation.
 
-| Candidate | What it is | Potential fit | Key checks | Tag |
-|---|---|---|---|---|
-| Keep the custom LOT fabric | Current local transaction router and 4×4 crossbar. | Best for continuing the existing POC and exploring LOT-specific routing semantics. | Define stable interface, error behavior, byte enables, IDs, address map, reset/clock assumptions and endpoint contract. Measure synthesis/timing only after selecting a target. | [Inference] |
-| AMBA AXI | Standard on-chip interface family; Arm positions AXI for high-frequency/high-bandwidth interconnects. | Candidate if the selected CPU subsystem or IP ecosystem already exposes AXI. | Determine AXI variant, widths, burst/ordering requirements, outstanding transactions, bridges, and license/implementation terms for any third-party IP. | [Confirmed overview; fit is inference] |
-| AMBA AHB | Arm positions AHB for embedded/low-latency systems. | Candidate for an embedded subsystem if the chosen core and peripherals support it. | Confirm actual MIPS core support; do not assume Arm protocol use merely because it is a MIPS design. | [Confirmed overview; fit is inference] |
-| AMBA APB | Simple, low-bandwidth peripheral bus; Arm documentation describes a bridge from the main memory system to APB peripherals. | Candidate for control/status registers or a peripheral segment behind an appropriate bridge. | APB is not itself a replacement for a high-throughput fabric; confirm the need for an AXI/AHB-to-APB bridge and target peripheral bus compatibility. | [Confirmed overview/spec; fit is inference] |
-| dpretet/axi-crossbar | Open-source parametric AXI4 crossbar written in SystemVerilog. | Candidate only if the CPU-side fabric is AXI4-compatible or can be bridged cleanly. | Review current license file, supported AXI features, verification evidence, issue/maintenance state, parameter constraints and timing behavior before adoption. | [Candidate identified; adoption checks open] |
-| atfox272/AXI4-Interconnect | Another public AXI4 interconnect candidate identified during discovery. | Potential comparison candidate if AXI4 is the chosen protocol. | License and maintenance/support details have not been confirmed here; do not adopt until reviewed. | [Check] |
+## What LOT needs
 
-## Recommendation
+1. Connect a MIPS-based subsystem to roughly four endpoints, including a Silicon Labs connectivity device.
+2. Reach an SPI controller and GPIO signals (reset, interrupt, wake); these may be exposed through a peripheral bus such as APB.
+3. Return an error for unmapped addresses rather than hanging.
+4. Be viable for eventual ASIC use, not only FPGA prototyping.
+5. Have usable documentation, verification collateral, and a support/maintenance path.
 
-**[Inference — medium confidence]** Do not replace the current POC crossbar with a third-party interconnect until the MIPS core, bus protocol and transaction requirements are identified. The practical decision order is:
+## Candidate comparison
 
-1. Identify the selected MIPS core/subsystem and native bus.
-2. Check whether existing bus bridges and a memory-mapped SPI controller are available.
-3. Decide whether the LOT value lies in a custom transaction protocol or whether a standard AXI/AHB/APB-compatible fabric would meet the requirements.
-4. Compare candidate IP using actual feature requirements, license, documentation, verification, integration cost, and synthesis/timing evidence.
-5. Keep the current RTL as the functional reference until a replacement demonstrates equivalent required behavior.
+| Candidate | Type / protocols | Potential fit | Main limitations and checks |
+|---|---|---|---|
+| **Arm CoreLink NIC-400** | Commercial; AXI3, AXI4 or AHB-Lite inputs, AXI/AHB-Lite/APB outputs | Conditional candidate if the selected CPU interface is compatible; APB ports could attach a memory-mapped SPI controller | Confirm Flexible Access tier, tool availability, manufacture fees, use with the selected subsystem, and whether a newer Arm fabric is more suitable. NIC-400 does not provide ACE coherency. |
+| **PULP axi_xbar** | Open-source AXI4 crossbar and separate AXI4-Lite crossbar; Solderpad Hardware License 0.51 | Fallback if AXI4 is confirmed and community-supported RTL is acceptable | No vendor support; APB peripherals require suitable bridge/conversion logic. Verify current features and integration needs. |
+| **dpretet/axi-crossbar** | Open-source AXI4 and AXI4-Lite | Alternative if AXI4 is selected | Check maintenance, supported features, verification, and bridge requirements. |
+| **alexforencich/verilog-axi** | Open-source AXI components | Reference material may be useful | Project is marked deprecated; evaluate its successor and current maintenance before adoption. |
+| **ZipCPU/wb2axip** | AXI, AXI-Lite and Wishbone-related components | Possible candidate if interface and features fit | Review exact license and compatibility before adoption. |
+| **FPGA-vendor generated fabrics** | Tool-generated vendor-specific fabrics | Useful for FPGA prototypes within the relevant tool ecosystem | Generally not a portable ASIC interconnect choice. |
+| **Custom 4×4 crossbar in this repo** | Local ready/valid protocol | Keep as simulation reference and learning artifact | No standard-bus bridges, silicon history, synthesis results, or production verification yet. |
 
-## Primary sources
+## Functional needs matrix
 
-- Arm, [AMBA overview](https://www.arm.com/architecture/system-architectures/amba) — overview and intended positioning of AXI/AHB/APB.
-- Arm, [AMBA specifications](https://www.arm.com/architecture/system-architectures/amba/amba-specifications) — authoritative specification index.
-- Arm, [APB specification / documentation](https://www.arm.com/architecture/system-architectures/amba/amba-specifications) — use the relevant APB version from the official specifications page.
-- GitHub, [dpretet/axi-crossbar](https://github.com/dpretet/axi-crossbar) — source repository; verify the current license and feature set directly before reuse.
-- GitHub, [atfox272/AXI4-Interconnect](https://github.com/atfox272/AXI4-Interconnect) — secondary candidate; license and maintenance need review.
+| Need | NIC-400 | PULP axi_xbar | Custom POC |
+|---|---|---|---|
+| CPU-side interface | AXI variants/AHB-Lite; confirm exact fit | AXI4 | Requires adapter/bridge |
+| APB peripheral connectivity | APB outputs available | Separate bridge needed | Bridge needed |
+| Unmapped-address error | DECERR behavior described in manual | Check error-slave configuration | Review current simulation behavior against final contract |
+| Generated collateral / vendor support | Tools and vendor support, subject to access | Community | Local project only |
+| Silicon evidence in this repository | None | None | None |
+
+## Recommendation and decision gates
+
+**No final interconnect selection is approved by this document.** NIC-400 is a conditional candidate, not a committed design choice. PULP axi_xbar is a possible open-source fallback if AXI4 is confirmed.
+
+1. Identify the exact MIPS core/subsystem and native bus (protocol variant, widths, ordering, and outstanding-transaction needs).
+2. Inventory existing bridges, SPI controller, GPIO, clock/reset domains, and drivers.
+3. Confirm the intended Silicon Labs part and NCP/RCP/SoC mode.
+4. Verify license, commercial access, tool access, support, and integration effort for each viable candidate.
+5. Keep the current RTL as a functional reference until a replacement demonstrates required behavior.
+6. After selection, run equivalent regression tests, synthesis, timing analysis, and eventually hardware validation.
+
+## Open checks
+
+| Check | Status |
+|---|---|
+| Flexible Access tier includes NIC-400 and required tools | Open |
+| Exact MIPS core and bus protocol | Open |
+| Existing SPI controller and GPIO availability | Open |
+| Whether NIC-450 or NI-700 is a better current option | Open |
+| License and maintenance review for open-source candidates | Open |
+| Synthesis, timing, area, power, and hardware measurements | Not performed |
+
+## Sources
+
+- Arm, [AMBA overview](https://www.arm.com/architecture/system-architectures/amba)
+- Arm, [AMBA specifications](https://www.arm.com/architecture/system-architectures/amba/amba-specifications)
+- Arm, [NIC interconnect](https://www.arm.com/products/silicon-ip-system/corelink-interconnect/nic)
+- Arm, [Flexible Access](https://www.arm.com/products/flexible-access)
+- Arm NIC-400 technical reference manual: https://documentation-service.arm.com/static/5f5a411f235b3560a01eb5ce
+- [PULP AXI](https://github.com/pulp-platform/axi)
+- [dpretet/axi-crossbar](https://github.com/dpretet/axi-crossbar)
+- [alexforencich/verilog-axi](https://github.com/alexforencich/verilog-axi)
+- [ZipCPU/wb2axip](https://github.com/ZipCPU/wb2axip)
+- Silicon Labs, [SiWx917 host-interface guidance](https://docs.silabs.com/wiseconnect/latest/wiseconnect-developers-guide/migr-porting-steps/implement-hardware-abstraction)
 
 ## Non-claims
 
-This note does not claim that AMBA is the native bus of the selected MIPS core, that either open-source crossbar is suitable without modification, or that any candidate has been synthesized, timed, or hardware-validated in this repository.
+This comparison does not establish that the selected MIPS core uses AXI, that any candidate is compatible without modification, or that any option has been synthesized, timed, or hardware-validated in this repository.
