@@ -64,3 +64,14 @@ The repository now carries a deterministic source transformation in `scripts/app
 The pinned-cache regression passed on 14 October 2026: [run 38554550754](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38554550754).
 
 A first adapter module, `rtl/mips_if/openmips_native_cache_adapter.sv`, now combines those aligned sidebands with the 34-bit address guard and maps native word/line commands to bridge-facing signals. Its standalone CI is running separately. **The adapter is not yet wired into `openmips_lot_memory_bridge`, and there is not yet an actual-cache + adapter + bridge + delayed-LOT-endpoint end-to-end regression.** CPU-to-LOT integration therefore remains unproven.
+
+
+## First actual-cache-to-LOT integration regression passed
+
+The new wrapper `rtl/mips_if/openmips_native_cache_lot_wrapper.sv` connects the address/qualification adapter to the candidate bridge. `tb/tb_openmips_native_cache_lot.sv` instantiates the actual pinned `DataCache_2KB`, the wrapper, and a deliberately delayed LOT endpoint. It verifies:
+- A native uncacheable read at `0x1F00_0000` becomes one LOT read request and the response data reaches the processor-facing cache interface.
+- A native uncacheable full-word store at `0x1F00_0004` becomes a LOT write to destination 1 with the expected data.
+- The queued store remains present while the LOT endpoint delays its response and retires after the response handshake.
+- The tested LOT accesses do not leak to RAM and no address/protocol fault is raised.
+
+End-to-end simulation passed in [CI run 38555604302](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38555604302). This is meaningful CPU-cache-port-to-LOT evidence, but it is **not full-core CPU program execution**. Remaining integration gates include exercising cache-line fills and dirty writebacks through the wrapper/RAM path in the same end-to-end test, high-address fail-stop behavior through the complete wrapper, reset with an outstanding LOT request, and the CPU error/fault policy. Synthesis, timing, area, and hardware validation remain outstanding.
