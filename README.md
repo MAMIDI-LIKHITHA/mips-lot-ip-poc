@@ -69,8 +69,8 @@ The request fabric uses ready/valid handshakes. Its crossbar is currently combin
 | Reset and invalid-destination behavior | **PASS** |
 | LOT transaction and response routers | **PASS** |
 | Candidate MIPS MMIO adapter unit test (Icarus Verilog, GitHub Actions) | **PASS** — all six sections; `TB RESULT: PASS` ([workflow run](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38209876697)) |
-| OpenMIPS LOT access classifier unit test | **Pending CI execution** — added a dedicated Icarus Verilog workflow; do not count as passed until the workflow result is green |
-| OpenMIPS LOT memory bridge unit test | **Pending CI execution** — tests routing and simplified response handshakes only; not full-core integration |
+| OpenMIPS LOT access classifier unit test | **PASS** — Icarus Verilog smoke test ([workflow run](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38545094138)) |
+| OpenMIPS LOT memory bridge unit test | **PASS** — Icarus Verilog compile and test pass ([latest workflow run](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38545479764)); unit-level only, not full-core integration |
 | End-to-end candidate CPU/LOT/endpoint path | **PASS in the confirmed 12-test ModelSim regression (14 October 2026)** |
 | Deterministic stress test | **500 cycles; 1,175 accepted and 1,175 delivered transfers** |
 | Synthesis, timing closure, area/resource measurements | **Not performed** |
