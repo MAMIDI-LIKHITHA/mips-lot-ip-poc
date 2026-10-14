@@ -122,3 +122,15 @@ results/       Checked-in verification evidence, where available
 The current evidence supports **functional behavior in simulation only**. It does not establish a finalized CPU interface, network interoperability, synthesis quality, FPGA Fmax, post-implementation latency, resource utilization, power, or production readiness.
 
 The research documents are evidence-gathering artifacts, not approval of a final architecture. Record vendor answers and the eventual decision with dates and supporting sources before integrating third-party IP.
+
+
+## Additional LOT research package
+
+The latest research additions are summarized here; all choices remain conditional until the target MIPS bus, connectivity mode, and licensing are confirmed.
+
+- [Interconnect options and conditional candidate comparison](docs/interconnect-options.md) — merged with the existing interconnect options note to avoid duplicate documents.
+- [LOT Connectivity Layer — Research Report 01 (Markdown summary)](docs/research/LOT-Research-Report-01.md) — Silicon Labs NCP/RCP/SoC modes, Matter border-router scope, MIPS bus questions, and next steps.
+- [NIC-400 decision memo (Markdown)](docs/research/NIC-400-decision-memo.md) — conditional candidate assessment and open checks.
+- [LOT research templates](docs/research/LOT-Research-Templates.md) — source-linked brief and comparison templates.
+
+These research notes are preliminary and do not supersede the engineering boundary above: the current RTL is simulation evidence only, with no synthesis, timing closure, or hardware validation claimed.
