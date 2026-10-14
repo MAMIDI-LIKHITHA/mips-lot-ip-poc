@@ -74,11 +74,15 @@ module tb_openmips_lot_memory_bridge;
                "LOT read payload uses byte address and zero write data");
         check_expectation(!lot_rsp_ready && !data_ready,
                "LOT response is not accepted before request handshake");
-        // Hold request back for a cycle: valid and payload must remain stable.
-        #2;
-        check_expectation(lot_valid &&
-               lot_payload == {1'b0,32'h1F00_0000,32'b0},
-               "LOT request remains asserted under downstream backpressure");
+        // Apply multi-cycle backpressure. The bridge must hold valid/payload
+        // stable and must not create a second request while not accepted.
+        repeat (4) begin
+            @(negedge clk); #1;
+            check_expectation(lot_valid &&
+                   lot_payload == {1'b0,32'h1F00_0000,32'b0} &&
+                   !lot_rsp_ready && !ram_read_word,
+                   "LOT request/payload remain stable through extended backpressure");
+        end
         lot_ready = 1;
         @(posedge clk); #1;
         lot_ready = 0;
