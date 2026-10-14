@@ -1,0 +1,31 @@
+name: OpenMIPS native cache adapter smoke test
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "rtl/mips_if/openmips_native_addr_guard.sv"
+      - "rtl/mips_if/openmips_native_cache_adapter.sv"
+      - "tb/tb_openmips_native_cache_adapter.sv"
+      - ".github/workflows/openmips-native-cache-adapter-smoke.yml"
+  pull_request:
+    paths:
+      - "rtl/mips_if/openmips_native_addr_guard.sv"
+      - "rtl/mips_if/openmips_native_cache_adapter.sv"
+      - "tb/tb_openmips_native_cache_adapter.sv"
+      - ".github/workflows/openmips-native-cache-adapter-smoke.yml"
+jobs:
+  native-cache-adapter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Icarus Verilog
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iverilog
+      - name: Compile adapter and address guard
+        run: |
+          iverilog -g2012 -s tb_openmips_native_cache_adapter             -o /tmp/native-cache-adapter.vvp             rtl/mips_if/openmips_native_addr_guard.sv             rtl/mips_if/openmips_native_cache_adapter.sv             tb/tb_openmips_native_cache_adapter.sv
+      - name: Run adapter smoke test
+        run: vvp -n /tmp/native-cache-adapter.vvp
