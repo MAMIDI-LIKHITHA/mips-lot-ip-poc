@@ -72,7 +72,7 @@ module openmips_lot_memory_bridge #(
     // The OpenMIPS top-level memory address is a word address, not byte address.
     // This first implementation deliberately supports PABITS=32 only.
     assign byte_addr = {data_addr, 2'b00};
-    assign endpoint_offset_supported = (byte_addr[3:0] <= 4'hC);
+    assign endpoint_offset_supported = (byte_addr[11:0] <= 12'h00C);
 
     openmips_lot_access_classifier #(
         .LOT_BASE(LOT_BASE),
