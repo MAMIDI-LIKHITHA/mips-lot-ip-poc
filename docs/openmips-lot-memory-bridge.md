@@ -1,6 +1,6 @@
 # OpenMIPS LOT Memory-Port Bridge — Candidate RTL
 
-**Status:** Candidate bridge RTL and focused testbench are committed. Awaiting CI execution.  
+**Status:** Candidate bridge RTL and focused testbench pass the dedicated Icarus Verilog GitHub Actions smoke test, including expanded backpressure, error-response, reset, and unmapped-offset checks ([run](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38545601674)).  
 **Integration status:** Not connected to the unmodified OpenMIPS top-level. This is not evidence that the processor boots or that CPU-to-LOT works end to end.
 
 ## Files
@@ -30,9 +30,9 @@ The module currently supports `PABITS=32` only and uses a default test aperture 
 1. Confirm the exact timing of `ReadWord_M`, buffered `WordOutReady_M`, and `Ready_M` on the selected OpenMIPS revision using a source-level timing test or full-core simulation.
 2. Review simultaneous line and word commands against the cache write-buffer behavior. The classifier rejects conflicting command bundles.
 3. Decide how a protocol fault should stop or recover the CPU; a sticky output alone is diagnostic, not architectural exception handling.
-4. Test LOT response errors and reset during an outstanding transaction.
+4. Test reset during an already accepted outstanding LOT transaction and define how a late/orphan response is handled; current unit coverage verifies fault reset, not reset cancellation semantics.
 5. Add the bridge to a full-core integration top only after sideband wiring and RAM controller semantics are explicit.
-6. Run the dedicated Icarus workflow and fix any compile/test failures before treating this candidate as verified.
+6. Keep the passing unit-test evidence separate from full-core validation. The passing workflow proves only the bridge/classifier testbench behavior under Icarus, not native OpenMIPS handshake compatibility or CPU boot.
 
 ## Evidence boundary
 
