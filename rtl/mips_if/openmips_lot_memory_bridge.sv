@@ -65,6 +65,10 @@ module openmips_lot_memory_bridge #(
     logic reject_access;
     logic [31:0] byte_addr;
     logic pending;
+    logic ram_pending;
+    logic ram_line_pending;
+    logic [1:0] ram_line_beat_count;
+    logic ram_command;
     logic [1:0] endpoint_dst;
     logic endpoint_offset_supported;
     logic lot_response_fire;
@@ -98,10 +102,14 @@ module openmips_lot_memory_bridge #(
     assign endpoint_dst = byte_addr[3:2];
     // Once a LOT request is accepted, keep ownership on the LOT path until its
     // response is consumed, even if upstream sideband/address signals move.
-    assign route_lot = pending || (class_route_lot && endpoint_offset_supported);
-    assign reject_access = !pending && (class_reject ||
+    assign ram_command = data_read_line || data_read_word ||
+                         data_write_line_ready || data_write_word_ready;
+    assign route_lot = pending || (!ram_pending && class_route_lot && endpoint_offset_supported);
+    assign reject_access = !pending && !ram_pending && (class_reject ||
                            (class_route_lot && !endpoint_offset_supported));
-    assign route_ram = !pending && class_route_ram && !reject_access;
+    // Hold RAM ownership after the command disappears. A line read has four
+    // response beats; word reads and write-buffer acknowledgements have one.
+    assign route_ram = ram_pending || (!pending && class_route_ram && !reject_access);
 
     // RAM path is preserved for cache-line fills/writebacks and ordinary words.
     assign ram_addr = data_addr;
@@ -146,6 +154,9 @@ module openmips_lot_memory_bridge #(
     always_ff @(posedge clk or negedge reset_n) begin
         if (!reset_n) begin
             pending <= 1'b0;
+            ram_pending <= 1'b0;
+            ram_line_pending <= 1'b0;
+            ram_line_beat_count <= 2'd0;
             protocol_fault <= 1'b0;
         end else begin
             if (reject_access)
@@ -153,6 +164,21 @@ module openmips_lot_memory_bridge #(
 
             if (lot_valid && lot_ready)
                 pending <= 1'b1;
+
+            if (!ram_pending && !pending && class_route_ram && ram_command && !ram_ready) begin
+                ram_pending <= 1'b1;
+                ram_line_pending <= data_read_line;
+                ram_line_beat_count <= 2'd0;
+            end
+            if (ram_pending && ram_ready) begin
+                if (ram_line_pending && ram_line_beat_count != 2'd3) begin
+                    ram_line_beat_count <= ram_line_beat_count + 2'd1;
+                end else begin
+                    ram_pending <= 1'b0;
+                    ram_line_pending <= 1'b0;
+                    ram_line_beat_count <= 2'd0;
+                end
+            end
 
             if (lot_response_fire) begin
                 pending <= 1'b0;
