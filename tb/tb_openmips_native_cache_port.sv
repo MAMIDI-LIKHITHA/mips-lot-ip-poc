@@ -156,7 +156,31 @@ module tb_openmips_native_cache_port;
     repeat (3) @(negedge clock);
     if (line_request_count != 1)
       $fatal(1, "cache-hit store/readback unexpectedly issued another line request: %0d", line_request_count);
-    $display("TB RESULT: PASS - uncacheable read, four-beat line fill, cache hit, cache store/readback");
+
+    // Exercise the native write buffer for an uncacheable word store. This
+    // checks the buffered payload and byte enables before acknowledging it.
+    @(negedge clock);
+    CacheAttr_C=3'b010;
+    VAddressIn_C=10'h00C;
+    PAddressIn_C=24'h000003;
+    DataIn_C=32'hCAFE_BABE;
+    Write_C=4'b1111;
+    wait (WordOutReady_M === 1'b1);
+    if (LineOutReady_M !== 1'b0)
+      $fatal(1, "uncacheable word store was incorrectly presented as a line write");
+    if (WordOutBE_M !== 4'b1111)
+      $fatal(1, "buffered word-store byte enables were %b, expected 1111", WordOutBE_M);
+    if (DataOut_M[31:0] !== 32'hCAFE_BABE)
+      $fatal(1, "buffered word-store data was %h, expected CAFEBABE", DataOut_M[31:0]);
+    Write_C=4'b0000;
+    @(negedge clock);
+    Ready_M=1;
+    @(negedge clock);
+    Ready_M=0;
+    repeat (3) @(negedge clock);
+    if (WordOutReady_M || LineOutReady_M)
+      $fatal(1, "write buffer did not retire after one-cycle Ready_M acknowledgement");
+    $display("TB RESULT: PASS - cache fill/hit/store plus uncacheable buffered word-store payload and retirement");
     $finish;
   end
 endmodule
