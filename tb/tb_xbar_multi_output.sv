@@ -1,17 +1,22 @@
 `timescale 1ns/1ps
-module tb_xbar_multi_output;
 
-    localparam int N = 4;
-    localparam int DATA_W = 32;
-    localparam int DST_W = 2;
-
-    logic clk, rst_n;
+module xbar_multi_output_case #(
+    parameter int N = 4,
+    parameter int DATA_W = 32,
+    parameter int DST_W = (N <= 1) ? 1 : $clog2(N)
+) (
+    input logic clk,
+    output logic done
+);
+    logic rst_n;
     logic [N-1:0] in_valid, in_ready;
     logic [N-1:0][DST_W-1:0] in_dst;
     logic [N-1:0][DATA_W-1:0] in_data;
     logic [N-1:0] out_valid, out_ready;
     logic [N-1:0][DATA_W-1:0] out_data;
     logic [N-1:0][N-1:0] grant;
+    logic [N-1:0][DST_W-1:0] expected_dst;
+    logic [N-1:0][DATA_W-1:0] expected_payload;
 
     xbar_4x4 #(.N(N), .DATA_W(DATA_W), .DST_W(DST_W)) dut (
         .clk(clk), .rst_n(rst_n),
@@ -21,108 +26,99 @@ module tb_xbar_multi_output;
         .out_data(out_data), .grant(grant)
     );
 
-    always #5 clk = ~clk;
-
-    task automatic clear_inputs;
-        integer k;
-        begin
-            for (k = 0; k < N; k = k + 1) begin
-                in_valid[k] = 1'b0;
-                in_dst[k] = '0;
-                in_data[k] = '0;
-            end
-        end
-    endtask
-
     initial begin
-        clk = 1'b0;
+        done = 1'b0;
         rst_n = 1'b0;
+        in_valid = '0;
+        in_dst = '0;
+        in_data = '0;
         out_ready = '1;
-        clear_inputs();
+        expected_dst = '0;
+        expected_payload = '0;
 
-        repeat (2) @(posedge clk);
-        @(negedge clk);
+        for (int i = 0; i < N; i++) begin
+            expected_dst[i] = DST_W'(i);
+            expected_payload[i] = DATA_W'(32'hA500_0000 ^ (i * 32'h0101_0101));
+        end
+
+        repeat (2) @(negedge clk);
         rst_n = 1'b1;
         @(negedge clk);
-
-        // Four simultaneous requests target four different outputs.
-        // Drive packed inputs as a whole to avoid per-slice scheduling ambiguity.
-        in_valid = 4'b1111;
-        in_dst   = {2'd3, 2'd2, 2'd1, 2'd0};
-        in_data  = {32'hA333_3333, 32'hA222_2222,
-                    32'hA111_1111, 32'hA000_0000};
-
+        in_dst = expected_dst;
+        in_data = expected_payload;
+        in_valid = '1;
         #1;
-        if (out_valid !== 4'b1111)
-            $fatal(1, "FAIL: expected all four outputs valid");
 
-        if (in_ready !== 4'b1111)
-            $fatal(1, "FAIL: expected all four inputs ready");
+        if (out_valid !== {N{1'b1}})
+            $fatal(1, "N=%0d: not all distinct outputs became valid", N);
+        if (in_ready !== {N{1'b1}})
+            $fatal(1, "N=%0d: not all inputs became ready", N);
 
-        if (out_data[2] !== 32'hA222_2222 ||
-            out_data[0] !== 32'hA000_0000 ||
-            out_data[1] !== 32'hA111_1111 ||
-            out_data[2] !== 32'hA222_2222 ||
-            out_data[3] !== 32'hA333_3333)
-            $fatal(1, "FAIL: simultaneous multi-output data mismatch");
-
-        // Exactly one grant per active input and exactly one winner per output.
-        for (int i = 0; i < N; i = i + 1) begin
+        for (int i = 0; i < N; i++) begin
             int row_grants;
             int col_grants;
             row_grants = 0;
             col_grants = 0;
-
-            for (int j = 0; j < N; j = j + 1) begin
+            if (out_data[i] !== expected_payload[i])
+                $fatal(1, "N=%0d output %0d payload mismatch", N, i);
+            for (int j = 0; j < N; j++) begin
                 row_grants += grant[i][j];
                 col_grants += grant[j][i];
             end
-
             if (row_grants != 1)
-                $fatal(1, "FAIL: input %0d has %0d grants", i, row_grants);
-
+                $fatal(1, "N=%0d input %0d has %0d grants", N, i, row_grants);
             if (col_grants != 1)
-                $fatal(1, "FAIL: output %0d has %0d grants", i, col_grants);
+                $fatal(1, "N=%0d output %0d has %0d grants", N, i, col_grants);
         end
 
-        // Stall output 2 while the other three remain ready.
-        out_ready[2] = 1'b0;
+        // Stall the highest-numbered output; other outputs must remain independent.
+        out_ready[N-1] = 1'b0;
         #1;
+        if (out_valid !== {N{1'b1}})
+            $fatal(1, "N=%0d: VALID changed under partial backpressure", N);
+        if (out_data[N-1] !== expected_payload[N-1])
+            $fatal(1, "N=%0d: stalled payload changed", N);
+        for (int i = 0; i < N; i++) begin
+            if (in_ready[i] !== (i != N-1))
+                $fatal(1, "N=%0d input %0d READY incorrect during stall", N, i);
+            if (out_data[i] !== expected_payload[i])
+                $fatal(1, "N=%0d output %0d changed during partial stall", N, i);
+        end
 
-        // VALID and payload must remain asserted/stable while output 2 is stalled.
-        if (out_valid !== 4'b1111)
-            $fatal(1, "FAIL: VALID was not preserved under partial backpressure");
-
-        if (out_data[2] !== 32'hA222_2222)
-            $fatal(1, "FAIL: stalled output 2 payload changed under backpressure");
-
-        if (in_ready[0] !== 1'b1 ||
-            in_ready[1] !== 1'b1 ||
-            in_ready[2] !== 1'b0 ||
-            in_ready[3] !== 1'b1)
-            $fatal(1, "FAIL: ready signals incorrect under partial backpressure");
-
-        if (out_data[0] !== 32'hA000_0000 ||
-            out_data[1] !== 32'hA111_1111 ||
-            out_data[3] !== 32'hA333_3333)
-            $fatal(1, "FAIL: independent output data changed under partial backpressure");
-
-        // Release output 2 and verify all four transfers recover.
-        out_ready[2] = 1'b1;
+        out_ready[N-1] = 1'b1;
         #1;
-
-        if (out_valid !== 4'b1111 || in_ready !== 4'b1111)
-            $fatal(1, "FAIL: all outputs did not recover after backpressure release");
-
-        if (out_data[2] !== 32'hA222_2222)
-            $fatal(1, "FAIL: output 2 data mismatch after recovery");
+        if (out_valid !== {N{1'b1}} || in_ready !== {N{1'b1}})
+            $fatal(1, "N=%0d: outputs did not recover after stall release", N);
 
         @(posedge clk);
-        clear_inputs();
-        @(posedge clk);
+        in_valid = '0;
+        @(negedge clk);
+        done = 1'b1;
+    end
+endmodule
 
-        $display("TB RESULT: PASS - simultaneous multi-output routing, one-to-one grants, partial backpressure and recovery checks passed.");
+module tb_xbar_multi_output;
+    logic clk = 1'b0;
+    logic done_n1, done_n3, done_n4, done_n5;
+    always #5 clk = ~clk;
+
+    xbar_multi_output_case #(.N(1), .DATA_W(8), .DST_W(1)) case_n1
+        (.clk(clk), .done(done_n1));
+    xbar_multi_output_case #(.N(3), .DATA_W(32), .DST_W(2)) case_n3
+        (.clk(clk), .done(done_n3));
+    xbar_multi_output_case #(.N(4), .DATA_W(32), .DST_W(2)) case_n4
+        (.clk(clk), .done(done_n4));
+    xbar_multi_output_case #(.N(5), .DATA_W(64), .DST_W(3)) case_n5
+        (.clk(clk), .done(done_n5));
+
+    initial begin
+        wait (done_n1 && done_n3 && done_n4 && done_n5);
+        $display("TB RESULT: PASS — multi-output routing/backpressure for N=1/3/4/5 and DATA_W=8/32/64");
         $finish;
     end
 
+    initial begin
+        #1000;
+        $fatal(1, "multi-output parameter test timed out");
+    end
 endmodule
