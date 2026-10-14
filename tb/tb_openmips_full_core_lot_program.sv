@@ -201,7 +201,6 @@ module tb_openmips_full_core_lot_program;
       ram_write_line_d <= ram_write_line;
       ram_write_word_d <= ram_write_word;
       if (ram_write_line && !ram_write_line_d) begin
-        $display("RAM WRITEBACK addr=%h data=%h cache_state=%0d", ram_addr, ram_data_out, cpu.DCache.state);
         ram_line_write_count <= ram_line_write_count + 1;
         ram_write_payload <= ram_data_out;
         ram_write_pending <= 1;
@@ -209,7 +208,6 @@ module tb_openmips_full_core_lot_program;
       if (ram_write_word && !ram_write_word_d)
         ram_write_pending <= 1;
       if (ram_read_line && !ram_read_line_d) begin
-        $display("RAM READ CMD addr=%h cache_state=%0d", ram_addr, cpu.DCache.state);
         ram_line_fill_count <= ram_line_fill_count + 1;
         ram_line_pending <= 1;
         ram_beat <= 0;
@@ -217,7 +215,6 @@ module tb_openmips_full_core_lot_program;
       if (ram_read_line && !ram_read_line_d) begin
         ram_ready <= 0;
       end else if (ram_line_pending) begin
-        $display("RAM BEAT offset=%0d ready_old=%b route=%b pending=%b cache_state=%0d", ram_beat, ram_ready, wrapper.u_bridge.route_ram, wrapper.u_bridge.ram_pending, cpu.DCache.state);
         ram_ready <= 1;
         ram_data_offset <= ram_beat[1:0];
         ram_data_in <= 32'h1111_0000 + ram_beat;
