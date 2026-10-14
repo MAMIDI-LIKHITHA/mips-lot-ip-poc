@@ -29,6 +29,9 @@ module tb_openmips_native_cache_lot;
   wire ram_read_line, ram_read_word, ram_write_line_ready, ram_write_word_ready;
   wire [3:0] ram_write_word_be;
   wire [127:0] ram_data_out;
+  reg [31:0] ram_data_in=0;
+  reg [1:0] ram_data_offset=0;
+  reg ram_ready=0;
   wire lot_valid, lot_rsp_ready;
   reg lot_ready=1, lot_rsp_valid=0;
   wire [1:0] lot_dst;
@@ -64,7 +67,7 @@ module tb_openmips_native_cache_lot;
     .ram_addr(ram_addr), .ram_read_line(ram_read_line), .ram_read_word(ram_read_word),
     .ram_write_line_ready(ram_write_line_ready), .ram_write_word_ready(ram_write_word_ready),
     .ram_write_word_be(ram_write_word_be), .ram_data_out(ram_data_out),
-    .ram_data_in(32'b0), .ram_data_offset(2'b0), .ram_ready(1'b0),
+    .ram_data_in(ram_data_in), .ram_data_offset(ram_data_offset), .ram_ready(ram_ready),
     .lot_valid(lot_valid), .lot_ready(lot_ready), .lot_dst(lot_dst),
     .lot_payload(lot_payload), .lot_rsp_valid(lot_rsp_valid),
     .lot_rsp_ready(lot_rsp_ready), .lot_rsp_rdata(lot_rsp_rdata),
@@ -73,6 +76,10 @@ module tb_openmips_native_cache_lot;
   );
 
   integer delay_count=0, lot_request_count=0;
+  integer ram_line_count=0, ram_line_write_count=0, ram_word_write_count=0;
+  reg ram_read_line_d=0, ram_write_line_d=0, ram_write_word_d=0;
+  reg ram_line_pending=0;
+  integer ram_beat=0;
   reg endpoint_pending=0;
   reg [64:0] captured_payload=0;
   always @(posedge clk) begin
@@ -83,7 +90,27 @@ module tb_openmips_native_cache_lot;
       lot_rsp_rdata <= 0;
       lot_request_count <= 0;
       captured_payload <= 0;
+      ram_read_line_d <= 0;
+      ram_write_line_d <= 0;
+      ram_write_word_d <= 0;
+      ram_line_pending <= 0;
+      ram_beat <= 0;
+      ram_line_count <= 0;
+      ram_line_write_count <= 0;
+      ram_word_write_count <= 0;
     end else begin
+      ram_read_line_d <= ram_read_line;
+      ram_write_line_d <= ram_write_line_ready;
+      ram_write_word_d <= ram_write_word_ready;
+      if (ram_read_line && !ram_read_line_d) begin
+        ram_line_count <= ram_line_count + 1;
+        ram_line_pending <= 1;
+        ram_beat <= 0;
+      end
+      if (ram_write_line_ready && !ram_write_line_d)
+        ram_line_write_count <= ram_line_write_count + 1;
+      if (ram_write_word_ready && !ram_write_word_d)
+        ram_word_write_count <= ram_word_write_count + 1;
       if (lot_valid && lot_ready) begin
         endpoint_pending <= 1;
         delay_count <= 3;
@@ -103,6 +130,20 @@ module tb_openmips_native_cache_lot;
     end
   end
 
+  // Simulation RAM responder: four ordered 32-bit beats per cache-line fill.
+  always @(negedge clk) begin
+    if (reset) begin
+      ram_ready <= 0; ram_data_in <= 0; ram_data_offset <= 0;
+    end else if (ram_line_pending) begin
+      ram_ready <= 1; ram_data_offset <= ram_beat[1:0];
+      ram_data_in <= 32'h1111_0000 + ram_beat;
+      if (ram_beat == 3) begin ram_line_pending <= 0; ram_beat <= 0; end
+      else ram_beat <= ram_beat + 1;
+    end else if (ram_write_line_ready || ram_write_word_ready) begin
+      ram_ready <= 1; ram_data_offset <= 0;
+    end else begin ram_ready <= 0;
+    end
+  end
   initial begin
     repeat (3) @(negedge clk);
     reset=0;
@@ -127,6 +168,27 @@ module tb_openmips_native_cache_lot;
       $fatal(1, "uncacheable LOT read leaked to RAM");
     if (protocol_fault || native_address_rejected)
       $fatal(1, "unexpected fault during LOT read");
+
+    // A cacheable miss must use the RAM line-fill path, not LOT.
+    @(negedge clk);
+    PAddressValid_C=1;
+    CacheAttr_C=3'b000;
+    PAddressIn_C=24'h000002;
+    VAddressIn_C=10'h008;
+    Read_C=1;
+    wait (ram_read_line === 1'b1);
+    wait (Ready_C === 1'b1);
+    if (DataOut_C !== 32'h1111_0000)
+      $fatal(1, "RAM line fill returned %h, expected 11110000", DataOut_C);
+    @(negedge clk);
+    Read_C=0;
+    repeat (2) @(negedge clk);
+    if (ram_line_count != 1)
+      $fatal(1, "expected exactly one RAM line fill, got %0d", ram_line_count);
+    if (lot_request_count != 1 || lot_valid)
+      $fatal(1, "cacheable line fill unexpectedly used LOT");
+    if (protocol_fault || native_address_rejected)
+      $fatal(1, "unexpected fault during cacheable RAM line fill");
 
     // Issue a queued uncacheable store and prove it does not retire while the
     // endpoint deliberately delays its response.
@@ -155,7 +217,7 @@ module tb_openmips_native_cache_lot;
       $fatal(1, "expected exactly two LOT requests, got %0d", lot_request_count);
     if (protocol_fault || native_address_rejected)
       $fatal(1, "unexpected fault during LOT write");
-    $display("TB RESULT: PASS - actual native cache to adapter/bridge to delayed LOT endpoint read/write");
+    if (ram_line_write_count != 0 || ram_word_write_count != 0)\n      $fatal(1, "unexpected RAM write during read-only integration cases: line=%0d word=%0d", ram_line_write_count, ram_word_write_count);\n    $display("TB RESULT: PASS - actual native cache RAM line fill plus LOT read/write and delayed response");
     $finish;
   end
 
