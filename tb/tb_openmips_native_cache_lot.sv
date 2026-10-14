@@ -217,7 +217,9 @@ module tb_openmips_native_cache_lot;
       $fatal(1, "expected exactly two LOT requests, got %0d", lot_request_count);
     if (protocol_fault || native_address_rejected)
       $fatal(1, "unexpected fault during LOT write");
-    if (ram_line_write_count != 0 || ram_word_write_count != 0)\n      $fatal(1, "unexpected RAM write during read-only integration cases: line=%0d word=%0d", ram_line_write_count, ram_word_write_count);\n    $display("TB RESULT: PASS - actual native cache RAM line fill plus LOT read/write and delayed response");
+    if (ram_line_write_count != 0 || ram_word_write_count != 0)
+      $fatal(1, "unexpected RAM write during read-only integration cases: line=%0d word=%0d", ram_line_write_count, ram_word_write_count);
+    $display("TB RESULT: PASS - actual native cache RAM line fill plus LOT read/write and delayed response");
     $finish;
   end
 
