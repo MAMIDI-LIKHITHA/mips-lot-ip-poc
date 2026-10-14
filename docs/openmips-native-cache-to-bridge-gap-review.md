@@ -75,3 +75,11 @@ The new wrapper `rtl/mips_if/openmips_native_cache_lot_wrapper.sv` connects the 
 - The tested LOT accesses do not leak to RAM and no address/protocol fault is raised.
 
 End-to-end simulation passed in [CI run 38555604302](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38555604302). This is meaningful CPU-cache-port-to-LOT evidence, but it is **not full-core CPU program execution**. Remaining integration gates include exercising cache-line fills and dirty writebacks through the wrapper/RAM path in the same end-to-end test, high-address fail-stop behavior through the complete wrapper, reset with an outstanding LOT request, and the CPU error/fault policy. Synthesis, timing, area, and hardware validation remain outstanding.
+
+
+
+## RAM response ownership fix (14 October 2026)
+
+The integrated line-fill test exposed a real bridge defect: the native cache drops `ReadLine_M` after issuing the command, while four RAM response beats arrive later. The bridge previously recomputed RAM routing from the live command and therefore dropped those responses. The bridge now latches RAM ownership until a word response/acknowledgement completes or all four line-fill beats have been accepted. The bridge-level delayed-four-beat regression passed: [CI run 38557101949](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38557101949). The actual-cache wrapper regression also passed with a RAM line fill alongside LOT read/write: [CI run 38556981169](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38556981169).
+
+The next extension is a two-way dirty-line eviction test through the same wrapper. Full-core program execution and hardware validation remain outstanding.
