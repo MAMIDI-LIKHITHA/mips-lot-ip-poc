@@ -225,6 +225,7 @@ module tb_openmips_native_cache_lot;
 
   initial begin
     repeat (400) @(posedge clk);
+    $display("TIMEOUT state=%0d Ready_C=%b ReadLine=%b ReadWord=%b ram_line=%b ram_pending=%b ram_beat=%0d ram_ready=%b ram_lines=%0d lot_valid=%b lot_count=%0d", cache.state, Ready_C, ReadLine_M, ReadWord_M, ram_read_line, ram_line_pending, ram_beat, ram_ready, ram_line_count, lot_valid, lot_request_count);
     $fatal(1, "timeout waiting for cache-to-LOT integration test");
   end
 endmodule
