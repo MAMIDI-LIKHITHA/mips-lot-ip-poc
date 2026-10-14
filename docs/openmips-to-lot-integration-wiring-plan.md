@@ -89,3 +89,10 @@ Do not implement an assumed cancellation mechanism unless the fabric/endpoints a
 - A full-core simulation demonstrates CPU-issued RAM and LOT operations.
 
 Until these criteria are met, describe the bridge as **unit-tested candidate RTL**, not a completed CPU integration.
+
+
+## New blocking findings from native cache-to-bridge review
+
+See [Native OpenMIPS Cache-to-LOT Bridge Gap Review](openmips-native-cache-to-bridge-gap-review.md). The pinned native cache's default 36-bit physical-address configuration emits a 34-bit word address, while the current candidate bridge accepts a 30-bit word address for a 32-bit map. Upper address bits must be validated before any narrowing conversion. Also, processor-side PAddressValid_C and CacheAttr_C are not automatically transaction-aligned with a write-buffer entry exposed on WordOutReady_M/LineOutReady_M. Do not wire these sidebands directly to the bridge until qualification is carried with, or otherwise proven aligned to, the exact memory-port transaction.
+
+**Next implementation gate:** design and test a source-revision-specific adapter that preserves the full native address and supplies transaction-aligned qualification for queued writes. Then connect the adapter to the bridge in a testbench that instantiates the actual pinned DataCache_2KB. Until that test passes, CPU-to-LOT remains unintegrated.
