@@ -1,0 +1,69 @@
+name: OpenMIPS full-core LOT program smoke test
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/apply-openmips-cache-qualification.py"
+      - "scripts/apply-openmips-lot-top-ports.py"
+      - "rtl/mips_if/openmips_native_addr_guard.sv"
+      - "rtl/mips_if/openmips_native_cache_adapter.sv"
+      - "rtl/mips_if/openmips_native_cache_lot_wrapper.sv"
+      - "rtl/mips_if/openmips_lot_memory_bridge.sv"
+      - "rtl/mips_if/openmips_lot_access_classifier.sv"
+      - "tb/models/openmips_cache_bram_ip_model.v"
+      - "tb/models/openmips_full_core_ip_models.v"
+      - "tb/tb_openmips_full_core_lot_program.sv"
+      - ".github/workflows/openmips-full-core-lot-program-smoke.yml"
+  pull_request:
+    paths:
+      - "scripts/apply-openmips-cache-qualification.py"
+      - "scripts/apply-openmips-lot-top-ports.py"
+      - "rtl/mips_if/openmips_native_addr_guard.sv"
+      - "rtl/mips_if/openmips_native_cache_adapter.sv"
+      - "rtl/mips_if/openmips_native_cache_lot_wrapper.sv"
+      - "rtl/mips_if/openmips_lot_memory_bridge.sv"
+      - "rtl/mips_if/openmips_lot_access_classifier.sv"
+      - "tb/models/openmips_cache_bram_ip_model.v"
+      - "tb/models/openmips_full_core_ip_models.v"
+      - "tb/tb_openmips_full_core_lot_program.sv"
+      - ".github/workflows/openmips-full-core-lot-program-smoke.yml"
+jobs:
+  full-core-lot-program:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check out pinned OpenMIPS source
+        uses: actions/checkout@v4
+        with:
+          repository: grantae/OpenMIPS
+          ref: d606b35e9d5260aef20de2a58660c8303a681e9c
+          path: upstream/OpenMIPS
+      - name: Apply cache and top-level qualification patches
+        run: |
+          python3 scripts/apply-openmips-cache-qualification.py
+          python3 scripts/apply-openmips-lot-top-ports.py
+      - name: Install Icarus Verilog
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iverilog
+      - name: Compile full-core program test
+        shell: bash
+        run: |
+          mapfile -t SOURCES < <(find upstream/OpenMIPS/hardware/src/MIPS32 upstream/OpenMIPS/hardware/src/Common -name '*.v' -type f | sort)
+          iverilog -g2012 \
+            -I upstream/OpenMIPS/hardware/src/MIPS32/Core \
+            -I upstream/OpenMIPS/hardware/src/MIPS32/Cache/DCache \
+            -I upstream/OpenMIPS/hardware/src/MIPS32/Cache/ICache \
+            -s tb_openmips_full_core_lot_program -o /tmp/full-core-lot-program.vvp \
+            tb/models/openmips_cache_bram_ip_model.v \
+            tb/models/openmips_full_core_ip_models.v \
+            rtl/mips_if/openmips_native_addr_guard.sv \
+            rtl/mips_if/openmips_native_cache_adapter.sv \
+            rtl/mips_if/openmips_lot_access_classifier.sv \
+            rtl/mips_if/openmips_lot_memory_bridge.sv \
+            rtl/mips_if/openmips_native_cache_lot_wrapper.sv \
+            tb/tb_openmips_full_core_lot_program.sv "${SOURCES[@]}"
+      - name: Run full-core LOT program
+        run: vvp -n /tmp/full-core-lot-program.vvp
