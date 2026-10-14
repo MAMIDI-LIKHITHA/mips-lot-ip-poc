@@ -99,3 +99,9 @@ See [Native OpenMIPS Cache-to-LOT Bridge Gap Review](openmips-native-cache-to-br
 
 
 **Progress update:** an isolated [native OpenMIPS address guard](openmips-native-address-guard.md) now validates upper physical-address bits before narrowing the native word address; its dedicated Icarus CI passed ([run 38552329183](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38552329183)). The guard is not yet wired into the bridge. The next gate remains a source-specific adapter carrying transaction-aligned qualification for queued writes, followed by an actual-cache-plus-bridge integration test.
+
+## Qualification and adapter progress (14 October 2026)
+
+A source-specific cache transformation now latches physical-address validity and cache attribute with the service request, then exposes the valid bit from the write-buffer head for queued word writes and from the active native uncacheable-read command. The actual pinned cache compiled and passed the regression that changes live sidebands after the original command is issued: [CI run 38554550754](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38554550754).
+
+The initial `openmips_native_cache_adapter` now preserves the native 34-bit word address until upper-bit validation, keeps line commands on the RAM route, and forwards the transaction-aligned word qualification. Its standalone tests cover word read/write qualification, line routing, and fail-closed high-address rejection. This is still a building block, not a full integration: the next acceptance gate is to connect this adapter to the candidate bridge and test the actual pinned cache with RAM, a delayed LOT endpoint, backpressure, dirty-line writeback, and response retirement.
