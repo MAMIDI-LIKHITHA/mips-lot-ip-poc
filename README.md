@@ -149,3 +149,12 @@ These research notes are preliminary and do not supersede the engineering bounda
 - [Interconnect options and LOT-specific decision matrix](docs/interconnect-options.md)
 
 The SVG diagrams are repository-native redraws based on the supplied asset names and the project research context. The original PNG and PDF files from `repo-additions.zip` have not been committed as binary assets; the two PDFs are represented by Markdown summaries, not byte-for-byte PDF copies. NIC-400 remains a conditional candidate pending interface, license, and tool-access checks.
+
+
+## OpenMIPS integration verification
+
+- [OpenMIPS memory-port cycle-level verification matrix](docs/openmips-memory-port-cycle-level-verification-matrix.md) — planned native-cache timing scenarios, waveform evidence requirements, and gates before full CPU-to-LOT wiring.
+- [OpenMIPS-to-LOT integration wiring plan](docs/openmips-to-lot-integration-wiring-plan.md) — wrapper boundary, address mapping, reset contract options, and end-to-end acceptance criteria.
+- [OpenMIPS memory-port handshake semantics](docs/openmips-memory-port-handshake-semantics.md) — source-inspection findings and unresolved native timing questions.
+
+These documents are verification plans and source-inspection notes. They do not claim native OpenMIPS cycle-level testing or full CPU-to-LOT integration.
