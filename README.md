@@ -190,3 +190,8 @@ The bridge now holds RAM routing after a command deasserts and keeps it through 
 ### Dirty-line eviction verified
 
 The actual cache + wrapper test now forces a two-way dirty-line eviction, checks the updated word is present in the 128-bit RAM writeback, acknowledges the writeback, and completes the replacement fill. [CI run 38557380566 passed](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38557380566). Full-wrapper high-address and reset/late-response checks are being validated next.
+
+
+### Full-wrapper guard and reset checks
+
+The actual-cache + adapter + bridge regression passed RAM line fill, two-way dirty writeback, LOT read/write, high physical-address rejection, and reset/late-response checks: [CI run 38557582605](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38557582605). This is not yet full-core program execution or hardware validation.
