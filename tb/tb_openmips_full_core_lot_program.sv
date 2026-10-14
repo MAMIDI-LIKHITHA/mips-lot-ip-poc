@@ -214,8 +214,6 @@ module tb_openmips_full_core_lot_program;
         ram_line_pending <= 1;
         ram_beat <= 0;
       end
-      if (ram_write_line && !ram_write_line_d) begin
-      end
       if (ram_read_line && !ram_read_line_d) begin
         ram_ready <= 0;
       end else if (ram_line_pending) begin
