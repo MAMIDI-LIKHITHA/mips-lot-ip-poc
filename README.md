@@ -170,3 +170,13 @@ These documents are verification plans and source-inspection notes. They do not 
 - The pinned OpenMIPS cache smoke test now applies `scripts/apply-openmips-cache-qualification.py` to latch qualification alongside the native service request and queued word write. The actual-cache regression passed: [CI run 38554550754](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38554550754).
 - `rtl/mips_if/openmips_native_cache_adapter.sv` combines the transaction-aligned read/write qualification with 34-bit address guarding and separates word commands from cache-line traffic.
 - Full cache-to-bridge CPU-to-LOT operation is not yet verified; adapter standalone CI and an actual-cache + bridge + delayed endpoint end-to-end regression are the remaining gates.
+
+
+### First actual-cache-to-LOT end-to-end proof
+
+- Added `openmips_native_cache_lot_wrapper.sv` to wire the pinned native cache adapter into the candidate bridge.
+- Added `tb/tb_openmips_native_cache_lot.sv` with the real pinned `DataCache_2KB` and a delayed LOT endpoint.
+- Verified one uncacheable read at `0x1F00_0000`, one full-word store at `0x1F00_0004`, expected destination/payload, response data return, delayed write-buffer retirement, and no RAM leakage for these LOT commands.
+- CI passed: [run 38555604302](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38555604302).
+
+This does not yet prove full-core CPU program execution or all memory-path behavior. Cache-line fill/writeback through the wrapper, outstanding-request reset behavior, system fault handling, synthesis/timing/area, and hardware validation remain open.
