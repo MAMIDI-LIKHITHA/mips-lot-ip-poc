@@ -134,3 +134,16 @@ The latest research additions are summarized here; all choices remain conditiona
 - [LOT research templates](docs/research/LOT-Research-Templates.md) — source-linked brief and comparison templates.
 
 These research notes are preliminary and do not supersede the engineering boundary above: the current RTL is simulation evidence only, with no synthesis, timing closure, or hardware validation claimed.
+
+
+## Research package and diagrams
+
+- [Candidate reference architecture (SVG)](docs/images/candidate-reference-architecture.svg)
+- [NIC-400 in the LOT architecture (SVG)](docs/images/nic400-in-the-lot-picture.svg)
+- [Silicon Labs NCP / RCP / SoC operating modes (SVG)](docs/images/silicon-labs-operating-modes.svg)
+- [NIC-400 decision memo — Markdown summary](docs/research/NIC-400-decision-memo.md)
+- [LOT Connectivity Research Report 01 — Markdown summary](docs/research/LOT-Research-Report-01.md)
+- [LOT research templates](docs/research/LOT-Research-Templates.md)
+- [Interconnect options and LOT-specific decision matrix](docs/interconnect-options.md)
+
+The SVG diagrams are repository-native redraws based on the supplied asset names and the project research context. The original PNG and PDF files from `repo-additions.zip` have not been committed as binary assets; the two PDFs are represented by Markdown summaries, not byte-for-byte PDF copies. NIC-400 remains a conditional candidate pending interface, license, and tool-access checks.
