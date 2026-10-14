@@ -29,7 +29,7 @@ module xbar_parameter_case #(
         in_dst = '0;
         in_data = '0;
         out_ready = '1;
-        expected_data = DATA_W'( 'h5A );
+        expected_data = DATA_W'('h5A);
         repeat (2) @(negedge clk);
         rst_n = 1'b1;
         in_dst[0] = DST_W'(N-1);
@@ -50,21 +50,31 @@ endmodule
 
 module tb_xbar_parameter_sanity;
     logic clk = 1'b0;
-    logic done_n1, done_n2, done_n3, done_n5;
+    logic done_n1_w8, done_n2_w8, done_n2_w64, done_n3_w16;
+    logic done_n3_w32, done_n4_w32, done_n5_w32, done_n5_w64;
     always #5 clk = ~clk;
 
-    xbar_parameter_case #(.N(1), .DATA_W(16), .DST_W(1)) case_n1
-        (.clk(clk), .done(done_n1));
-    xbar_parameter_case #(.N(2), .DATA_W(8), .DST_W(1)) case_n2
-        (.clk(clk), .done(done_n2));
-    xbar_parameter_case #(.N(3), .DATA_W(16), .DST_W(2)) case_n3
-        (.clk(clk), .done(done_n3));
-    xbar_parameter_case #(.N(5), .DATA_W(64), .DST_W(3)) case_n5
-        (.clk(clk), .done(done_n5));
+    xbar_parameter_case #(.N(1), .DATA_W(8), .DST_W(1)) case_n1_w8
+        (.clk(clk), .done(done_n1_w8));
+    xbar_parameter_case #(.N(2), .DATA_W(8), .DST_W(1)) case_n2_w8
+        (.clk(clk), .done(done_n2_w8));
+    xbar_parameter_case #(.N(2), .DATA_W(64), .DST_W(1)) case_n2_w64
+        (.clk(clk), .done(done_n2_w64));
+    xbar_parameter_case #(.N(3), .DATA_W(16), .DST_W(2)) case_n3_w16
+        (.clk(clk), .done(done_n3_w16));
+    xbar_parameter_case #(.N(3), .DATA_W(32), .DST_W(2)) case_n3_w32
+        (.clk(clk), .done(done_n3_w32));
+    xbar_parameter_case #(.N(4), .DATA_W(32), .DST_W(2)) case_n4_w32
+        (.clk(clk), .done(done_n4_w32));
+    xbar_parameter_case #(.N(5), .DATA_W(32), .DST_W(3)) case_n5_w32
+        (.clk(clk), .done(done_n5_w32));
+    xbar_parameter_case #(.N(5), .DATA_W(64), .DST_W(3)) case_n5_w64
+        (.clk(clk), .done(done_n5_w64));
 
     initial begin
-        wait (done_n1 && done_n2 && done_n3 && done_n5);
-        $display("TB RESULT: PASS — N=1/2/3/5 and DATA_W=8/16/64 parameter smoke");
+        wait (done_n1_w8 && done_n2_w8 && done_n2_w64 && done_n3_w16 &&
+              done_n3_w32 && done_n4_w32 && done_n5_w32 && done_n5_w64);
+        $display("TB RESULT: PASS — 8 parameter combinations across N=1/2/3/4/5 and DATA_W=8/16/32/64");
         $finish;
     end
 
