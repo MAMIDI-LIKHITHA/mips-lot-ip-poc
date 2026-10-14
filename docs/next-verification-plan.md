@@ -5,7 +5,7 @@
 
 ## 1. Current evidence baseline
 
-The README reports a user-run ModelSim Intel FPGA Edition 2021.1 regression on 12 October 2026 with 11 tests passing, 0 failing, all 16 request routes covered, and a 500-cycle stress test with 1,175 accepted and 1,175 delivered transfers. These are local simulation results reported by the project, not hardware validation.
+The README records the confirmed user-run ModelSim Intel FPGA Edition 2021.1 regression on 14 October 2026: 12 tests passed, 0 failed, 0 compilation errors, and 14 warnings. The run also reported all 16 request routes covered and a 500-cycle stress test with 1,175 accepted and 1,175 delivered transfers. These are local functional-simulation results, not hardware validation or proof of compatibility with a selected MIPS core/native bus.
 
 The checked-in candidate adapter and router tests now additionally cover:
 - Invalid response source IDs without accidental routing.
