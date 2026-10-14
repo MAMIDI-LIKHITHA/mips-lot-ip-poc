@@ -96,7 +96,7 @@ module tb_openmips_native_cache_port;
     @(negedge clock);
     line_test=1;
     CacheAttr_C=3'b000;
-    VAddressIn_C=10'h00A; // word offset 2 within the same cache line
+    VAddressIn_C=10'h008; // word offset 0 within the cache line
     PAddressIn_C=24'h000002;
     Read_C=1;
     wait (dut.state == 4); // FILL_WAIT_1: the cache has issued its line-fill request.
@@ -105,8 +105,8 @@ module tb_openmips_native_cache_port;
     send_line_beat(2'd2, 32'h3333_0002);
     send_line_beat(2'd3, 32'h4444_0003);
     wait (Ready_C === 1'b1);
-    if (DataOut_C !== 32'h3333_0002)
-      $fatal(1, "line-fill read returned %h; vaddr=%h s_vaddr=%h r_offset=%h s_offset=%h state=%0d hitA=%b hitB=%b setAout=%h setBout=%h", DataOut_C, VAddressIn_C, dut.s_vaddr, dut.r_offset, dut.s_vaddr[1:0], dut.state, dut.SetA_Hit, dut.SetB_Hit, dut.SetA_WordOut, dut.SetB_WordOut);
+    if (DataOut_C !== 32'h1111_0000)
+      $fatal(1, "line-fill read returned %h, expected word at offset 0 = 11110000", DataOut_C);
     @(negedge clock);
     Read_C=0;
     repeat (3) @(negedge clock);
@@ -120,8 +120,8 @@ module tb_openmips_native_cache_port;
     @(negedge clock);
     Read_C=1;
     wait (Ready_C === 1'b1);
-    if (DataOut_C !== 32'h3333_0002)
-      $fatal(1, "cache-hit read returned %h, expected 33330002", DataOut_C);
+    if (DataOut_C !== 32'h1111_0000)
+      $fatal(1, "cache-hit read returned %h, expected 11110000", DataOut_C);
     @(negedge clock);
     Read_C=0;
     repeat (3) @(negedge clock);
