@@ -5,20 +5,55 @@ from pathlib import Path
 p = Path("upstream/OpenMIPS/hardware/src/MIPS32/Cache/DCache/DataCache_2KB.v")
 lines = p.read_text().splitlines(keepends=True)
 
-def indices(needle):
-    return [i for i, line in enumerate(lines) if needle in line]
+def find_all(predicate):
+    return [i for i, line in enumerate(lines) if predicate(line)]
 
-def replace_one(needle, replacement, label):
-    found = indices(needle)
+def replace_one(predicate, replacement, label):
+    found = find_all(predicate)
     if len(found) != 1:
-        raise SystemExit(f"{label}: expected one line containing {needle!r}, got {len(found)}")
+        raise SystemExit(f"{label}: expected one match, got {len(found)}")
     lines[found[0]] = replacement
 
-# Export the validity metadata associated with the write-buffer head.
-i = indices("WordOutBE_M,")
-if len(i) != 1:
-    raise SystemExit(f"WordOutBE port: expected one match, got {len(i)}")
-lines.insert(i[0] + 1, "    output                 WordOutPAddressValid_M, // Validity captured with this queued word transaction.\n")
+# Add a sideband sourced from the exact FIFO head, not live CPU-side pins.
+replace_one(lambda x: "output [3:0]" in x and "WordOutBE_M," in x,
+            "    output [3:0]           WordOutBE_M,      // Byte enable bits for single-word memory writes (using 'WordOutReady_M').\n    output                 WordOutPAddressValid_M, // Validity captured with this queued word transaction.\n",
+            "add queued qualification port")
 
-replace_one("wire        s_uncacheable;", "    reg         s_uncacheable;         // Latched cache attribute for the service request\n", "latch cache attribute")
-replace_one("wire        s_uncacheable;", "    reg         s_uncacheable;         // Latched cache attribute for the service request\n", "latch cache attribute")
+replace_one(lambda x: "wire        s_uncacheable;" in x,
+            "    reg         s_uncacheable;         // Latched cache attribute for the service request\n    reg         s_paddr_valid;         // Latched physical-address-valid for the service request\n",
+            "latch service qualification")
+
+replace_one(lambda x: "WB_DataIn;" in x and "reg" in x,
+            "    reg  [((PABITS-5)+130):0] WB_DataIn;    // Existing payload plus queued PAddressValid metadata\n",
+            "extend write buffer input")
+replace_one(lambda x: "WB_DataOut;" in x and "wire" in x,
+            "    wire [((PABITS-5)+130):0] WB_DataOut;   // Existing payload plus queued PAddressValid metadata\n",
+            "extend write buffer output")
+
+replace_one(lambda x: "assign WordOutBE_M" in x,
+            "    assign WordOutBE_M    = WB_DataOut[36:33];\n    assign WordOutPAddressValid_M = WB_DataOut[((PABITS-5)+130)];\n",
+            "export queued qualification")
+
+replace_one(lambda x: "assign s_uncacheable" in x,
+            "",
+            "remove live cache attribute")
+
+replace_one(lambda x: "ff_using_delay_data" in x,
+            "    DFF_E #(.WIDTH(1)) ff_using_delay_data (.clock(clock), .enable(1'b1),          .D(delay_update),     .Q(using_delay_data));\n\n    // Keep qualification aligned with the service request, not live processor\n    // sidebands that may change while a queued write waits for Ready_M.\n    always @(posedge clock) begin\n        if (reset) begin\n            s_uncacheable <= 1'b0;\n            s_paddr_valid <= 1'b0;\n        end\n        else if (new_request) begin\n            s_uncacheable <= (CacheAttr_C == 3'b010);\n            s_paddr_valid <= PAddressValid_C;\n        end\n    end\n",
+            "latch request qualification")
+
+# Store the service qualification in every FIFO entry; word commands expose it.
+la = find_all(lambda x: "// {la[160:129]" in x)
+if len(la) != 1:
+    raise SystemExit(f"write-buffer data block: expected one header, got {len(la)}")
+starts = [i for i in range(la[0], min(la[0] + 5, len(lines))) if "always @(*) begin" in lines[i]]
+if len(starts) != 1:
+    raise SystemExit("write-buffer data block: could not locate its combinational block")
+lines.insert(starts[0] + 1, "        WB_DataIn[((PABITS-5)+130)] <= s_paddr_valid;\n")
+
+replace_one(lambda x: ".DATA_WIDTH" in x and "PABITS-5" in x,
+            "        .DATA_WIDTH  (((PABITS-5)+130+1)),\n",
+            "widen write buffer")
+
+p.write_text("".join(lines))
+print("Applied queued qualification metadata to the pinned OpenMIPS cache.")
