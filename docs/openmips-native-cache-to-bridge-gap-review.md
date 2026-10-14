@@ -1,0 +1,50 @@
+# Native OpenMIPS Cache-to-LOT Bridge Gap Review
+
+**Status: integration blocker review; no cache-to-bridge wiring is claimed by this document.**
+
+## Reviewed source
+
+- OpenMIPS repository: https://github.com/grantae/OpenMIPS
+- Pinned revision: https://github.com/grantae/OpenMIPS/commit/d606b35e9d5260aef20de2a58660c8303a681e9c
+- Native cache module: hardware/src/MIPS32/Cache/DCache/DataCache_2KB.v
+- Existing candidate bridge: ../rtl/mips_if/openmips_lot_memory_bridge.sv
+- Existing native-cache test: ../tb/tb_openmips_native_cache_port.sv
+
+## Confirmed native cache-port facts
+
+The pinned DataCache_2KB declares PABITS=36 by default. Its Address_M[(PABITS-3):0] is a word address: the source comment says it represents physical line (bits 35:4) or word (bits 35:2) addressing. At PABITS=36, the port is 34 bits wide (Address_M[33:0]). The current bridge is deliberately restricted to PABITS=32 and accepts only data_addr[29:0]. Directly connecting Address_M[29:0] without checking the upper four bits would silently alias physical addresses above the 32-bit aperture.
+
+The native cache exposes:
+- ReadLine_M: a 128-bit cache-line read sequence.
+- ReadWord_M: a single uncacheable 32-bit read.
+- LineOutReady_M: a queued cache-line writeback.
+- WordOutReady_M: a queued single-word write.
+- WordOutBE_M: byte enables for the queued word write.
+- DataOut_M[127:0]: queued write payload; line payload for line writes and low 32 bits for word writes.
+- Ready_M: a one-cycle memory-side completion/beat pulse.
+
+The current bridge's data_write_word_ready input corresponds most naturally to WordOutReady_M, and its line-write input to LineOutReady_M. These are queued write-buffer commands, not necessarily the same cycle's processor request.
+
+## Blocking issue: qualification sidebands are not transaction-aligned
+
+The candidate bridge currently classifies a word request using data_paddr_valid and data_cache_attr. At the native processor-facing cache interface, PAddressValid_C and CacheAttr_C describe the current processor-side request. But when the cache write buffer is non-empty, Address_M, WordOutReady_M, LineOutReady_M, WordOutBE_M, and DataOut_M can describe a previously queued write. Reusing the current processor-side sidebands to qualify that queued transaction can associate the wrong request's physical-address-valid or cache-attribute information with it.
+
+The cache has an internal s_uncacheable service signal, but that internal signal is not a public output. Before safe wiring, the integration must either:
+1. Expose a reviewed transaction-aligned qualification sideband for the memory-port transaction, including queued write-buffer entries; or
+2. Change the bridge contract so it derives LOT eligibility only from a source demonstrably aligned with the exact memory-port command and address.
+
+Do not tie the qualification inputs high or simply connect the current PAddressValid_C/CacheAttr_C signals without proving their cycle alignment.
+
+## Required adapter contract before implementation
+
+1. Preserve the complete 34-bit native word address until high-bit validation is performed.
+2. For the initial 32-bit LOT/RAM map, reject or fault any memory-port address with Address_M[33:30] != 0; never silently truncate it.
+3. Convert the validated 30-bit word address to a 32-bit byte address by appending 2'b00 exactly once.
+4. Keep ReadLine_M and LineOutReady_M on the original RAM path, including four-beat line fills and dirty-line writebacks.
+5. Route ReadWord_M and WordOutReady_M only after transaction-aligned physical-valid/cache-attribute qualification, aperture/alignment checks, and full-word byte-enable checks.
+6. Preserve native one-cycle Ready_M semantics. A LOT write-buffer entry must not retire until its response is consumed; line and word write-buffer entries must not be acknowledged early.
+7. Add a test that instantiates the actual pinned DataCache_2KB, the revised adapter/bridge, a delayed-response LOT endpoint model, and a RAM model. Exercise uncacheable LOT reads/writes, ordinary RAM reads, line fills, dirty writeback, backpressure, and qualification changes while a queued write is pending.
+
+## Current conclusion
+
+The existing bridge unit test proves the bridge's own classification and handshake contract. The native-cache smoke tests prove selected behavior of the upstream cache in isolation. They do not yet prove the cache and bridge can safely be wired together. The width mismatch and transaction-alignment issue above must be resolved before describing CPU-to-LOT integration as implemented.
