@@ -134,8 +134,9 @@ module tb_openmips_native_cache_lot;
     VAddressIn_C=10'h001; // next word: byte address 0x1F000004 -> DATA destination
     DataIn_C=32'hCAFE_BABE;
     Write_C=4'b1111;
-    wait (WordOutReady_M === 1'b1);
+    wait (cache.state == 2); // WRITEBACK: retire the one-shot CPU request before enqueue.
     Write_C=0;
+    wait (WordOutReady_M === 1'b1);
     wait (lot_valid === 1'b1);
     if (lot_dst !== 2'd1 || lot_payload[64] !== 1'b1 ||
         lot_payload[63:32] !== 32'h1F00_0004 ||
