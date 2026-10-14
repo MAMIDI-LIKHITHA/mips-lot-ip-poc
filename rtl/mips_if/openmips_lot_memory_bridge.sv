@@ -109,7 +109,7 @@ module openmips_lot_memory_bridge #(
     assign ram_read_word = data_read_word && route_ram;
     assign ram_write_line_ready = data_write_line_ready && route_ram;
     assign ram_write_word_ready = data_write_word_ready && route_ram;
-    assign ram_write_word_be = data_write_word_be;
+    assign ram_write_word_be = route_ram ? data_write_word_be : 4'b0000;
     assign ram_data_out = data_out;
 
     // LOT payload follows the existing 65-bit {write, byte_address, write_data}
