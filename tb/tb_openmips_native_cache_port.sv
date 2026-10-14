@@ -77,7 +77,9 @@ module tb_openmips_native_cache_port;
     PAddressIn_C=24'h000001;
     Read_C=1;
     wait (ReadWord_M === 1'b1);
-    // Keep the native read request present until its single-word completion.
+    // The cache's FILL_WAIT_WORD state can re-sample a held CPU request;
+    // retire the one-shot test request before returning the memory response.
+    Read_C=0;
     repeat (2) @(negedge clock);
     DataIn_M=32'hA55A_3CC3;
     Ready_M=1;
