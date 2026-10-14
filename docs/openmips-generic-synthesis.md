@@ -1,0 +1,29 @@
+# Generic synthesis smoke report
+
+Date: 14 October 2026
+
+## Result
+
+The integrated top `openmips_mips32_lot_system` completed a Yosys generic synthesis pass in [CI run 38560068393](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38560068393).
+
+- Top-level hierarchy: `openmips_mips32_lot_system`
+- Generic cell count reported for the hierarchy: 70,353
+- Generic synthesis command: `synth -top openmips_mips32_lot_system -noabc`
+- The workflow uploads the Yosys statistics text and JSON netlist as run artifacts.
+
+## Important limitations
+
+This is a synthesis-flow smoke test, **not a physical area or timing result**.
+
+- The generated I-cache BRAM, D-cache BRAM, and DSP blocks are black-box modules. Their FPGA/ASIC resource use is not included in the generic logic count.
+- The pass uses Yosys generic cells without ABC technology mapping to a target library.
+- No target device/library, timing constraints, placement, clock-tree synthesis, routing, or static timing analysis were supplied.
+- The number 70,353 must not be interpreted as LUTs, standard cells, gate equivalents, or a silicon area estimate.
+
+## Next synthesis steps
+
+1. Select the target technology and its synthesis tool/library.
+2. Replace the generated-IP black boxes with target-specific implementations or characterized macros.
+3. Add clock and I/O constraints and run technology mapping.
+4. Produce mapped cell/resource reports and static timing analysis.
+5. Compare results against the target clock and area budgets before hardware validation.
