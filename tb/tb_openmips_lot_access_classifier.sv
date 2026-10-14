@@ -3,7 +3,7 @@ module tb_openmips_lot_access_classifier;
     logic paddr_valid;
     logic [31:0] byte_addr;
     logic [2:0] cache_attr;
-    logic read_word;
+    logic read_word, write_word;
     logic [3:0] write_word_be;
     logic read_line, write_line;
     logic route_lot, route_ram, reject_access, is_lot_window;
@@ -32,18 +32,21 @@ module tb_openmips_lot_access_classifier;
         byte_addr = 32'h1F00_0000;
         cache_attr = 3'b010;
         read_word = 1;
+        write_word = 0;
         write_word_be = 0;
         read_line = 0;
         write_line = 0;
         check(1, 0, 0, "qualified uncacheable LOT word read");
 
         read_word = 0;
+        write_word = 1;
         write_word_be = 4'b1111;
         check(1, 0, 0, "qualified full-word LOT write");
 
         write_word_be = 4'b0011;
         check(0, 0, 1, "partial LOT write rejected");
 
+        write_word = 0;
         write_word_be = 0;
         read_word = 1;
         byte_addr = 32'h1F00_0002;
@@ -62,6 +65,7 @@ module tb_openmips_lot_access_classifier;
         check(0, 1, 0, "ordinary uncacheable word routes to RAM");
 
         read_word = 0;
+        write_word = 0;
         write_word_be = 0;
         read_line = 1;
         byte_addr = 32'h1F00_0000;
@@ -74,6 +78,7 @@ module tb_openmips_lot_access_classifier;
         write_line = 0;
         read_line = 0;
         read_word = 1;
+        write_word = 1;
         write_word_be = 4'b1111;
         check(0, 0, 1, "conflicting word and line commands rejected");
 
