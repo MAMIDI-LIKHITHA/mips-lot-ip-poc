@@ -326,7 +326,41 @@ module tb_openmips_lot_memory_bridge;
         lot_rsp_valid = 0;
         data_read_word = 0;
 
+        // 11: A delayed RAM line response must remain routed after the native
+        // ReadLine_M command drops on entry to FILL_WAIT_1.
+        @(negedge clk);
+        data_addr = 30'h0000_1000 >> 2;
+        data_cache_attr = 3'b000;
+        data_paddr_valid = 1;
+        data_read_line = 1;
+        ram_ready = 0;
+        #1;
+        check_expectation(ram_read_line && !data_ready,
+               "delayed line-fill command launches on RAM without an immediate response");
+        @(posedge clk); #1;
+        @(negedge clk);
+        data_read_line = 0;
+        #1;
+        check_expectation(dut.ram_pending && dut.route_ram && !ram_read_line && !data_ready,
+               "RAM path ownership persists after ReadLine_M deasserts");
+        for (integer beat = 0; beat < 4; beat = beat + 1) begin
+            ram_data_offset = beat[1:0];
+            ram_data_in = 32'hA000_0000 + beat;
+            ram_ready = 1;
+            #1;
+            check_expectation(data_ready && data_in == (32'hA000_0000 + beat) &&
+                   dut.route_ram,
+                   "delayed RAM line beat is returned while command is no longer asserted");
+            @(posedge clk); #1;
+            @(negedge clk);
+            ram_ready = 0;
+            #1;
+        end
+        check_expectation(!dut.ram_pending && !dut.route_ram && !data_ready,
+               "RAM line ownership clears after exactly four response beats");
+
         $display("TB RESULT: PASS - OpenMIPS LOT memory bridge");
+
         $finish;
     end
 endmodule
