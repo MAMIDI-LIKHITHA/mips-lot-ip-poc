@@ -1,6 +1,6 @@
 # OpenMIPS LOT Memory-Port Bridge — Candidate RTL
 
-**Status:** Candidate bridge RTL and focused testbench pass the dedicated Icarus Verilog GitHub Actions smoke test, including expanded backpressure, error-response, reset, and unmapped-offset checks ([run](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38545810076)).  
+**Status:** Candidate bridge RTL and focused testbench pass the dedicated Icarus Verilog GitHub Actions smoke test, including backpressure, error-response, unmapped-offset, STATUS/ID routing, and reset during an accepted outstanding request ([latest passing run](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38546466798)).  
 **Integration status:** Not connected to the unmodified OpenMIPS top-level. This is not evidence that the processor boots or that CPU-to-LOT works end to end.
 
 ## Files
