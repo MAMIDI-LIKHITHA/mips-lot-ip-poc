@@ -218,8 +218,8 @@ module tb_openmips_full_core_lot_program;
         end else if (lot_count == 2) begin
           payload_data_write <= lot_payload;
           if (lot_payload[64] !== 1'b1 || lot_payload[63:32] !== 32'h1F00_0004 ||
-              lot_payload[31:0] !== 32'h1234_5678)
-            $fatal(1, "CPU DATA store payload/address mismatch: %h", lot_payload);
+              lot_payload[31:0] !== 32'h7856_3412)
+            $fatal(1, "CPU DATA store payload/address mismatch (little-endian bus byte order): %h", lot_payload);
         end else begin
           $fatal(1, "unexpected extra LOT transaction #%0d: %h", lot_count, lot_payload);
         end
