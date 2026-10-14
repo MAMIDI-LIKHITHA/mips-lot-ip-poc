@@ -120,9 +120,9 @@ jobs:
         run: verilator --binary --timing -Wno-fatal --top-module tb_xbar_reset --Mdir /tmp/obj_xbar_reset rtl/crossbar/xbar_scheduler.sv rtl/crossbar/xbar_4x4.sv tb/tb_xbar_reset.sv
       - name: Run crossbar reset test
         run: /tmp/obj_xbar_reset/Vtb_xbar_reset
-      - name: Compile crossbar stress/latency test
+      - name: Compile parameterized crossbar stress test
         run: verilator --binary --timing -Wno-fatal --top-module tb_xbar_stress_latency --Mdir /tmp/obj_xbar_stress_latency rtl/crossbar/xbar_scheduler.sv rtl/crossbar/xbar_4x4.sv tb/tb_xbar_stress_latency.sv
-      - name: Run crossbar stress/latency test
+      - name: Run parameterized crossbar stress test
         run: timeout 60s /tmp/obj_xbar_stress_latency/Vtb_xbar_stress_latency
       - name: Announce core crossbar regression
         run: echo "Running packed-vector crossbar regression under Verilator"
