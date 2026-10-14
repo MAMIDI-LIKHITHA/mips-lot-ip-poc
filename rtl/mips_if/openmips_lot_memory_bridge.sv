@@ -83,6 +83,7 @@ module openmips_lot_memory_bridge #(
         .byte_addr(byte_addr),
         .cache_attr(data_cache_attr),
         .read_word(data_read_word),
+        .write_word(data_write_word_ready),
         .write_word_be(data_write_word_ready ? data_write_word_be : 4'b0000),
         .read_line(data_read_line),
         .write_line(data_write_line_ready),
