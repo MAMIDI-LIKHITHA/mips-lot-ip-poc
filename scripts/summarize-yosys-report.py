@@ -37,7 +37,7 @@ rows = [
     f"- Wires: {wires:,}",
     f"- Wire bits: {wire_bits:,}",
     f"- Memory bits in generic netlist: {mem_bits:,}",
-    f"- Warning lines in full log: {len(warning_lines)}",
+    f"- Warning lines in captured statistics: {len(warning_lines)}",
     "",
     "## Interpretation limits",
     "",
