@@ -99,7 +99,7 @@ module tb_openmips_native_cache_port;
     VAddressIn_C=10'h008;
     PAddressIn_C=24'h000002;
     Read_C=1;
-    wait (ReadLine_M === 1'b1);
+    wait (dut.state == 4); // FILL_WAIT_1: the cache has issued its line-fill request.
     send_line_beat(2'd0, 32'h1111_0000);
     send_line_beat(2'd1, 32'h2222_0001);
     send_line_beat(2'd2, 32'h3333_0002);
