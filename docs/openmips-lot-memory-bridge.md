@@ -1,6 +1,6 @@
 # OpenMIPS LOT Memory-Port Bridge — Candidate RTL
 
-**Status:** Candidate bridge RTL and focused testbench pass the dedicated Icarus Verilog GitHub Actions smoke test, including expanded backpressure, error-response, reset, and unmapped-offset checks ([run](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38545601674)).  
+**Status:** Candidate bridge RTL and focused testbench pass the dedicated Icarus Verilog GitHub Actions smoke test, including expanded backpressure, error-response, reset, and unmapped-offset checks ([run](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38545810076)).  
 **Integration status:** Not connected to the unmodified OpenMIPS top-level. This is not evidence that the processor boots or that CPU-to-LOT works end to end.
 
 ## Files
@@ -24,6 +24,8 @@
 The stock OpenMIPS `MIPS32` top-level exposes `DataMem_Address`, read/line/write-buffer signals, and data/ready/offset return signals, but it does **not** export the data cache's physical-address-valid and cache-attribute sidebands. The bridge therefore requires `data_paddr_valid` and `data_cache_attr` from the internal core/cache path. These must be exposed by a reviewed integration top or a deliberate core wrapper change; do not tie them to constants to make the design appear to work.
 
 The module currently supports `PABITS=32` only and uses a default test aperture of `0x1F00_0000–0x1F00_0FFF`. The aperture must be checked against the chosen TLB/cache-attribute setup, reset vectors, RAM map, and peripherals before system integration.
+
+See the [OpenMIPS-to-LOT integration wiring plan](openmips-to-lot-integration-wiring-plan.md) for required wrapper signals, native handshake checks, reset policy, and full-core acceptance criteria.
 
 ## Known limitations / next checks
 
