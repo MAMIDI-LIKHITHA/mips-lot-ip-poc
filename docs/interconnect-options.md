@@ -77,3 +77,35 @@ The guiding rule is to reuse compatible existing IP where possible. Any vendor-I
 ## Non-claims
 
 This comparison does not establish that the selected MIPS core uses AXI, that any candidate is compatible without modification, or that any option has been synthesized, timed, or hardware-validated in this repository.
+
+
+## LOT-specific decision matrix (from the supplied research package)
+
+| Need | NIC-400 | PULP axi_xbar | dpretet/axi-crossbar | Current custom crossbar |
+|---|---|---|---|---|
+| AXI-compatible CPU side | Supported AXI variants; confirm exact core fit | AXI4 | AXI4 / AXI4-Lite | Requires adapter |
+| APB peripheral segment for SPI/GPIO | APB outputs available | Additional bridge/converter | Additional bridge/converter | Bridge required |
+| Unmapped-address response | DECERR behavior described in manual; validate integration | Configure/check error-slave behavior | Verify exact configuration | Validate final contract |
+| Generated implementation collateral | Arm tools, subject to access | RTL-based community project | Project tooling/wizard; verify current status | No generator |
+| Support model | Commercial vendor support, subject to agreement | Community | Community | Local project |
+| ASIC readiness evidence in this repository | None | None | None | None |
+
+### Conditional recommendation
+
+The supplied research package proposes **Arm CoreLink NIC-400 as the first candidate to investigate**, with **PULP axi_xbar as an open-source fallback**. This is a research preference, not an approved architecture selection.
+
+NIC-400 is worth evaluating because its documented interfaces can combine an AXI/AHB-Lite system side with APB peripherals, which could simplify attachment of a memory-mapped SPI controller. It remains unsuitable to commit until the actual MIPS bus is confirmed and MobilFlex verifies its Arm IP/tool access, manufacturing terms, and permission for the intended subsystem.
+
+Switch to the fallback or re-evaluate the shortlist if NIC-400 access or compatibility fails, the target requires coherency features it does not provide, or a newer Arm interconnect proves a better fit. PULP axi_xbar is a fallback only if AXI4 is confirmed and the team accepts community-supported integration and the additional APB bridge work.
+
+### Decision checks to close
+
+| Check | Owner / input needed | Status |
+|---|---|---|
+| Flexible Access tier includes NIC-400 and required tools | MobilFlex / Arm | Open |
+| Exact MIPS core, native bus and protocol variant | MIPS subsystem owner | Open |
+| Existing SPI controller, GPIO, bridges and drivers | MIPS subsystem owner | Open |
+| Current NIC-450 / NI-700 alternatives | Research | Open |
+| License and maintenance review for open-source candidates | Research | Open |
+| Equivalent regression, synthesis, timing and hardware evidence | Engineering | Not performed |
+
