@@ -132,6 +132,8 @@ module tb_openmips_native_cache_lot;
       ram_data_offset=offset;
       ram_data_in=value;
       ram_ready=1;
+      @(posedge clk); #1;
+      $display("RAM BEAT offset=%0d Ready_M=%b route_ram=%b ram_pending=%b cache_state=%0d", offset, Ready_M, dut.u_bridge.route_ram, dut.u_bridge.ram_pending, cache.state);
       @(negedge clk);
       ram_ready=0;
     end
