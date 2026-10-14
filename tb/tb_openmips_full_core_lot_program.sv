@@ -22,6 +22,13 @@ module tb_openmips_full_core_lot_program;
   wire ram_read_line, ram_read_word, ram_write_line, ram_write_word;
   wire [3:0] ram_write_be;
   wire [127:0] ram_data_out;
+  reg [31:0] ram_data_in=0;
+  reg [1:0] ram_data_offset=0;
+  reg ram_ready=0;
+  integer ram_line_fill_count=0, ram_line_write_count=0;
+  reg ram_read_line_d=0, ram_write_line_d=0, ram_line_pending=0;
+  integer ram_beat=0;
+  reg [127:0] ram_write_payload=0;
   wire lot_valid, lot_rsp_ready;
   wire [1:0] lot_dst;
   wire [64:0] lot_payload;
@@ -57,7 +64,7 @@ module tb_openmips_full_core_lot_program;
     .ram_addr(ram_addr), .ram_read_line(ram_read_line), .ram_read_word(ram_read_word),
     .ram_write_line_ready(ram_write_line), .ram_write_word_ready(ram_write_word),
     .ram_write_word_be(ram_write_be), .ram_data_out(ram_data_out),
-    .ram_data_in(32'b0), .ram_data_offset(2'b0), .ram_ready(1'b0),
+    .ram_data_in(ram_data_in), .ram_data_offset(ram_data_offset), .ram_ready(ram_ready),
     .lot_valid(lot_valid), .lot_ready(lot_ready), .lot_dst(lot_dst),
     .lot_payload(lot_payload), .lot_rsp_valid(lot_rsp_valid),
     .lot_rsp_ready(lot_rsp_ready), .lot_rsp_rdata(lot_rsp_rdata),
@@ -68,30 +75,54 @@ module tb_openmips_full_core_lot_program;
   // Small ROM at both plausible reset/BEV entry locations. KSEG1 is uncached,
   // so the core normally issues one-word instruction reads.
   function [31:0] rom_word(input [33:0] word_addr);
-    reg [4:0] idx;
+    reg [5:0] idx;
     begin
-      if (word_addr >= 34'h07F00000 && word_addr <= 34'h07F0000E)
+      if (word_addr >= 34'h07F00000 && word_addr <= 34'h07F00026)
         idx = word_addr - 34'h07F00000;
-      else if (word_addr >= 34'h07F000E0 && word_addr <= 34'h07F000EE)
+      else if (word_addr >= 34'h07F000E0 && word_addr <= 34'h07F00106)
         idx = word_addr - 34'h07F000E0;
       else
         idx = 5'd31;
       case (idx)
-        0:  rom_word=32'h3C08_BF00; // lui t0,0xBF00
-        1:  rom_word=32'h0000_0000;
-        2:  rom_word=32'h8D09_0000; // lw t1,0(t0) -> LOT CONTROL
+        0:  rom_word=32'h3C0B_8000; // lui t3,0x8000: cacheable RAM base
+        1:  rom_word=32'h356B_1000; // ori t3,t3,0x1000
+        2:  rom_word=32'h8D6C_0000; // lw t4,0(t3): first line fill
         3:  rom_word=32'h0000_0000;
         4:  rom_word=32'h0000_0000;
-        5:  rom_word=32'hAD09_0008; // sw t1,8(t0) -> STATUS should receive read data
+        5:  rom_word=32'hAD6C_0000; // sw t4,0(t3): dirty first way
         6:  rom_word=32'h0000_0000;
-        7:  rom_word=32'h3C0A_1234; // lui t2,0x1234
-        8:  rom_word=32'h0000_0000;
-        9:  rom_word=32'h354A_5678; // ori t2,t2,0x5678
-        10: rom_word=32'h0000_0000;
-        11: rom_word=32'hAD0A_0004; // sw t2,4(t0) -> DATA
+        7:  rom_word=32'h0000_0000;
+        8:  rom_word=32'h3C0D_8000; // lui t5,0x8000
+        9:  rom_word=32'h35AD_1400; // ori t5,t5,0x1400: same D-cache set
+        10: rom_word=32'h8DAE_0000; // lw t6,0(t5): fill second way
+        11: rom_word=32'h0000_0000;
         12: rom_word=32'h0000_0000;
-        13: rom_word=32'h1000_FFFF; // beq zero,zero,self
-        14: rom_word=32'h0000_0000; // branch delay slot
+        13: rom_word=32'h8DAE_0000; // hit second way; set replacement state
+        14: rom_word=32'h0000_0000;
+        15: rom_word=32'h0000_0000;
+        16: rom_word=32'h3C0F_8000; // lui t7,0x8000
+        17: rom_word=32'h35EF_1800; // ori t7,t7,0x1800: third tag, same set
+        18: rom_word=32'h8DF8_0000; // lw t8,0(t7): evict dirty first line
+        19: rom_word=32'h0000_0000;
+        20: rom_word=32'h0000_0000;
+        21: rom_word=32'h3C08_BF00; // lui t0,0xBF00: LOT aperture
+        22: rom_word=32'h0000_0000;
+        23: rom_word=32'h8D09_0000; // lw t1,0(t0) -> LOT CONTROL
+        24: rom_word=32'h0000_0000;
+        25: rom_word=32'h0000_0000;
+        26: rom_word=32'hAD09_0008; // sw t1,8(t0) -> STATUS gets read value
+        27: rom_word=32'h0000_0000;
+        28: rom_word=32'h0000_0000;
+        29: rom_word=32'h3C0A_1234; // lui t2,0x1234
+        30: rom_word=32'h0000_0000;
+        31: rom_word=32'h354A_5678; // ori t2,t2,0x5678
+        32: rom_word=32'h0000_0000;
+        33: rom_word=32'h0000_0000;
+        34: rom_word=32'hAD0A_0004; // sw t2,4(t0) -> DATA
+        35: rom_word=32'h0000_0000;
+        36: rom_word=32'h0000_0000;
+        37: rom_word=32'h1000_FFFF; // beq zero,zero,self
+        38: rom_word=32'h0000_0000; // branch delay slot
         default: rom_word=32'h1000_FFFF;
       endcase
     end
@@ -144,6 +175,51 @@ module tb_openmips_full_core_lot_program;
           else
             inst_pending <= 0;
         end
+      end
+    end
+  end
+
+  // RAM model for cacheable data: delayed four-beat line fills and one-cycle
+  // acknowledgement of a 128-bit dirty-line writeback.
+  always @(posedge clk) begin
+    if (reset) begin
+      ram_ready <= 0;
+      ram_data_in <= 0;
+      ram_data_offset <= 0;
+      ram_read_line_d <= 0;
+      ram_write_line_d <= 0;
+      ram_line_pending <= 0;
+      ram_beat <= 0;
+      ram_line_fill_count <= 0;
+      ram_line_write_count <= 0;
+      ram_write_payload <= 0;
+    end else begin
+      ram_read_line_d <= ram_read_line;
+      ram_write_line_d <= ram_write_line;
+      if (ram_read_line && !ram_read_line_d) begin
+        ram_line_fill_count <= ram_line_fill_count + 1;
+        ram_line_pending <= 1;
+        ram_beat <= 0;
+      end
+      if (ram_write_line && !ram_write_line_d) begin
+        ram_line_write_count <= ram_line_write_count + 1;
+        ram_write_payload <= ram_data_out;
+      end
+      if (ram_line_pending) begin
+        ram_ready <= 1;
+        ram_data_offset <= ram_beat[1:0];
+        ram_data_in <= 32'h1111_0000 + ram_beat;
+        if (ram_beat == 3) begin
+          ram_line_pending <= 0;
+          ram_beat <= 0;
+        end else begin
+          ram_beat <= ram_beat + 1;
+        end
+      end else if (ram_write_line || ram_write_word) begin
+        ram_ready <= 1;
+        ram_data_offset <= 0;
+      end else begin
+        ram_ready <= 0;
       end
     end
   end
@@ -203,10 +279,15 @@ module tb_openmips_full_core_lot_program;
     reset=0;
     repeat (2000) begin
       @(negedge clk);
-      if (lot_count == 3) begin
+      if (lot_count == 3 && ram_line_fill_count == 3 && ram_line_write_count == 1) begin
+        if (!(ram_write_payload[31:0] === 32'h1111_0000 ||
+              ram_write_payload[63:32] === 32'h1111_0000 ||
+              ram_write_payload[95:64] === 32'h1111_0000 ||
+              ram_write_payload[127:96] === 32'h1111_0000))
+          $fatal(1, "full-core dirty RAM writeback did not contain the modified word: %h", ram_write_payload);
         if (protocol_fault || native_address_rejected)
           $fatal(1, "unexpected wrapper fault during full-core program");
-        $display("TB RESULT: PASS - full MIPS32 program executed LOT load, data-dependent STATUS store, and DATA store");
+        $display("TB RESULT: PASS - full MIPS32 program executed cacheable RAM fills/dirty eviction and LOT load/status/data transactions");
         $finish;
       end
     end
