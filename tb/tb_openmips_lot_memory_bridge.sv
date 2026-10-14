@@ -245,7 +245,27 @@ module tb_openmips_lot_memory_bridge;
         check_expectation(protocol_fault, "invalid LOT qualification sets sticky fault");
         data_read_word = 0;
 
-        // 9: Reset while a LOT request is outstanding. Current bridge policy
+        // 9: Partial-byte writes in the LOT window must not be converted into
+        // full-word side-effecting register writes or leak to ordinary RAM.
+        @(negedge clk);
+        reset_n = 0;
+        @(posedge clk); #1;
+        check_expectation(!protocol_fault, "reset clears fault before partial-write case");
+        @(negedge clk);
+        reset_n = 1;
+        data_addr = 30'h1F00_0004 >> 2;
+        data_write_word_ready = 1;
+        data_write_word_be = 4'b0011;
+        data_out[31:0] = 32'h0000_BEEF;
+        #1;
+        check_expectation(!lot_valid && !ram_write_word_ready && !data_ready,
+               "partial-byte LOT write is blocked rather than widened or sent to RAM");
+        @(posedge clk); #1;
+        check_expectation(protocol_fault, "partial-byte LOT write raises sticky fault");
+        data_write_word_ready = 0;
+        data_write_word_be = 0;
+
+        // 10: Reset while a LOT request is outstanding. Current bridge policy
         // drops local pending state; a late response must not be mistaken for a
         // new transaction. System integration still needs coordinated reset or
         // a drain/cancel contract so the downstream response cannot remain orphaned.
