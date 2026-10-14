@@ -25,8 +25,6 @@ cells = stat("Number of cells")
 if any(value is None for value in (wires, wire_bits, mem_bits, cells)):
     raise SystemExit("final Yosys statistics block is incomplete")
 
-warning_lines = [line.strip() for line in text.splitlines()
-                 if re.search(r"\bWarning:", line)]
 rows = [
     "# OpenMIPS generic synthesis summary",
     "",
@@ -37,7 +35,6 @@ rows = [
     f"- Wires: {wires:,}",
     f"- Wire bits: {wire_bits:,}",
     f"- Memory bits in generic netlist: {mem_bits:,}",
-    f"- Warning lines in captured statistics: {len(warning_lines)}",
     "",
     "## Interpretation limits",
     "",
