@@ -105,4 +105,4 @@ A new testbench instantiates the pinned MIPS32 top-level processor and both cach
 
 [Full-core program CI passed: run 38559227689](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38559227689). The full MIPS32 core and caches compile with functional simulation models for the generated I-cache BRAM and DSP IP: [run 38559048706](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38559048706).
 
-Scope limitation: this is functional simulation with a ROM model and behavioral generated-IP models, not a hardware run or timing model. The full-core program currently tests LOT MMIO; the actual-cache integration test separately covers RAM line fills and dirty-line writeback. Synthesis, timing, area, and board validation remain open.
+Scope limitation: this is functional simulation with a ROM model and behavioral generated-IP models, not a hardware run or timing model. The full-core program now covers cacheable RAM line fills, dirty-line writeback, and LOT MMIO; the actual-cache integration test separately stress-tests these memory paths plus reset and high-address rejection. Synthesis, timing, area, and board validation remain open.
