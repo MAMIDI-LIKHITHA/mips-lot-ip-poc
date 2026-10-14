@@ -7,6 +7,7 @@ on:
       - "scripts/apply-openmips-cache-qualification.py"
       - "scripts/apply-openmips-lot-top-ports.py"
       - "tb/models/openmips_cache_bram_ip_model.v"
+      - "tb/models/openmips_full_core_ip_models.v"
       - ".github/workflows/openmips-full-core-compile-smoke.yml"
   pull_request:
     paths:
@@ -43,4 +44,4 @@ jobs:
             -I upstream/OpenMIPS/hardware/src/MIPS32/Cache/DCache \
             -I upstream/OpenMIPS/hardware/src/MIPS32/Cache/ICache \
             -s MIPS32 -o /tmp/mips32-full-core.vvp \
-            tb/models/openmips_cache_bram_ip_model.v "${SOURCES[@]}"
+            tb/models/openmips_cache_bram_ip_model.v tb/models/openmips_full_core_ip_models.v "${SOURCES[@]}"
