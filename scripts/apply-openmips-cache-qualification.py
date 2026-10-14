@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Apply the qualification sideband patch to the pinned OpenMIPS cache source."""
 from pathlib import Path
+import re
 
 p = Path("upstream/OpenMIPS/hardware/src/MIPS32/Cache/DCache/DataCache_2KB.v")
 s = p.read_text()
