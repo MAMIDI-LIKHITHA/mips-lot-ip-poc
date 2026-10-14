@@ -1,0 +1,38 @@
+name: OpenMIPS LOT memory bridge smoke test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "rtl/mips_if/openmips_lot_access_classifier.sv"
+      - "rtl/mips_if/openmips_lot_memory_bridge.sv"
+      - "tb/tb_openmips_lot_memory_bridge.sv"
+      - ".github/workflows/openmips-memory-bridge-smoke.yml"
+  pull_request:
+    paths:
+      - "rtl/mips_if/openmips_lot_access_classifier.sv"
+      - "rtl/mips_if/openmips_lot_memory_bridge.sv"
+      - "tb/tb_openmips_lot_memory_bridge.sv"
+      - ".github/workflows/openmips-memory-bridge-smoke.yml"
+
+jobs:
+  iverilog-memory-bridge-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install Icarus Verilog
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iverilog
+      - name: Compile bridge test
+        run: |
+          iverilog -g2012 -s tb_openmips_lot_memory_bridge \
+            -o /tmp/openmips-memory-bridge.vvp \
+            rtl/mips_if/openmips_lot_access_classifier.sv \
+            rtl/mips_if/openmips_lot_memory_bridge.sv \
+            tb/tb_openmips_lot_memory_bridge.sv
+      - name: Run bridge test
+        run: vvp -n /tmp/openmips-memory-bridge.vvp
