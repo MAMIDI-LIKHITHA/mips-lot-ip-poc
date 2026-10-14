@@ -51,7 +51,7 @@ module tb_openmips_lot_memory_bridge;
         end
     endtask
 
-    task automatic expect(input logic condition_i, input string message_i);
+    task automatic check_expectation(input logic condition_i, input string message_i);
         if (!condition_i) $fatal(1, "%s", message_i);
         $display("PASS: %s", message_i);
     endtask
@@ -68,7 +68,7 @@ module tb_openmips_lot_memory_bridge;
         data_addr = 30'h1F00_0000 >> 2;
         data_read_word = 1;
         #1;
-        expect(lot_valid && lot_dst == 0 && !ram_read_word,
+        check_expectation(lot_valid && lot_dst == 0 && !ram_read_word,
                "qualified LOT read issues one request and suppresses RAM");
         expect(lot_payload == {1'b0,32'h1F00_0000,32'b0},
                "LOT read payload uses byte address and zero write data");
