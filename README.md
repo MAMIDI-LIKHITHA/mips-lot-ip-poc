@@ -180,3 +180,8 @@ These documents are verification plans and source-inspection notes. They do not 
 - CI passed: [run 38555604302](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38555604302).
 
 This does not yet prove full-core CPU program execution or all memory-path behavior. Cache-line fill/writeback through the wrapper, outstanding-request reset behavior, system fault handling, synthesis/timing/area, and hardware validation remain open.
+
+
+### RAM response ownership fix
+
+The bridge now holds RAM routing after a command deasserts and keeps it through all four beats of a cache-line fill. Delayed-response tests passed: [bridge CI run 38557101949](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38557101949) and [actual-cache integration run 38556981169](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38556981169). Dirty-line eviction and full-core program execution are the next verification gates.
