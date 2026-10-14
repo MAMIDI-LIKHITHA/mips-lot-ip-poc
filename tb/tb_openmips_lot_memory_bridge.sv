@@ -256,6 +256,8 @@ module tb_openmips_lot_memory_bridge;
         @(negedge clk);
         reset_n = 1;
         data_addr = 30'h1F00_0000 >> 2;
+        data_cache_attr = 3'b010;
+        data_paddr_valid = 1;
         data_read_word = 1;
         #1;
         check_expectation(lot_valid && !lot_rsp_ready,
