@@ -97,3 +97,12 @@ High-address rejection through the full wrapper and reset with a late LOT respon
 The actual-cache integration CI now also checks that a physical address above the bridge's 32-bit range is rejected without RAM/LOT traffic, and that resetting the cache/bridge while a LOT request is outstanding clears local ownership so an injected late response is not consumed as a new completion. These checks passed with the RAM line fill, two-way dirty writeback, LOT read/write, and delayed response cases in [CI run 38557582605](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38557582605).
 
 This is still simulation-only and does not yet run a program on the full CPU top-level. Synthesis/timing/area and hardware validation remain open.
+
+
+## Full-core CPU program-level proof passed
+
+A new testbench instantiates the pinned MIPS32 top-level processor and both caches, then executes a small instruction program through the actual core. It performs an uncacheable load from CONTROL at physical `0x1F000000`, stores the returned value to STATUS at `0x1F000008`, and stores a second value to DATA at `0x1F000004`. The test verifies addresses, direction, response-dependent data, the little-endian bus payload, and no wrapper protocol/address fault.
+
+[Full-core program CI passed: run 38559227689](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38559227689). The full MIPS32 core and caches compile with functional simulation models for the generated I-cache BRAM and DSP IP: [run 38559048706](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38559048706).
+
+Scope limitation: this is functional simulation with a ROM model and behavioral generated-IP models, not a hardware run or timing model. The full-core program currently tests LOT MMIO; the actual-cache integration test separately covers RAM line fills and dirty-line writeback. Synthesis, timing, area, and board validation remain open.
