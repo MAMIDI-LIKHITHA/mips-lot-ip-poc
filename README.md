@@ -213,3 +213,8 @@ These are functional RTL simulations, not vendor timing models or hardware resul
 ### Generic synthesis smoke passed
 
 The integrated top `openmips_mips32_lot_system` completed a Yosys generic synthesis pass: [latest confirmed CI run 38563738864](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/38563738864). The hierarchy reported 70,353 generic cells, 15,049 wires, and 108,739 wire bits. Generated BRAM/DSP IP was treated as black boxes and ABC technology mapping was disabled, so this is only a synthesis-flow check—not an area, LUT, gate-equivalent, or timing estimate. See [generic synthesis limitations and next steps](docs/openmips-generic-synthesis.md).
+
+
+### FPGA implementation readiness
+
+The target-independent [FPGA implementation readiness gates](docs/fpga-implementation-readiness.md) record the requested 100 MHz clock intent and the exact board/device information still needed before vendor-specific constraints, resource mapping, or timing closure can be claimed.
