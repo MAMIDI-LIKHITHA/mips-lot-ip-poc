@@ -16,6 +16,16 @@ Start here if you prefer block diagrams before reading RTL. **Solid blocks indic
 | [4. Reusable interconnect evaluation scorecard](docs/images/interconnect-ip-evaluation-scorecard.svg) | What evidence is needed before choosing or reusing an interconnect? |
 | [5. Silicon Labs / Matter integration boundary](docs/images/lot-silicon-labs-matter-boundary.svg) | Where would the host interface end and the external connectivity device/network begin? |
 
+## Current architecture proposal (v1.0)
+
+The owner-supplied [LOT Complete Architecture Specification v1.0](docs/architecture/lot-complete-architecture-specification-v1.md) is the current proposal for stakeholder approval. Its [architecture overview diagram](docs/images/lot-proposed-reference-architecture-v1.svg) and [gated execution roadmap](docs/lot-architecture-v1-execution-roadmap.md) separate decisions, simulation, board bring-up, measurement, and optional offload into reviewable gates.
+
+- **Proposal, not approval:** APB4 peripheral contract; SiWx917 NCP over SPI mode 0; `lot_rlink` wrapper; WiSeConnect HAL/CMSIS-RTOS2 port.
+- **Blocking decisions:** exact MIPS core/native bus and license; FPGA board/pins/voltage/toolchain; exact SiWx917 board/SDK; product scope; performance targets and deadline.
+- **Reuse first:** inventory existing SPI/GPIO/UART/bridges; only select AHB/AXI adapter and crossbar after the real host interface and initiator count are confirmed.
+- **Offload is optional:** measure software-only CPU cost/throughput before considering DMA or interrupt coalescing.
+- **Evidence discipline:** simulation, generic synthesis, target timing/resources, and board results must be reported separately. The current OpenMIPS simulation path is not approval of the production host core.
+
 ### Decision status at a glance
 
 - **Implemented and simulated:** custom LOT request router, 4×4 ready/valid crossbar, behavioral endpoints, response router, and a candidate single-outstanding MMIO path in the testbench.
