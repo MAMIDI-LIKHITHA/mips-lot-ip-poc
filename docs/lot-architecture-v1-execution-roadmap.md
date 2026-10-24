@@ -1,10 +1,12 @@
 # LOT Architecture v1 — GitHub Execution Roadmap
 
 **Authority:** [LOT Complete Architecture Specification v1.0](architecture/lot-complete-architecture-specification-v1.md)  
-**Status:** Proposed workflow; no architecture approval or hardware validation implied.  
-**Rule:** Do not start target-specific adapter RTL until the host core/bus and the owner-approved scope are recorded.
+**Status:** Gate 0 accepted by the project owner; existing-project simulation and verification is the immediate next step. No hardware validation implied.  
+**Rule:** Verify the current RTL baseline before adding architecture-driven RTL. Do not start target-specific adapter RTL until the host core/bus and owner-approved scope are recorded.
 
-## Gate 0 — Owner decisions (blocking)
+## Gate 0 — Owner decisions (accepted for planning)
+
+The project owner has confirmed Gate 0 is OK. Treat this as authorization to proceed with simulation/verification of the existing POC, not as proof that unresolved target-specific choices (production MIPS core/bus, board, SDK, licenses or performance targets) have been technically verified. Record any specific owner answers separately as they become available.
 
 - [ ] Confirm LOT role: device-side connectivity only or another explicitly defined role; initial proposal excludes Thread border router.
 - [ ] Confirm Wi-Fi-first scope and whether BLE/Matter is in the first deliverable.
@@ -16,6 +18,21 @@
 - [ ] Record each answer with source/evidence and date; unanswered questions remain explicitly open.
 
 **Gate exit:** no hidden assumptions; all blocking unknowns are answered or explicitly accepted as open by the project owner.
+
+## Gate 0.5 — Verify the existing LOT/MIPS POC (immediate priority)
+
+- [ ] Run the current regression from a clean checkout using the documented simulator/version and command.
+- [ ] Capture the commit SHA, simulator/version, exact command, compile errors/warnings, each test result, and final exit status.
+- [ ] Reconcile the documented 12-test ModelSim baseline with the current source tree; do not assume historical PASS results still reproduce.
+- [ ] Run available Icarus Verilog unit tests and the existing OpenMIPS/LOT bridge and CPU-level tests where scripts and dependencies support them.
+- [ ] Inspect every failure and warning; fix real defects and explain any accepted tool-specific warning with evidence.
+- [ ] Confirm the end-to-end transaction path: candidate CPU/MMIO bridge → LOT router → request crossbar → endpoint/register model → response crossbar/router → CPU-side response.
+- [ ] Verify read/write data, response source association, invalid/unmapped addresses, reset during outstanding traffic, backpressure stability/recovery, contention/fairness, and deterministic timeout behavior.
+- [ ] Check route/function coverage and stress counters; add missing tests only where a real gap is confirmed.
+- [ ] Ensure CI runs all portable deterministic tests. Keep ModelSim-only checks explicit if the CI runner cannot legally or technically run ModelSim.
+- [ ] Publish a verification report with pass/fail matrix and links to logs/workflow runs. Do not claim hardware, timing closure, or target-specific performance from simulation.
+
+**Gate exit:** clean reproducible regression with all expected tests passing, warnings triaged, end-to-end behavior evidenced, and known limitations recorded. If failures remain, the gate stays open and fixes take priority over new feature RTL.
 
 ## Gate 1 — Freeze interfaces and inventory reusable IP
 
