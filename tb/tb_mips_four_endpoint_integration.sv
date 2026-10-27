@@ -148,6 +148,11 @@ module tb_mips_four_endpoint_integration;
                 cycles = cycles + 1;
             end
             if (!cpu_req_ready) begin
+                $display("DEBUG timeout: req_valid=%b req_ready=%b busy=%b addr_valid=%b lot_valid=%b lot_ready=%b lot_dst=%0d req_src_valid=%b req_src_ready=%b req_dst_valid=%b req_dst_ready=%b req_grant=%b",
+                         cpu_req_valid, cpu_req_ready, u_mips_candidate.busy,
+                         u_mips_candidate.addr_valid, lot_req_valid, lot_req_ready,
+                         lot_req_dst, req_src_valid, req_src_ready, req_dst_valid,
+                         req_dst_ready, req_grant);
                 $error("CPU request timeout: dst=%0d addr=%h", dst, addr);
                 $fatal;
             end
