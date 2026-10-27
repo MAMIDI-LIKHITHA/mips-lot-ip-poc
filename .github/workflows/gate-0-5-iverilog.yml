@@ -1,0 +1,91 @@
+name: Gate 0.5 — Icarus Verilog portable regression
+
+on:
+  push:
+    branches:
+      - verification/gate-0-5-iverilog-ci
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  iverilog-regression:
+    name: Compile and run portable LOT testbenches
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install Icarus Verilog
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes iverilog
+          iverilog -V
+          vvp -V
+
+      - name: Compile and run portable regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/iverilog-logs
+
+          RTL=(
+            rtl/crossbar/xbar_scheduler.sv
+            rtl/crossbar/xbar_4x4.sv
+            rtl/interconnect/lot_txn_router.sv
+            rtl/interconnect/lot_rsp_router.sv
+            rtl/mips_if/mips_mmio_adapter_candidate.sv
+            rtl/endpoints/lot_endpoint_adapter.sv
+          )
+
+          TESTS=(
+            tb_xbar_4x4
+            tb_xbar_backpressure_stability
+            tb_xbar_multi_output
+            tb_xbar_invalid_dst
+            tb_xbar_reset
+            tb_xbar_stress_latency
+            tb_lot_txn_router
+            tb_lot_rsp_router
+            tb_mips_mmio_adapter_candidate
+            tb_end_to_end_candidate
+            tb_mips_four_endpoint_integration
+          )
+
+          passed=0
+          for tb in "${TESTS[@]}"; do
+            echo "::group::Compile $tb"
+            iverilog -g2012 -Wall -s "$tb" -o "build/iverilog-logs/$tb.vvp" "${RTL[@]}" "tb/$tb.sv"
+            echo "::endgroup::"
+
+            echo "::group::Run $tb"
+            set +e
+            vvp "build/iverilog-logs/$tb.vvp" 2>&1 | tee "build/iverilog-logs/$tb.log"
+            sim_status=${PIPESTATUS[0]}
+            set -e
+            if [[ $sim_status -ne 0 ]]; then
+              echo "FAIL: $tb exited with status $sim_status"
+              exit 1
+            fi
+            if ! grep -Fq "TB RESULT: PASS" "build/iverilog-logs/$tb.log"; then
+              echo "FAIL: $tb did not emit the required TB RESULT: PASS marker"
+              exit 1
+            fi
+            passed=$((passed + 1))
+            echo "PASS: $tb"
+            echo "::endgroup::"
+          done
+
+          echo "IVERILOG REGRESSION SUMMARY: $passed passed, 0 failed"
+          echo "IVERILOG REGRESSION RESULT: PASS"
+
+      - name: Upload compile and simulation logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-0-5-iverilog-logs
+          path: build/iverilog-logs/
+          if-no-files-found: warn
+          retention-days: 14
