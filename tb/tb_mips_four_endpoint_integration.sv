@@ -136,6 +136,8 @@ module tb_mips_four_endpoint_integration;
         logic [ADDR_W-1:0] addr;
         integer cycles;
         begin
+            // Drive requests away from the active edge to avoid a testbench/DUT race.
+            @(negedge clk);
             addr = {14'b0, dst, local_addr};
             cpu_req_write = write;
             cpu_req_addr = addr;
@@ -183,6 +185,8 @@ module tb_mips_four_endpoint_integration;
         logic [DATA_W-1:0] held_data;
         logic held_error;
         begin
+            // Drive requests away from the active edge to avoid a testbench/DUT race.
+            @(negedge clk);
             addr = {14'b0, dst, local_addr};
             cpu_req_write = 1'b0;
             cpu_req_addr = addr;
