@@ -59,7 +59,7 @@ jobs:
             obj="build/verilator-logs/obj_$tb"
 
             echo "::group::Compile $tb"
-            verilator --binary --timing --no-stop --Wno-fatal \
+            verilator --binary --timing --Wno-fatal \
               --top-module "$tb" --Mdir "$obj" \
               "${RTL[@]}" "tb/$tb.sv" 2>&1 | tee "$log"
             echo "::endgroup::"
