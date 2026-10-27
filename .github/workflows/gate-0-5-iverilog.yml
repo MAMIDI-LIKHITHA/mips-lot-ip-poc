@@ -62,7 +62,7 @@ jobs:
 
             echo "::group::Run $tb"
             set +e
-            vvp "build/iverilog-logs/$tb.vvp" 2>&1 | tee "build/iverilog-logs/$tb.log"
+            vvp -n "build/iverilog-logs/$tb.vvp" 2>&1 | tee "build/iverilog-logs/$tb.log"
             sim_status=${PIPESTATUS[0]}
             set -e
             if [[ $sim_status -ne 0 ]]; then
