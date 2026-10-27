@@ -59,9 +59,12 @@ jobs:
             obj="build/verilator-logs/obj_$tb"
 
             echo "::group::Compile $tb"
+            # Convert testbench-only $stop calls to $finish for non-interactive CI.
+            tb_ci="build/verilator-logs/${tb}_ci.sv"
+            sed 's/\\$stop/\\$finish/g' "tb/$tb.sv" > "$tb_ci"
             verilator --binary --timing --Wno-fatal \
               --top-module "$tb" --Mdir "$obj" \
-              "${RTL[@]}" "tb/$tb.sv" 2>&1 | tee "$log"
+              "${RTL[@]}" "$tb_ci" 2>&1 | tee "$log"
             echo "::endgroup::"
 
             echo "::group::Run $tb"
