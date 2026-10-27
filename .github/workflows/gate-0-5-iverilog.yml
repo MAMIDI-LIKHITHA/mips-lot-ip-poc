@@ -1,4 +1,4 @@
-name: Gate 0.5 — Icarus Verilog portable regression
+name: Gate 0.5 — Verilator portable regression
 
 on:
   push:
@@ -10,26 +10,25 @@ permissions:
   contents: read
 
 jobs:
-  iverilog-regression:
+  verilator-regression:
     name: Compile and run portable LOT testbenches
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Install Icarus Verilog
+      - name: Install Verilator
         run: |
           sudo apt-get update
-          sudo apt-get install --yes iverilog
-          iverilog -V
-          vvp -V
+          sudo apt-get install --yes verilator
+          verilator --version
 
       - name: Compile and run portable regression
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p build/iverilog-logs
+          mkdir -p build/verilator-logs
 
           RTL=(
             rtl/crossbar/xbar_scheduler.sv
@@ -56,20 +55,25 @@ jobs:
 
           passed=0
           for tb in "${TESTS[@]}"; do
+            log="build/verilator-logs/$tb.log"
+            obj="build/verilator-logs/obj_$tb"
+
             echo "::group::Compile $tb"
-            iverilog -g2012 -Wall -s "$tb" -o "build/iverilog-logs/$tb.vvp" "${RTL[@]}" "tb/$tb.sv"
+            verilator --binary --timing --no-stop --Wno-fatal \
+              --top-module "$tb" --Mdir "$obj" \
+              "${RTL[@]}" "tb/$tb.sv" 2>&1 | tee "$log"
             echo "::endgroup::"
 
             echo "::group::Run $tb"
             set +e
-            vvp -n "build/iverilog-logs/$tb.vvp" 2>&1 | tee "build/iverilog-logs/$tb.log"
+            "$obj/V$tb" 2>&1 | tee -a "$log"
             sim_status=${PIPESTATUS[0]}
             set -e
             if [[ $sim_status -ne 0 ]]; then
               echo "FAIL: $tb exited with status $sim_status"
               exit 1
             fi
-            if ! grep -Fq "TB RESULT: PASS" "build/iverilog-logs/$tb.log"; then
+            if ! grep -Fq "TB RESULT: PASS" "$log"; then
               echo "FAIL: $tb did not emit the required TB RESULT: PASS marker"
               exit 1
             fi
@@ -78,14 +82,14 @@ jobs:
             echo "::endgroup::"
           done
 
-          echo "IVERILOG REGRESSION SUMMARY: $passed passed, 0 failed"
-          echo "IVERILOG REGRESSION RESULT: PASS"
+          echo "VERILATOR REGRESSION SUMMARY: $passed passed, 0 failed"
+          echo "VERILATOR REGRESSION RESULT: PASS"
 
       - name: Upload compile and simulation logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: gate-0-5-iverilog-logs
-          path: build/iverilog-logs/
+          name: gate-0-5-verilator-logs
+          path: build/verilator-logs/
           if-no-files-found: warn
           retention-days: 14
