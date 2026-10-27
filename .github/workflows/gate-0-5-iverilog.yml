@@ -61,7 +61,7 @@ jobs:
             echo "::group::Compile $tb"
             # Convert testbench-only $stop calls to $finish for non-interactive CI.
             tb_ci="build/verilator-logs/${tb}_ci.sv"
-            sed 's/\\$stop/\\$finish/g' "tb/$tb.sv" > "$tb_ci"
+            sed 's/\$stop/\$finish/g' "tb/$tb.sv" > "$tb_ci"
             verilator --binary --timing --Wno-fatal \
               --top-module "$tb" --Mdir "$obj" \
               "${RTL[@]}" "$tb_ci" 2>&1 | tee "$log"
