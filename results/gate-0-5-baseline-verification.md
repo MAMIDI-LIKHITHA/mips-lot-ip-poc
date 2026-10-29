@@ -54,13 +54,13 @@ These figures must be re-confirmed against the current commit. The 14 warnings r
 A GitHub Actions run on 27 October 2026 completed successfully on commit `433b7483be7c3e049c8e97e99bba60a6ab1bba87`.
 
 - Runner: GitHub-hosted Ubuntu runner.
-- Simulator: Verilator (version is present in the run logs; this report does not infer it from a local installation).
+- Simulator: Verilator 5.020 (Debian package `5.020-1`), as printed in the GitHub Actions log.
 - Workflow: [Gate 0.5 — Verilator portable regression](https://github.com/MAMIDI-LIKHITHA/mips-lot-ip-poc/actions/runs/40467577406).
 - Result: **11 passed, 0 failed**.
 - The workflow requires a `TB RESULT: PASS` marker for each test and stores build/simulation logs in the `gate-0-5-verilator-logs` artifact.
 - The successful run covered crossbar routing, backpressure stability, multi-output, invalid destination, reset, stress/latency, transaction router, response router, candidate MMIO adapter, end-to-end candidate path, and four-endpoint integration.
 - The portable run does **not** execute `tb_xbar_coverage`, so it does not replace ModelSim coverage-specific validation.
-- Warnings observed include Verilator timescale consistency and width-expansion warnings. They are currently **untriaged**, not presumed harmless.
+- Warnings observed include `TIMESCALEMOD` for RTL modules without an explicit timescale and `WIDTHEXPAND` in the stress testbench and response-router comparisons/assignments. They remain **untriaged**; no warning is presumed harmless. The `TIMESCALEMOD` messages arise from mixed timescale declarations across testbench and RTL compilation units; decide whether to add a consistent explicit timescale or configure the simulation unit in a follow-up. Width warnings need a source-level review to distinguish harmless testbench sizing from RTL comparisons.
 - The CI workflow uses temporary testbench copies to convert testbench `$stop` calls to `$finish`; it does not modify the original testbench source for this purpose.
 
 ## 5. Fresh ModelSim run — pending actual owner-side execution
