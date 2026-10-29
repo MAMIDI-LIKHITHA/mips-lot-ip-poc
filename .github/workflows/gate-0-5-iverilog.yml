@@ -82,6 +82,19 @@ jobs:
               echo "FAIL: $tb did not emit the required TB RESULT: PASS marker"
               exit 1
             fi
+            if [[ "$tb" == "tb_xbar_coverage" ]]; then
+              for expected in \
+                "Route coverage       : 16/16 = 100.00%" \
+                "Contention           : PASS" \
+                "Multi-output         : PASS" \
+                "Backpressure         : PASS" \
+                "Reset                : PASS"; do
+                if ! grep -Fq "$expected" "$log"; then
+                  echo "FAIL: coverage report missing expected result: $expected"
+                  exit 1
+                fi
+              done
+            fi
             passed=$((passed + 1))
             echo "PASS: $tb"
             echo "::endgroup::"
