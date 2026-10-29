@@ -38,8 +38,11 @@ module lot_rsp_router #(
         for (dst = 0; dst < N; dst = dst + 1) begin
             selected = 1'b0;
             for (src = 0; src < N; src = src + 1) begin
+                // The loop only visits legal destinations [0, N-1], so an
+                // equality match already rejects every out-of-range src_id.
+                // Cast dst to SRC_W to keep the comparison width explicit.
                 if (!selected && src_valid[src] &&
-                    (src_id[src] == dst) && (src_id[src] < N) && rst_n) begin
+                    (src_id[src] == SRC_W'(dst)) && rst_n) begin
                     selected = 1'b1;
                     grant[src][dst] = 1'b1;
                     dst_valid[dst] = 1'b1;

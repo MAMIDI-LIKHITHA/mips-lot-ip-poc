@@ -136,6 +136,8 @@ module tb_mips_four_endpoint_integration;
         logic [ADDR_W-1:0] addr;
         integer cycles;
         begin
+            // Drive requests away from the active edge to avoid a testbench/DUT race.
+            @(negedge clk);
             addr = {14'b0, dst, local_addr};
             cpu_req_write = write;
             cpu_req_addr = addr;
@@ -148,6 +150,11 @@ module tb_mips_four_endpoint_integration;
                 cycles = cycles + 1;
             end
             if (!cpu_req_ready) begin
+                $display("DEBUG timeout: req_valid=%b req_ready=%b busy=%b addr_valid=%b lot_valid=%b lot_ready=%b lot_dst=%0d req_src_valid=%b req_src_ready=%b req_dst_valid=%b req_dst_ready=%b req_grant=%b",
+                         cpu_req_valid, cpu_req_ready, u_mips_candidate.busy,
+                         u_mips_candidate.addr_valid, lot_req_valid, lot_req_ready,
+                         lot_req_dst, req_src_valid, req_src_ready, req_dst_valid,
+                         req_dst_ready, req_grant);
                 $error("CPU request timeout: dst=%0d addr=%h", dst, addr);
                 $fatal;
             end
@@ -155,7 +162,18 @@ module tb_mips_four_endpoint_integration;
             @(posedge clk);
             cpu_req_valid = 1'b0;
 
-            wait (cpu_rsp_valid);
+            cycles = 0;
+            while (!cpu_rsp_valid && cycles < 20) begin
+                @(posedge clk);
+                cycles = cycles + 1;
+            end
+            if (!cpu_rsp_valid) begin
+                $display("DEBUG response timeout: busy=%b lot_rsp_valid=%b lot_rsp_ready=%b rsp_src_valid=%b rsp_src_ready=%b rsp_dst_valid=%b rsp_dst_ready=%b rsp_grant=%b",
+                         u_mips_candidate.busy, lot_rsp_valid, lot_rsp_ready,
+                         rsp_src_valid, rsp_src_ready, rsp_dst_valid,
+                         rsp_dst_ready, rsp_grant);
+                $fatal(1, "CPU response timeout: dst=%0d addr=%h", dst, addr);
+            end
             if (cpu_rsp_error !== expected_error ||
                 cpu_rsp_rdata !== expected) begin
                 $error("Response mismatch dst=%0d addr=%h got data=%h err=%b expected data=%h err=%b",
@@ -177,18 +195,43 @@ module tb_mips_four_endpoint_integration;
         logic [ADDR_W-1:0] addr;
         logic [DATA_W-1:0] held_data;
         logic held_error;
+        integer cycles;
         begin
+            // Drive requests away from the active edge to avoid a testbench/DUT race.
+            @(negedge clk);
             addr = {14'b0, dst, local_addr};
             cpu_req_write = 1'b0;
             cpu_req_addr = addr;
             cpu_req_wdata = '0;
             cpu_req_valid = 1'b1;
 
-            wait (cpu_req_ready);
+            cycles = 0;
+            while (!cpu_req_ready && cycles < 20) begin
+                @(posedge clk);
+                cycles = cycles + 1;
+            end
+            if (!cpu_req_ready) begin
+                $display("DEBUG stalled-read request timeout: req_valid=%b req_ready=%b busy=%b addr_valid=%b lot_valid=%b lot_ready=%b req_src_valid=%b req_src_ready=%b req_dst_valid=%b req_dst_ready=%b req_grant=%b",
+                         cpu_req_valid, cpu_req_ready, u_mips_candidate.busy,
+                         u_mips_candidate.addr_valid, lot_req_valid, lot_req_ready,
+                         req_src_valid, req_src_ready, req_dst_valid, req_dst_ready, req_grant);
+                $fatal(1, "CPU stalled-read request timeout: dst=%0d addr=%h", dst, addr);
+            end
             @(posedge clk);
             cpu_req_valid = 1'b0;
 
-            wait (cpu_rsp_valid);
+            cycles = 0;
+            while (!cpu_rsp_valid && cycles < 20) begin
+                @(posedge clk);
+                cycles = cycles + 1;
+            end
+            if (!cpu_rsp_valid) begin
+                $display("DEBUG stalled-read response timeout: busy=%b lot_rsp_valid=%b lot_rsp_ready=%b rsp_src_valid=%b rsp_src_ready=%b rsp_dst_valid=%b rsp_dst_ready=%b rsp_grant=%b",
+                         u_mips_candidate.busy, lot_rsp_valid, lot_rsp_ready,
+                         rsp_src_valid, rsp_src_ready, rsp_dst_valid,
+                         rsp_dst_ready, rsp_grant);
+                $fatal(1, "CPU stalled-read response timeout: dst=%0d addr=%h", dst, addr);
+            end
             held_data = cpu_rsp_rdata;
             held_error = cpu_rsp_error;
 

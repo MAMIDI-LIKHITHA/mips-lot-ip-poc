@@ -1,0 +1,113 @@
+name: Gate 0.5 — Verilator portable regression
+
+on:
+  push:
+    branches:
+      - verification/gate-0-5-iverilog-ci
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verilator-regression:
+    name: Compile and run portable LOT testbenches
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install Verilator
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes verilator
+          verilator --version
+
+      - name: Compile and run portable regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/verilator-logs
+
+          RTL=(
+            rtl/crossbar/xbar_scheduler.sv
+            rtl/crossbar/xbar_4x4.sv
+            verification/xbar_coverage.sv
+            rtl/interconnect/lot_txn_router.sv
+            rtl/interconnect/lot_rsp_router.sv
+            rtl/mips_if/mips_mmio_adapter_candidate.sv
+            rtl/endpoints/lot_endpoint_adapter.sv
+          )
+
+          TESTS=(
+            tb_xbar_4x4
+            tb_xbar_backpressure_stability
+            tb_xbar_multi_output
+            tb_xbar_coverage
+            tb_xbar_invalid_dst
+            tb_xbar_reset
+            tb_xbar_stress_latency
+            tb_lot_txn_router
+            tb_lot_rsp_router
+            tb_mips_mmio_adapter_candidate
+            tb_end_to_end_candidate
+            tb_mips_four_endpoint_integration
+          )
+
+          passed=0
+          for tb in "${TESTS[@]}"; do
+            log="build/verilator-logs/$tb.log"
+            obj="build/verilator-logs/obj_$tb"
+
+            echo "::group::Compile $tb"
+            # Convert testbench-only $stop calls to $finish for non-interactive CI.
+            tb_ci="build/verilator-logs/${tb}_ci.sv"
+            sed 's/\$stop/\$finish/g' "tb/$tb.sv" > "$tb_ci"
+            verilator --binary --timing --Wno-fatal \
+              --top-module "$tb" --Mdir "$obj" \
+              "${RTL[@]}" "$tb_ci" 2>&1 | tee "$log"
+            echo "::endgroup::"
+
+            echo "::group::Run $tb"
+            set +e
+            "$obj/V$tb" 2>&1 | tee -a "$log"
+            sim_status=${PIPESTATUS[0]}
+            set -e
+            if [[ $sim_status -ne 0 ]]; then
+              echo "FAIL: $tb exited with status $sim_status"
+              exit 1
+            fi
+            if ! grep -Fq "TB RESULT: PASS" "$log"; then
+              echo "FAIL: $tb did not emit the required TB RESULT: PASS marker"
+              exit 1
+            fi
+            if [[ "$tb" == "tb_xbar_coverage" ]]; then
+              for expected in \
+                "Route coverage       : 16/16 = 100.00%" \
+                "Contention           : PASS" \
+                "Multi-output         : PASS" \
+                "Backpressure         : PASS" \
+                "Reset                : PASS"; do
+                if ! grep -Fq "$expected" "$log"; then
+                  echo "FAIL: coverage report missing expected result: $expected"
+                  exit 1
+                fi
+              done
+            fi
+            passed=$((passed + 1))
+            echo "PASS: $tb"
+            echo "::endgroup::"
+          done
+
+          echo "VERILATOR REGRESSION SUMMARY: $passed passed, 0 failed"
+          echo "VERILATOR REGRESSION RESULT: PASS"
+
+      - name: Upload compile and simulation logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-0-5-verilator-logs
+          path: build/verilator-logs/
+          if-no-files-found: warn
+          retention-days: 14
